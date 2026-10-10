@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { TOPIC_BY_ID } from '../../../shared/topics';
 import { useApp } from '../lib/app';
-import { daysUntil, formatDeadline, formatRange } from '../lib/format';
+import { daysUntil, formatDeadline, formatRange, timeLeft } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import type { EventRow } from '../lib/supabase';
 
@@ -60,7 +60,7 @@ export function EventCard({ event }: { event: EventRow }) {
           <div className={`deadline ${urgent ? 'urgent' : ''}`}>
             <span className="label">{t.deadline}</span>
             <strong>{formatDeadline(event.submission_deadline, lang)}</strong>
-            <span className="countdown">{t.daysLeft(days!)}</span>
+            <span className="countdown">{timeLeft(event.submission_deadline, t)}</span>
             {event.abstract_deadline && event.abstract_deadline !== event.submission_deadline && (
               <span className="muted small">
                 {t.abstract}: {formatDeadline(event.abstract_deadline, lang)}

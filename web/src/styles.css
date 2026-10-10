@@ -182,6 +182,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .actions { display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: flex-end; }
 
 @media (max-width: 640px) {
+  .filters select, .filters input[type='search'] { flex: 1 1 100%; }
   .event { flex-direction: column; }
   .event-side, .deadline { align-items: flex-start; text-align: left; }
   .actions { justify-content: flex-start; }

@@ -19,6 +19,13 @@ export function formatRange(start: string | null, end: string | null, lang: Lang
   return `${formatDate(start, lang)} – ${formatDate(end, lang)}`;
 }
 
+/** Kalan süre metni: 24 saatten azsa saat, değilse gün. */
+export function timeLeft(iso: string, t: { daysLeft: (n: number) => string; hoursLeft: (n: number) => string }): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms < 86_400_000) return t.hoursLeft(Math.max(1, Math.ceil(ms / 3_600_000)));
+  return t.daysLeft(Math.floor(ms / 86_400_000));
+}
+
 export function daysUntil(iso: string): number {
   return Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 86_400_000));
 }

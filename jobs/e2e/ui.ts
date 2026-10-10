@@ -36,7 +36,12 @@ async function newPage(kind: 'desktop' | 'mobile') {
   });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => pageErrors.push(`${kind}: ${e.message}`));
+  page.on('response', (r) => {
+    if (r.status() >= 400) pageErrors.push(`${kind} ${r.status()} ${r.request().method()} ${r.url()}`);
+  });
   page.on('console', (m) => {
+    if (m.text().startsWith('Failed to load resource')) return; // ayrıntısı response olayında
+
     if (m.type() === 'error' && !m.text().includes('favicon')) pageErrors.push(`${kind} console: ${m.text()}`);
   });
   return page;
@@ -109,8 +114,11 @@ try {
     await page.locator('article.event').first().waitFor({ timeout: 20_000 });
     const count = await page.locator('article.event').count();
     check('çağrı listesi yüklendi', count > 0, count);
-    const badge = await page.locator('.nav .badge').textContent().catch(() => null);
-    check('okunmamış mesaj rozeti', !!badge && +badge > 0, badge);
+    if (kind === 'desktop') {
+      // (mobilde mesajlar masaüstü testinde okunmuş olur)
+      const badge = await page.locator('.nav .badge').textContent().catch(() => null);
+      check('okunmamış mesaj rozeti', !!badge && +badge > 0, badge);
+    }
     await shot(page, `${kind}-03-events`, false);
 
     // Filtre: sadece takip ettiklerim
@@ -139,6 +147,9 @@ try {
     // Profil
     await page.goto(`${SITE}#/profil`);
     await page.getByRole('heading', { name: 'Hesap' }).waitFor({ timeout: 15_000 });
+    await page.locator('ul.followed li').first().waitFor({ timeout: 10_000 }).catch(() => {});
+    const followedRows = await page.locator('ul.followed li').count();
+    check('profil: takip edilen çağrılar listelendi', followedRows >= follow.length, followedRows);
     check('profil: konu seçimleri işaretli', (await page.locator('.chip.on').count()) === 2, await page.locator('.chip.on').count());
     check('profil: şifre değiştirme (e-posta üyesi)', await page.getByRole('heading', { name: 'Şifre değiştir' }).isVisible());
     check('profil: hesap silme bölümü', await page.getByRole('heading', { name: 'Hesabı sil' }).isVisible());
