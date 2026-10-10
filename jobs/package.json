@@ -6,7 +6,8 @@
     "job": "tsx src/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx test/*.test.ts",
-    "dry-run": "tsx src/dry-run.ts"
+    "dry-run": "tsx src/dry-run.ts",
+    "e2e": "tsx e2e/e2e.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

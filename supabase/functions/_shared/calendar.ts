@@ -269,6 +269,45 @@ async function microsoftWrite(token: string, item: CalItem, externalId?: string)
 }
 
 // ---------------------------------------------------------------------------
+// Hesap silme: eklediğimiz kayıtları takvimden kaldır, izni geri çek
+// ---------------------------------------------------------------------------
+
+/** Kullanıcının takvimine eklediğimiz tüm kayıtları siler; silinen kayıt sayısını döndürür. */
+export async function deleteAllEntries(db: Db, env: CalendarEnv, userId: string): Promise<number> {
+  const access = await getAccessToken(db, env, userId);
+  if (!access) return 0;
+  const { data: entries } = await db
+    .from('calendar_entries')
+    .select('id, provider, external_id, status')
+    .eq('user_id', userId);
+
+  let deleted = 0;
+  for (const e of entries ?? []) {
+    if (e.status !== 'active' || !e.external_id || e.provider !== access.provider) continue;
+    const url =
+      access.provider === 'google'
+        ? `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(e.external_id)}`
+        : `https://graph.microsoft.com/v1.0/me/events/${encodeURIComponent(e.external_id)}`;
+    const res = await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${access.token}` } });
+    // 404/410: kullanıcı zaten silmiş
+    if (res.ok || res.status === 404 || res.status === 410) deleted++;
+  }
+  return deleted;
+}
+
+/** Google izinlerini geri çeker (Microsoft'ta karşılığı yok; kullanıcı hesap ayarlarından kaldırır). */
+export async function revokeAccess(db: Db, env: CalendarEnv, userId: string): Promise<void> {
+  const { data: conn } = await db
+    .from('calendar_connections')
+    .select('provider, refresh_token_enc')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (conn?.provider !== 'google') return;
+  const token = await decrypt(conn.refresh_token_enc, env.TOKEN_ENC_KEY);
+  await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST' });
+}
+
+// ---------------------------------------------------------------------------
 // Tek bir kaydı takvimle eşitle (oluştur / güncelle / dokunma)
 // ---------------------------------------------------------------------------
 
