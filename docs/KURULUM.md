@@ -3,8 +3,8 @@
 Bu rehber projeyi sıfırdan canlıya almak için gereken **tek seferlik** adımları anlatır.
 Toplam süre yaklaşık 45 dakikadır. Adımları sırayla yapın; her adımda not etmeniz gereken değerler **kalın** yazılmıştır.
 
-> Örneklerde depo adresi `https://github.com/SafakSahinn/cfp-takvim`, site adresi
-> `https://safaksahinn.github.io/cfp-takvim/` olarak geçer.
+> Örneklerde depo adresi `https://github.com/SafakSahinn/cfp-calendar`, site adresi
+> `https://safaksahinn.github.io/cfp-calendar/` olarak geçer.
 
 ---
 
@@ -78,8 +78,8 @@ Supabase Dashboard → **Authentication**:
 3. **Sign In / Providers → (en üst) User Signups**: *Allow manual linking* → **açık**
    (Google ile girip Outlook takvimi bağlayabilmek için)
 4. **URL Configuration**
-   - Site URL: `https://safaksahinn.github.io/cfp-takvim/`
-   - Redirect URLs: `https://safaksahinn.github.io/cfp-takvim/`, `http://localhost:5173/cfp-takvim/`
+   - Site URL: `https://safaksahinn.github.io/cfp-calendar/`
+   - Redirect URLs: `https://safaksahinn.github.io/cfp-calendar/`, `http://localhost:5173/cfp-calendar/`
 
 ## 6. GitHub ayarları
 
@@ -104,7 +104,7 @@ Depo → **Settings → Secrets and variables → Actions**
 | `SUPABASE_URL` | 1. adım (aynı değer) |
 | `SUPABASE_ANON_KEY` | 1. adım |
 | `SUPABASE_PROJECT_REF` | 1. adım |
-| `SITE_URL` | `https://safaksahinn.github.io/cfp-takvim/` |
+| `SITE_URL` | `https://safaksahinn.github.io/cfp-calendar/` |
 
 Sonra:
 
@@ -123,7 +123,7 @@ Bundan sonra her şey otomatik: `main`'e push edilen değişiklikler yayınlanı
 cd web
 cp .env.example .env      # SUPABASE_URL ve ANON_KEY'i doldurun
 npm install
-npm run dev               # http://localhost:5173/cfp-takvim/
+npm run dev               # http://localhost:5173/cfp-calendar/
 
 # Veri işleri
 cd jobs

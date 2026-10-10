@@ -2,7 +2,7 @@
 
 Bilgisayar mühendisliği ve elektrik-elektronik mühendisliği alanındaki **konferans, çalıştay ve dergi özel sayısı çağrılarının** başvuru tarihlerini toplayan, ilgilendiklerinizi **Google veya Outlook takviminize otomatik ekleyen** web sitesi.
 
-**Site:** https://safaksahinn.github.io/cfp-takvim/
+**Site:** https://safaksahinn.github.io/cfp-calendar/
 
 ## Özellikler
 

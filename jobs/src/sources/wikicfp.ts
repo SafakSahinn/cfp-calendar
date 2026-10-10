@@ -38,7 +38,7 @@ const CATEGORIES: Record<string, string[]> = {
 
 const PAGES_PER_CATEGORY = 3;
 const DELAY_MS = 1200;
-const UA = 'Mozilla/5.0 (compatible; CFP-Takvim/1.0; +https://github.com/SafakSahinn/cfp-takvim)';
+const UA = 'Mozilla/5.0 (compatible; CFP-Calendar/1.0; +https://github.com/SafakSahinn/cfp-calendar)';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

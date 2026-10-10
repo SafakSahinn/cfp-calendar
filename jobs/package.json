@@ -1,5 +1,5 @@
 {
-  "name": "cfp-takvim-jobs",
+  "name": "cfp-calendar-jobs",
   "private": true,
   "type": "module",
   "scripts": {

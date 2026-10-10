@@ -1,5 +1,5 @@
 {
-  "name": "cfp-takvim-web",
+  "name": "cfp-calendar-web",
   "private": true,
   "type": "module",
   "scripts": {

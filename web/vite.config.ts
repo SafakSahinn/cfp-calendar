@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 
 // GitHub Pages'te site https://<kullanıcı>.github.io/<repo>/ altında yayınlanır.
 export default defineConfig({
-  base: process.env.VITE_BASE ?? '/cfp-takvim/',
+  base: process.env.VITE_BASE ?? '/cfp-calendar/',
   plugins: [react()],
   server: { fs: { allow: ['..'] } },
 });

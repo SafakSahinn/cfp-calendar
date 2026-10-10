@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     for (const type of ['submission_open', 'deadline', 'event_days'] as EntryType[]) {
       if (!isApplicable(e, type)) continue;
       const item = buildItem(e, type, profile.locale, siteUrl);
-      lines.push('BEGIN:VEVENT', `UID:${e.id}-${type}@cfp-takvim`, `DTSTAMP:${now}`);
+      lines.push('BEGIN:VEVENT', `UID:${e.id}-${type}@cfp-calendar`, `DTSTAMP:${now}`);
       if (item.allDay) {
         lines.push(`DTSTART;VALUE=DATE:${day(item.allDay.start)}`, `DTEND;VALUE=DATE:${day(item.allDay.endExclusive)}`);
       } else {
