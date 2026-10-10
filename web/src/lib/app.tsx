@@ -34,6 +34,9 @@ interface AppState {
   updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'display_name'>>) => Promise<void>;
   refreshUnread: () => Promise<void>;
   addToCalendar: (eventId: string) => Promise<boolean>;
+  /** Şifre sıfırlama bağlantısıyla gelindi: yeni şifre formu gösterilmeli. */
+  recovery: boolean;
+  endRecovery: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -47,6 +50,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [topics, setTopics] = useState<Set<string>>(new Set());
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
+  const [recovery, setRecovery] = useState(false);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -85,8 +89,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setReady(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true);
       setReady(true);
       let pending: string | null = null;
       try {
@@ -241,6 +246,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         session, ready, profile, followed, topics, unread, toast, showToast,
         signIn, signOut, connectCalendar, disconnectCalendar, toggleFollow, toggleTopic,
         updateProfile, refreshUnread, addToCalendar,
+        recovery, endRecovery: () => setRecovery(false),
       }}
     >
       {children}

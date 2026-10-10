@@ -1,3 +1,4 @@
+import { EmailAuth } from '../components/EmailAuth';
 import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 
@@ -40,6 +41,8 @@ export function LandingPage() {
             <MicrosoftIcon /> {t.signInMicrosoft}
           </button>
           <p className="muted small">{t.signInNote}</p>
+          <div className="divider"><span>{t.orEmail}</span></div>
+          <EmailAuth />
         </div>
       </div>
       <ul className="features">

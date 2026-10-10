@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from './lib/app';
 import { useI18n } from './lib/i18n';
+import { NewPasswordForm } from './components/EmailAuth';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
@@ -18,7 +19,7 @@ function routeFromHash(): Route {
 
 export function App() {
   const { t, lang, setLang } = useI18n();
-  const { session, ready, profile, unread, toast, signOut, updateProfile } = useApp();
+  const { session, ready, profile, unread, toast, signOut, updateProfile, recovery } = useApp();
   const [route, setRoute] = useState<Route>(routeFromHash);
 
   useEffect(() => {
@@ -73,6 +74,8 @@ export function App() {
           <div className="notice">{t.notConfigured}</div>
         ) : !ready ? (
           <p className="muted center">{t.loading}</p>
+        ) : recovery && session ? (
+          <NewPasswordForm />
         ) : !session ? (
           <LandingPage />
         ) : route === 'inbox' ? (

@@ -213,3 +213,17 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
   max-width: calc(100% - 32px); padding: 0.65rem 1rem; border-radius: 10px;
   background: var(--text); color: var(--bg); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2); z-index: 20;
 }
+
+/* --- e-posta ile giriş --- */
+.divider { display: flex; align-items: center; gap: 0.75rem; width: 100%; max-width: 320px; margin: 0.75rem 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.email-auth { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 320px; margin: 0 auto; text-align: left; }
+.email-auth label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; font-weight: 500; }
+.email-auth input[type="text"], .email-auth input[type="email"], .email-auth input[type="password"] {
+  padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit;
+}
+.tabs { display: flex; padding: 3px; gap: 3px; border-radius: 10px; background: var(--surface-2); }
+.tabs button { flex: 1; border: 0; background: transparent; padding: 0.4rem; color: var(--muted); }
+.tabs button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.form-error { margin: 0; padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--danger-soft); color: var(--danger); font-size: 0.88rem; }
+.form-info { margin: 0; padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--accent-soft); font-size: 0.88rem; }
