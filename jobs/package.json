@@ -1,0 +1,21 @@
+{
+  "name": "cfp-takvim-jobs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "job": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import tsx test/*.test.ts",
+    "dry-run": "tsx src/dry-run.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "cheerio": "^1.2.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

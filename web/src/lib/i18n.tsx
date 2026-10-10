@@ -1,0 +1,200 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+
+export type Lang = 'tr' | 'en';
+
+const dict = {
+  tr: {
+    tagline: 'Bilgisayar ve elektrik-elektronik mühendisliği çağrıları, takviminize otomatik.',
+    heroTitle: 'Son başvuru tarihlerini kaçırmayın',
+    heroText:
+      'Konferans, çalıştay ve dergi özel sayısı çağrıları 12 saatte bir güncellenir. İlgilendiklerinizi işaretleyin; başvuru açıldığında Google veya Outlook takviminize otomatik eklensin.',
+    feature1: 'IEEE, CORE/CCF dereceli konferanslar ve dergi çağrıları tek yerde',
+    feature2: 'Başvuru başlangıcı ve son tarih takviminizde, hatırlatıcılarla',
+    feature3: '“İlgileniyorum” deyin, konferans günleri de eklensin',
+    signInGoogle: 'Google ile devam et',
+    signInMicrosoft: 'Microsoft ile devam et',
+    signInNote: 'Hesabınız ilk girişte otomatik oluşturulur.',
+    signOut: 'Çıkış',
+    navEvents: 'Çağrılar',
+    navInbox: 'Mesajlar',
+    navProfile: 'Profil',
+    search: 'Ara: kısaltma, başlık, yer…',
+    allFields: 'Tüm alanlar',
+    fieldCs: 'Bilgisayar',
+    fieldEe: 'Elektrik-Elektronik',
+    allKinds: 'Tüm türler',
+    kindConference: 'Konferans',
+    kindWorkshop: 'Çalıştay',
+    kindJournal: 'Dergi / Özel sayı',
+    allTopics: 'Tüm konular',
+    onlyIeee: 'Sadece IEEE',
+    onlyRanked: 'Sadece dereceli',
+    onlyFollowed: 'Takip ettiklerim',
+    results: 'sonuç',
+    showMore: 'Daha fazla göster',
+    deadline: 'Son başvuru',
+    abstract: 'Özet',
+    eventDates: 'Etkinlik',
+    daysLeft: (n: number) => (n === 0 ? 'bugün' : `${n} gün kaldı`),
+    follow: 'Takip et',
+    following: 'Takipte',
+    addToCalendar: 'Takvime ekle',
+    addedToCalendar: 'Takvime eklendi',
+    needCalendar: 'Önce profilinizden takvim bağlayın',
+    details: 'Sayfaya git',
+    noEvents: 'Filtrelere uyan çağrı yok.',
+    loading: 'Yükleniyor…',
+    inboxTitle: 'Mesajlar',
+    inboxEmpty: 'Henüz mesaj yok. Profilinizden konu seçin veya çağrıları takip edin.',
+    nOpen: 'Başvuru açıldı',
+    nTopic: 'İlgi alanınızda yeni çağrı',
+    nChanged: 'Tarih değişti',
+    nReminder: 'Son başvuruya 1 haftadan az kaldı',
+    askInterested: 'İlgileniyor musunuz?',
+    interested: 'İlgileniyorum',
+    notInterested: 'İlgilenmiyorum',
+    youInterested: '✓ İlgileniyorsunuz — takvime eklendi',
+    youInterestedNoCal: '✓ İlgileniyorsunuz — takip listenize eklendi',
+    youNotInterested: 'İlgilenmiyorsunuz',
+    oldDeadline: 'Eski tarih',
+    newDeadline: 'Yeni tarih',
+    profileTitle: 'Profil',
+    calendarTitle: 'Takvim bağlantısı',
+    calendarText:
+      'Takip ettiğiniz çağrıların başvuru başlangıcı ve son tarihi, başvuru açıldığında takviminize otomatik eklenir. Tarih uzatılırsa takvim kaydı güncellenir.',
+    connectedTo: 'Bağlı takvim',
+    connectGoogle: 'Google Takvim bağla',
+    connectMicrosoft: 'Outlook / Microsoft takvimi bağla',
+    disconnect: 'Bağlantıyı kes',
+    calendarConnected: 'Takvim bağlandı',
+    calendarError: 'Takvim bağlanamadı',
+    icsTitle: 'Takvim aboneliği (ICS)',
+    icsText: 'İzin vermeden de kullanabilirsiniz: bu adresi Apple Takvim, Google Takvim (“URL ile ekle”) veya Outlook’a abonelik olarak ekleyin. Not: takvim uygulamaları abonelikleri birkaç saatte bir yeniler.',
+    copy: 'Kopyala',
+    copied: 'Kopyalandı',
+    topicsTitle: 'İlgi alanlarım',
+    topicsText: 'Seçtiğiniz konularda yeni çağrı yayımlandığında “İlgileniyor musunuz?” mesajı alırsınız.',
+    topicNotifications: 'Konu bazlı mesajlar',
+    followedTitle: 'Takip ettiğim çağrılar',
+    noneFollowed: 'Henüz takip ettiğiniz çağrı yok.',
+    unfollow: 'Bırak',
+    language: 'Dil',
+    notConfigured: 'Supabase ayarları eksik: web/.env dosyasına VITE_SUPABASE_URL ve VITE_SUPABASE_ANON_KEY ekleyin.',
+    sourceNote: 'Kaynaklar: ccf-deadlines, WikiCFP. Tarihleri her zaman resmi sayfadan doğrulayın.',
+  },
+  en: {
+    tagline: 'Computer & electrical engineering calls for papers, straight to your calendar.',
+    heroTitle: 'Never miss a submission deadline',
+    heroText:
+      'Conference, workshop and journal special-issue calls are refreshed every 12 hours. Mark what you care about and it is added to your Google or Outlook calendar as soon as submissions open.',
+    feature1: 'IEEE, CORE/CCF-ranked conferences and journal calls in one place',
+    feature2: 'Submission opening and deadline in your calendar, with reminders',
+    feature3: 'Say “I’m interested” and the conference days are added too',
+    signInGoogle: 'Continue with Google',
+    signInMicrosoft: 'Continue with Microsoft',
+    signInNote: 'Your account is created automatically on first sign-in.',
+    signOut: 'Sign out',
+    navEvents: 'Calls',
+    navInbox: 'Messages',
+    navProfile: 'Profile',
+    search: 'Search: acronym, title, location…',
+    allFields: 'All fields',
+    fieldCs: 'Computer',
+    fieldEe: 'Electrical & Electronics',
+    allKinds: 'All types',
+    kindConference: 'Conference',
+    kindWorkshop: 'Workshop',
+    kindJournal: 'Journal / Special issue',
+    allTopics: 'All topics',
+    onlyIeee: 'IEEE only',
+    onlyRanked: 'Ranked only',
+    onlyFollowed: 'Following',
+    results: 'results',
+    showMore: 'Show more',
+    deadline: 'Deadline',
+    abstract: 'Abstract',
+    eventDates: 'Event',
+    daysLeft: (n: number) => (n === 0 ? 'today' : `${n} days left`),
+    follow: 'Follow',
+    following: 'Following',
+    addToCalendar: 'Add to calendar',
+    addedToCalendar: 'Added to calendar',
+    needCalendar: 'Connect a calendar in your profile first',
+    details: 'Website',
+    noEvents: 'No calls match the filters.',
+    loading: 'Loading…',
+    inboxTitle: 'Messages',
+    inboxEmpty: 'No messages yet. Pick topics in your profile or follow some calls.',
+    nOpen: 'Submissions are open',
+    nTopic: 'New call in your field',
+    nChanged: 'Dates changed',
+    nReminder: 'Less than a week to the deadline',
+    askInterested: 'Are you interested?',
+    interested: 'I’m interested',
+    notInterested: 'Not interested',
+    youInterested: '✓ Interested — added to your calendar',
+    youInterestedNoCal: '✓ Interested — added to your followed list',
+    youNotInterested: 'Not interested',
+    oldDeadline: 'Old date',
+    newDeadline: 'New date',
+    profileTitle: 'Profile',
+    calendarTitle: 'Calendar connection',
+    calendarText:
+      'For calls you follow, the submission opening and deadline are added to your calendar automatically once submissions open. Extended deadlines update the entry.',
+    connectedTo: 'Connected calendar',
+    connectGoogle: 'Connect Google Calendar',
+    connectMicrosoft: 'Connect Outlook / Microsoft',
+    disconnect: 'Disconnect',
+    calendarConnected: 'Calendar connected',
+    calendarError: 'Could not connect calendar',
+    icsTitle: 'Calendar subscription (ICS)',
+    icsText: 'No permissions needed: subscribe to this URL in Apple Calendar, Google Calendar (“From URL”) or Outlook. Note: calendar apps refresh subscriptions every few hours.',
+    copy: 'Copy',
+    copied: 'Copied',
+    topicsTitle: 'My topics',
+    topicsText: 'When a new call is published in these topics you get an “Are you interested?” message.',
+    topicNotifications: 'Topic-based messages',
+    followedTitle: 'Calls I follow',
+    noneFollowed: 'You are not following any calls yet.',
+    unfollow: 'Unfollow',
+    language: 'Language',
+    notConfigured: 'Supabase is not configured: add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to web/.env.',
+    sourceNote: 'Sources: ccf-deadlines, WikiCFP. Always verify dates on the official page.',
+  },
+};
+
+export type Dict = typeof dict.tr;
+
+const I18nContext = createContext<{ lang: Lang; t: Dict; setLang: (l: Lang) => void }>({
+  lang: 'tr',
+  t: dict.tr,
+  setLang: () => {},
+});
+
+function initialLang(): Lang {
+  try {
+    const saved = localStorage.getItem('cfp.lang');
+    if (saved === 'tr' || saved === 'en') return saved;
+  } catch {
+    // depolama kapalı olabilir
+  }
+  return navigator.language.toLowerCase().startsWith('tr') ? 'tr' : 'en';
+}
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(initialLang);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try {
+      localStorage.setItem('cfp.lang', l);
+    } catch {
+      // yok say
+    }
+  };
+  return <I18nContext.Provider value={{ lang, t: dict[lang] as Dict, setLang }}>{children}</I18nContext.Provider>;
+}
+
+export const useI18n = () => useContext(I18nContext);

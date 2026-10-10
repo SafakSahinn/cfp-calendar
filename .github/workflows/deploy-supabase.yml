@@ -1,0 +1,40 @@
+name: Supabase'e yayınla (veritabanı + fonksiyonlar)
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/**', '.github/workflows/deploy-supabase.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Projeye bağlan
+        run: supabase link --project-ref "$PROJECT_REF"
+      - name: Veritabanı göçleri
+        run: supabase db push
+      - name: Fonksiyon gizli değişkenleri
+        run: |
+          supabase secrets set --project-ref "$PROJECT_REF" \
+            TOKEN_ENC_KEY='${{ secrets.TOKEN_ENC_KEY }}' \
+            GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
+            GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
+            MS_CLIENT_ID='${{ secrets.MS_CLIENT_ID }}' \
+            MS_CLIENT_SECRET='${{ secrets.MS_CLIENT_SECRET }}' \
+            SITE_URL='${{ vars.SITE_URL }}'
+      - name: Edge Functions
+        run: |
+          supabase functions deploy save-calendar-token respond --project-ref "$PROJECT_REF"
+          supabase functions deploy ics --no-verify-jwt --project-ref "$PROJECT_REF"

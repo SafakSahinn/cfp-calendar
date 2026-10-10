@@ -1,0 +1,48 @@
+name: Veri çek ve dağıt
+
+on:
+  schedule:
+    - cron: '17 */12 * * *' # 12 saatte bir (UTC 00:17 ve 12:17); tam saatten kaçınmak kuyruk gecikmesini azaltır
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'Çalışacak adım'
+        type: choice
+        options: [all, fetch, dispatch]
+        default: all
+
+permissions:
+  contents: read
+  actions: write # keepalive: 60 gün commit gelmezse zamanlanmış işler durmasın
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: jobs
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: jobs/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run job -- ${{ inputs.step || 'all' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          TOKEN_ENC_KEY: ${{ secrets.TOKEN_ENC_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+      - uses: liskin/gh-workflow-keepalive@v1
