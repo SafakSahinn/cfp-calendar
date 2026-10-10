@@ -26,14 +26,20 @@ jobs:
       - name: Veritabanı göçleri
         run: supabase db push
       - name: Fonksiyon gizli değişkenleri
+        env:
+          TOKEN_ENC_KEY: ${{ secrets.TOKEN_ENC_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
         run: |
-          supabase secrets set --project-ref "$PROJECT_REF" \
-            TOKEN_ENC_KEY='${{ secrets.TOKEN_ENC_KEY }}' \
-            GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}' \
-            GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}' \
-            MS_CLIENT_ID='${{ secrets.MS_CLIENT_ID }}' \
-            MS_CLIENT_SECRET='${{ secrets.MS_CLIENT_SECRET }}' \
-            SITE_URL='${{ vars.SITE_URL }}'
+          # Sadece tanımlı olanları gönder (Google/Microsoft anahtarları sonradan eklenebilir)
+          args=()
+          for name in TOKEN_ENC_KEY GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET MS_CLIENT_ID MS_CLIENT_SECRET SITE_URL; do
+            if [ -n "${!name}" ]; then args+=("$name=${!name}"); else echo "atlandı: $name (tanımlı değil)"; fi
+          done
+          supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"
       - name: Edge Functions
         run: |
           supabase functions deploy save-calendar-token respond --project-ref "$PROJECT_REF"
