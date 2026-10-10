@@ -24,10 +24,11 @@ export function env(name: string): string {
 export function calendarEnv(): CalendarEnv {
   return {
     TOKEN_ENC_KEY: env('TOKEN_ENC_KEY'),
-    GOOGLE_CLIENT_ID: env('GOOGLE_CLIENT_ID'),
-    GOOGLE_CLIENT_SECRET: env('GOOGLE_CLIENT_SECRET'),
-    MS_CLIENT_ID: env('MS_CLIENT_ID'),
-    MS_CLIENT_SECRET: env('MS_CLIENT_SECRET'),
+    // Sağlayıcı anahtarları isteğe bağlı: sadece o sağlayıcının takvimi bağlıysa kullanılır.
+    GOOGLE_CLIENT_ID: Deno.env.get('GOOGLE_CLIENT_ID') ?? '',
+    GOOGLE_CLIENT_SECRET: Deno.env.get('GOOGLE_CLIENT_SECRET') ?? '',
+    MS_CLIENT_ID: Deno.env.get('MS_CLIENT_ID') ?? '',
+    MS_CLIENT_SECRET: Deno.env.get('MS_CLIENT_SECRET') ?? '',
     SITE_URL: env('SITE_URL'),
   };
 }
