@@ -71,6 +71,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setToast((cur) => (cur === msg ? null : cur)), 4000);
   }, []);
 
+  useEffect(() => {
+    try {
+      const flash = sessionStorage.getItem('cfp.flash');
+      if (flash) {
+        sessionStorage.removeItem('cfp.flash');
+        showToast(flash);
+      }
+    } catch {
+      // yok say
+    }
+  }, [showToast]);
+
   const userId = session?.user.id;
 
   const loadProfile = useCallback(async () => {
@@ -249,10 +261,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       showToast(error.message);
       return false;
     }
-    // Kullanıcı sunucuda silindi; yerel oturumu da temizle.
-    await supabase.auth.signOut({ scope: 'local' });
-    showToast(t.accountDeleted);
-    window.location.hash = '#/';
+    // Kullanıcı sunucuda silindi: oturum sunucuya sorulmadan yerelde temizlenir (signOut silinmiş kullanıcı için 403 alır).
+    try {
+      Object.keys(localStorage).filter((k) => k.startsWith('sb-')).forEach((k) => localStorage.removeItem(k));
+      sessionStorage.setItem('cfp.flash', t.accountDeleted);
+    } catch {
+      // yok say
+    }
+    window.location.replace(siteRoot);
     return true;
   };
 
