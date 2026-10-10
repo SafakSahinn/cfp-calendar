@@ -24,6 +24,29 @@ Deno.serve(async (req) => {
 
   const provider = body.provider;
   if (provider !== 'google' && provider !== 'microsoft') return json({ error: 'provider' }, 400);
+
+  // Google: tarayıcıdaki Google açılır penceresi (Identity Services, popup kod akışı) tek kullanımlık bir
+  // yetki kodu verir; burada token'a çevrilir. Böylece takvim izni ekranında Supabase alan adı görünmez.
+  if (provider === 'google' && body.code) {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: body.code,
+        client_id: env('GOOGLE_CLIENT_ID'),
+        client_secret: env('GOOGLE_CLIENT_SECRET'),
+        redirect_uri: 'postmessage',
+      }),
+    });
+    const tok = await res.json().catch(() => ({}));
+    if (!res.ok) return json({ error: 'code_exchange_failed', detail: tok.error_description ?? tok.error }, 400);
+    if (!String(tok.scope ?? '').includes('https://www.googleapis.com/auth/calendar.events')) {
+      return json({ error: 'calendar_scope_missing' }, 400);
+    }
+    body.provider_token = tok.access_token;
+    body.provider_refresh_token = tok.refresh_token;
+  }
+
   if (!body.provider_refresh_token) {
     return json({ error: 'no_refresh_token', hint: 'Sağlayıcı refresh token döndürmedi; izin ekranını tekrar onaylayın.' }, 400);
   }

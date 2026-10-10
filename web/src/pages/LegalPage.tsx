@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useI18n } from '../lib/i18n';
+import { useI18n, type Lang } from '../lib/i18n';
 import { CONTACT_EMAIL, DATA_CONTROLLER, LEGAL_UPDATED, REPO_URL, SITE_NAME } from '../lib/site';
 
 const Mail = () => <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
@@ -15,8 +15,7 @@ const LIMITED_USE = (
   </p>
 );
 
-function Doc({ title, children }: { title: string; children: ReactNode }) {
-  const { lang } = useI18n();
+function Doc({ title, lang, children }: { title: string; lang: Lang; children: ReactNode }) {
   return (
     <article className="legal card">
       <h1>{title}</h1>
@@ -28,9 +27,9 @@ function Doc({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function PrivacyTr() {
+export function PrivacyTr() {
   return (
-    <Doc title="Gizlilik Politikası ve KVKK Aydınlatma Metni">
+    <Doc lang="tr" title="Gizlilik Politikası ve KVKK Aydınlatma Metni">
       <p>
         Bu metin, {SITE_NAME} (“Site”) kullanılırken hangi kişisel verilerin işlendiğini, 6698 sayılı Kişisel Verilerin
         Korunması Kanunu (“KVKK”) kapsamında açıklar. Veri sorumlusu: <strong>{DATA_CONTROLLER}</strong> — iletişim: <Mail />.
@@ -94,9 +93,9 @@ function PrivacyTr() {
   );
 }
 
-function PrivacyEn() {
+export function PrivacyEn() {
   return (
-    <Doc title="Privacy Policy">
+    <Doc lang="en" title="Privacy Policy">
       <p>
         This policy explains what personal data {SITE_NAME} (“the Site”) processes. Data controller:{' '}
         <strong>{DATA_CONTROLLER}</strong> — contact: <Mail />.
@@ -156,9 +155,9 @@ function PrivacyEn() {
   );
 }
 
-function TermsTr() {
+export function TermsTr() {
   return (
-    <Doc title="Kullanım Koşulları">
+    <Doc lang="tr" title="Kullanım Koşulları">
       <p>{SITE_NAME}’ı kullanarak aşağıdaki koşulları kabul etmiş olursunuz.</p>
       <h2>1. Hizmet</h2>
       <p>
@@ -183,9 +182,9 @@ function TermsTr() {
   );
 }
 
-function TermsEn() {
+export function TermsEn() {
   return (
-    <Doc title="Terms of Service">
+    <Doc lang="en" title="Terms of Service">
       <p>By using {SITE_NAME} you agree to the following terms.</p>
       <h2>1. The service</h2>
       <p>

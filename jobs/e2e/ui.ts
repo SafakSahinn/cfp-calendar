@@ -168,6 +168,13 @@ try {
     check('gizlilik sayfası', await page.getByRole('heading', { name: /Gizlilik Politikası/ }).isVisible());
     check('Google "Limited Use" beyanı', await page.getByText('Limited Use requirements').isVisible());
     await shot(page, `${kind}-06-privacy`, false);
+    if (kind === 'desktop') {
+      for (const f of ['privacy.html', 'terms.html']) {
+        const res = await page.request.get(`${SITE}${f}`);
+        const html = await res.text();
+        check(`statik ${f} yayında (JavaScript gerektirmez)`, res.status() === 200 && html.includes('<h1>') && (f !== 'privacy.html' || html.includes('Limited Use')), res.status());
+      }
+    }
     await page.goto(`${SITE}#/kosullar`);
     check('kullanım koşulları sayfası', await page.getByRole('heading', { name: 'Kullanım Koşulları' }).isVisible());
 

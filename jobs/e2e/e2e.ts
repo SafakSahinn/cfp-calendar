@@ -176,6 +176,15 @@ try {
   check('geçersiz ICS token → 404', badToken.status === 404, badToken.status);
 
   // -------------------------------------------------------------------------
+  section('Google takvim bağlama (popup kod akışı)');
+  const badCode = await fn(user, 'save-calendar-token', { provider: 'google', code: 'gecersiz-kod' });
+  check('geçersiz Google kodu → 400 (Google token uç noktasına gidildi)', badCode.status === 400, badCode);
+  const noToken = await fn(user, 'save-calendar-token', { provider: 'google' });
+  check('kod/token olmadan → 400', noToken.status === 400, noToken.status);
+  const { data: stillNoConn } = await db.from('calendar_connections').select('user_id').eq('user_id', userId);
+  check('başarısız denemede bağlantı kaydedilmez', (stillNoConn ?? []).length === 0);
+
+  // -------------------------------------------------------------------------
   section('Hesap silme');
   const del = await fn(user, 'delete-account', { delete_calendar_entries: true });
   check('hesap silme → 200', del.status === 200, del);

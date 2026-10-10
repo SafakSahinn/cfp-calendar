@@ -1,5 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { requestGoogleCalendarCode } from './googleCalendar';
 import { useI18n } from './i18n';
 import { authProvider, configured, siteRoot, supabase, type Profile, type Provider } from './supabase';
 
@@ -193,6 +194,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const connectCalendar = async (p: Provider) => {
+    if (p === 'google') return connectGoogleCalendar();
     try {
       localStorage.setItem(PENDING_KEY, p);
     } catch {
@@ -201,8 +203,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const options = {
       redirectTo: siteRoot, // hash eklenmez: PKCE ?code= parametresi bozulur
       scopes: SCOPES[p].calendar,
-      // Google refresh token'ı sadece offline erişim + onay ekranında verir.
-      queryParams: (p === 'google' ? { access_type: 'offline', prompt: 'consent' } : { prompt: 'consent' }) as Record<string, string>,
+      // Microsoft: refresh token için onay ekranı (Google kendi açılır penceresiyle bağlanır, bkz. connectGoogleCalendar)
+      queryParams: { prompt: 'consent' },
     };
     const hasIdentity = session?.user.identities?.some((i) => i.provider === authProvider(p));
     if (hasIdentity) {
@@ -211,6 +213,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Google ile girip Outlook takvimi bağlamak gibi durumlar: kimliği hesaba bağla.
       const { error } = await supabase.auth.linkIdentity({ provider: authProvider(p), options });
       if (error) showToast(`${t.calendarError}: ${error.message}`);
+    }
+  };
+
+  const connectGoogleCalendar = async () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+    if (!clientId) return showToast(`${t.calendarError}: VITE_GOOGLE_CLIENT_ID`);
+    try {
+      const code = await requestGoogleCalendarCode(clientId, session?.user.email);
+      const { data, error } = await supabase.functions.invoke('save-calendar-token', {
+        body: { provider: 'google', code },
+      });
+      if (error) {
+        // Fonksiyonun döndürdüğü hata kodunu göster (ör. calendar_scope_missing)
+        const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+        throw new Error(detail?.error ?? error.message);
+      }
+      if (data?.ok) showToast(t.calendarConnected);
+      await loadProfile();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg === 'popup_closed') return; // kullanıcı pencereyi kapattı
+      showToast(msg === 'calendar_scope_missing' ? t.calendarScopeMissing : `${t.calendarError}: ${msg}`);
     }
   };
 
