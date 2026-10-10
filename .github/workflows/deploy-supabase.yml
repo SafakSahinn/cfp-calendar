@@ -40,6 +40,8 @@ jobs:
             if [ -n "${!name}" ]; then args+=("$name=${!name}"); else echo "atlandı: $name (tanımlı değil)"; fi
           done
           supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"
+      - name: E-posta şablonları (onay, şifre sıfırlama, e-posta değişikliği)
+        run: node supabase/templates/build.mjs --push
       - name: Edge Functions
         run: |
           supabase functions deploy save-calendar-token respond --project-ref "$PROJECT_REF"
