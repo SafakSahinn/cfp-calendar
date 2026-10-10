@@ -14,10 +14,11 @@ export const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_K
 export function calendarEnv(): CalendarEnv {
   return {
     TOKEN_ENC_KEY: env('TOKEN_ENC_KEY'),
-    GOOGLE_CLIENT_ID: env('GOOGLE_CLIENT_ID'),
-    GOOGLE_CLIENT_SECRET: env('GOOGLE_CLIENT_SECRET'),
-    MS_CLIENT_ID: env('MS_CLIENT_ID'),
-    MS_CLIENT_SECRET: env('MS_CLIENT_SECRET'),
+    // Sağlayıcı anahtarları sadece takvimi bağlı kullanıcı varsa gerekir; yoksa token yenileme hata verir.
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? '',
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? '',
+    MS_CLIENT_ID: process.env.MS_CLIENT_ID ?? '',
+    MS_CLIENT_SECRET: process.env.MS_CLIENT_SECRET ?? '',
     SITE_URL: env('SITE_URL'),
   };
 }
