@@ -1,4 +1,6 @@
-# 📅 CFP Takvim
+<img src="web/public/logo.svg" width="56" align="left" alt="">
+
+# CFP Calendar
 
 Bilgisayar mühendisliği ve elektrik-elektronik mühendisliği alanındaki **konferans, çalıştay ve dergi özel sayısı çağrılarının** başvuru tarihlerini toplayan, ilgilendiklerinizi **Google veya Outlook takviminize otomatik ekleyen** web sitesi.
 

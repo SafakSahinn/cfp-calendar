@@ -37,7 +37,7 @@ veya `openssl rand -base64 32` → **TOKEN_ENC_KEY**
 
 ## 3. Google (giriş + Google Takvim)
 
-1. https://console.cloud.google.com → yeni proje: `CFP Takvim`
+1. https://console.cloud.google.com → yeni proje: `CFP Calendar`
 2. **APIs & Services → Library** → **Google Calendar API** → *Enable*
 3. **Google Auth Platform → Branding** (OAuth consent screen):
    - User type: **External**
@@ -58,7 +58,7 @@ veya `openssl rand -base64 32` → **TOKEN_ENC_KEY**
 ## 4. Microsoft (giriş + Outlook Takvim)
 
 1. https://entra.microsoft.com → **App registrations → New registration**
-   - Ad: `CFP Takvim`
+   - Ad: `CFP Calendar`
    - Supported account types: **Accounts in any organizational directory and personal Microsoft accounts**
    - Redirect URI (Web): `https://<SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback`
 2. **Overview** → *Application (client) ID* → **MS_CLIENT_ID**

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TOPICS } from '../../../shared/topics';
+import { AccountCard, DangerZone } from '../components/AccountSettings';
 import { useApp } from '../lib/app';
 import { formatDeadline } from '../lib/format';
 import { useI18n } from '../lib/i18n';
@@ -10,7 +11,7 @@ export function ProfilePage() {
   const { t, lang } = useI18n();
   const {
     session, profile, topics, followed, toggleTopic, toggleFollow,
-    connectCalendar, disconnectCalendar, updateProfile, showToast,
+    connectCalendar, disconnectCalendar, updateProfile, showToast, providers,
   } = useApp();
   const [followedEvents, setFollowedEvents] = useState<EventRow[]>([]);
 
@@ -48,6 +49,8 @@ export function ProfilePage() {
         </div>
       </div>
 
+      <AccountCard />
+
       <div className="card">
         <h3>{t.calendarTitle}</h3>
         <p className="muted">{t.calendarText}</p>
@@ -65,9 +68,11 @@ export function ProfilePage() {
           <button className="provider" onClick={() => connectCalendar('google')}>
             <GoogleIcon /> {t.connectGoogle}
           </button>
-          <button className="provider" onClick={() => connectCalendar('microsoft')}>
-            <MicrosoftIcon /> {t.connectMicrosoft}
-          </button>
+          {providers.microsoft && (
+            <button className="provider" onClick={() => connectCalendar('microsoft')}>
+              <MicrosoftIcon /> {t.connectMicrosoft}
+            </button>
+          )}
         </div>
       </div>
 
@@ -130,6 +135,8 @@ export function ProfilePage() {
           <button className="small" onClick={copy}>{t.copy}</button>
         </div>
       </div>
+
+      <DangerZone />
     </section>
   );
 }

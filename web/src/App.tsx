@@ -2,18 +2,23 @@ import { useEffect, useState } from 'react';
 import { useApp } from './lib/app';
 import { useI18n } from './lib/i18n';
 import { NewPasswordForm } from './components/EmailAuth';
+import { Logo } from './components/Logo';
+import { REPO_URL, SITE_NAME } from './lib/site';
+import { LegalPage } from './pages/LegalPage';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
 import { ProfilePage } from './pages/ProfilePage';
 
-type Route = 'events' | 'inbox' | 'profile';
+type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms';
 
 function routeFromHash(): Route {
   const h = window.location.hash;
   if (h.startsWith('#/mesajlar')) return 'inbox';
   if (h.startsWith('#/profil')) return 'profile';
+  if (h.startsWith('#/gizlilik')) return 'privacy';
+  if (h.startsWith('#/kosullar')) return 'terms';
   return 'events';
 }
 
@@ -23,7 +28,10 @@ export function App() {
   const [route, setRoute] = useState<Route>(routeFromHash);
 
   useEffect(() => {
-    const onHash = () => setRoute(routeFromHash());
+    const onHash = () => {
+      setRoute(routeFromHash());
+      window.scrollTo(0, 0);
+    };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -44,8 +52,8 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <a className="brand" href="#/">
-          <span className="brand-mark">📅</span>
-          <span>CFP Takvim</span>
+          <Logo />
+          <span>{SITE_NAME}</span>
         </a>
         {session && (
           <nav className="nav">
@@ -72,6 +80,8 @@ export function App() {
       <main className="main">
         {!configured ? (
           <div className="notice">{t.notConfigured}</div>
+        ) : route === 'privacy' || route === 'terms' ? (
+          <LegalPage doc={route} />
         ) : !ready ? (
           <p className="muted center">{t.loading}</p>
         ) : recovery && session ? (
@@ -87,7 +97,14 @@ export function App() {
         )}
       </main>
 
-      <footer className="footer muted">{t.sourceNote}</footer>
+      <footer className="footer muted">
+        <p>{t.sourceNote}</p>
+        <nav className="footer-links">
+          <a href="#/gizlilik">{t.privacy}</a>
+          <a href="#/kosullar">{t.terms}</a>
+          <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
+        </nav>
+      </footer>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );

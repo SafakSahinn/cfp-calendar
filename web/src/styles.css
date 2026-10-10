@@ -63,6 +63,17 @@ h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; colo
 .shell { min-height: 100vh; display: flex; flex-direction: column; }
 .main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 1.25rem 16px 3rem; }
 .footer { text-align: center; padding: 1.5rem 16px; font-size: 0.8rem; }
+.footer p { margin: 0 0 0.4rem; }
+.footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.4rem 1.2rem; }
+.footer-links a { color: var(--muted); }
+/* --- yasal sayfalar --- */
+.legal { max-width: 760px; margin: 0 auto; padding: 1.5rem 1.75rem; line-height: 1.65; }
+.legal h1 { font-size: 1.6rem; }
+.legal h2 { font-size: 1.05rem; margin-top: 1.6rem; }
+.legal ul { padding-left: 1.2rem; }
+.legal li { margin-bottom: 0.35rem; }
+.legal code { font-size: 0.85em; background: var(--surface-2); padding: 0.05rem 0.3rem; border-radius: 4px; }
+.callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; }
 
 .topbar {
   position: sticky; top: 0; z-index: 10;
@@ -239,3 +250,16 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tabs button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .form-error { margin: 0; padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--danger-soft); color: var(--danger); font-size: 0.88rem; }
 .form-info { margin: 0; padding: 0.5rem 0.7rem; border-radius: 8px; background: var(--accent-soft); font-size: 0.88rem; }
+
+/* --- hesap ayarları --- */
+.inline-field { display: flex; flex-direction: column; gap: 0.3rem; }
+.inline-field input { padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
+.email-auth.left { margin: 0; }
+.chip.method { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; font-size: 0.82rem; }
+.chip.method svg { width: 14px; height: 14px; }
+.card.danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-start; }
+.card.danger h3 { color: var(--danger); margin: 0; }
+.card.danger p { margin: 0; }
+.card.danger .inline-field { width: 100%; max-width: 320px; }
+.danger-btn { background: var(--danger); border-color: var(--danger); color: #fff; }
+.danger-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 85%, black) !important; }

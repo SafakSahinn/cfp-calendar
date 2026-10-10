@@ -38,7 +38,7 @@ function layout({ preheader, icon, titleTr, titleEn, bodyTr, bodyEn, button, url
     <!-- Logo -->
     <tr><td align="center" style="padding:0 0 20px;">
       <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-        <td style="background:${ACCENT};border-radius:10px;width:36px;height:36px;text-align:center;font-size:20px;line-height:36px;">📅</td>
+        <td style="width:40px;height:40px;"><img src="https://safaksahinn.github.io/cfp-calendar/logo-96.png" width="40" height="40" alt="" style="display:block;border:0;border-radius:10px;"></td>
         <td style="padding-left:10px;font-size:18px;font-weight:700;color:#111827;">${BRAND}</td>
       </tr></table>
     </td></tr>

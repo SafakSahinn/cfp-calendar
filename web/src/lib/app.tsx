@@ -37,6 +37,9 @@ interface AppState {
   /** Şifre sıfırlama bağlantısıyla gelindi: yeni şifre formu gösterilmeli. */
   recovery: boolean;
   endRecovery: () => void;
+  /** Supabase'te hangi giriş sağlayıcıları açık (kapalı olanların butonu gizlenir). */
+  providers: Record<Provider, boolean>;
+  deleteAccount: (deleteCalendarEntries: boolean) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -51,6 +54,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [recovery, setRecovery] = useState(false);
+  const [providers, setProviders] = useState<Record<Provider, boolean>>({ google: true, microsoft: false });
+
+  useEffect(() => {
+    if (!configured) return;
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {
+      headers: { apikey: import.meta.env.VITE_SUPABASE_ANON_KEY },
+    })
+      .then((r) => r.json())
+      .then((s) => setProviders({ google: !!s.external?.google, microsoft: !!s.external?.azure }))
+      .catch(() => {});
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -227,6 +241,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await supabase.from('profiles').update(patch).eq('id', userId);
   };
 
+  const deleteAccount = async (deleteCalendarEntries: boolean) => {
+    const { error } = await supabase.functions.invoke('delete-account', {
+      body: { delete_calendar_entries: deleteCalendarEntries },
+    });
+    if (error) {
+      showToast(error.message);
+      return false;
+    }
+    // Kullanıcı sunucuda silindi; yerel oturumu da temizle.
+    await supabase.auth.signOut({ scope: 'local' });
+    showToast(t.accountDeleted);
+    window.location.hash = '#/';
+    return true;
+  };
+
   const addToCalendar = async (eventId: string) => {
     const { data, error } = await supabase.functions.invoke('respond', {
       body: { event_id: eventId, response: 'interested' },
@@ -247,6 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         signIn, signOut, connectCalendar, disconnectCalendar, toggleFollow, toggleTopic,
         updateProfile, refreshUnread, addToCalendar,
         recovery, endRecovery: () => setRecovery(false),
+        providers, deleteAccount,
       }}
     >
       {children}

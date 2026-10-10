@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
   const siteUrl = env('SITE_URL');
   const now = stamp(new Date().toISOString());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CFP Takvim//TR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:CFP Takvim'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CFP Calendar//TR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:CFP Calendar'];
 
   for (const row of rows ?? []) {
     const e = (row as unknown as { events: EventRow }).events;

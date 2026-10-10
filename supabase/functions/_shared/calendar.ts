@@ -102,7 +102,7 @@ export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl:
       ? `${LABELS[locale].deadline}: ${e.submission_deadline.replace('T', ' ').slice(0, 16)} UTC${tz}`
       : '',
     '',
-    locale === 'tr' ? `CFP Takvim tarafından eklendi — ${siteUrl}` : `Added by CFP Takvim — ${siteUrl}`,
+    locale === 'tr' ? `CFP Calendar tarafından eklendi — ${siteUrl}` : `Added by CFP Calendar — ${siteUrl}`,
   ].filter((l, i) => l !== '' || i === 4);
 
   const base = { description: lines.join('\n'), location: e.location };
@@ -212,7 +212,7 @@ async function googleWrite(token: string, item: CalItem, siteUrl: string, extern
     description: item.description,
     location: item.location ?? undefined,
     transparency: 'transparent',
-    source: { title: 'CFP Takvim', url: siteUrl },
+    source: { title: 'CFP Calendar', url: siteUrl },
     reminders: { useDefault: false, overrides: item.reminders.map((minutes) => ({ method: 'popup', minutes })) },
   };
   if (item.allDay) {

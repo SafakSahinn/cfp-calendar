@@ -8,7 +8,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
 const MIN_PASSWORD = 8;
 
 /** Supabase hata mesajlarını kullanıcı diline çevirir. */
-function authError(message: string, t: Dict): string {
+export function authError(message: string, t: Dict): string {
   const m = message.toLowerCase();
   if (m.includes('invalid login')) return t.errInvalidLogin;
   if (m.includes('not confirmed')) return t.errNotConfirmed;
@@ -72,7 +72,7 @@ function PasswordInput(props: {
 }
 
 /** Yeni şifre + tekrarı; eşleşme durumunu canlı gösterir. */
-function NewPasswordFields(props: {
+export function NewPasswordFields(props: {
   password: string;
   confirm: string;
   setPassword: (v: string) => void;
@@ -107,7 +107,7 @@ function NewPasswordFields(props: {
 }
 
 /** Gönderimden önce yeni şifreyi doğrular; hata yoksa null döner. */
-function validateNewPassword(password: string, confirm: string, t: Dict): string | null {
+export function validateNewPassword(password: string, confirm: string, t: Dict): string | null {
   if (password.length < MIN_PASSWORD) return t.errWeakPassword;
   if (password !== confirm) return t.errPasswordMismatch;
   return null;

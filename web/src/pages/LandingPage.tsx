@@ -26,7 +26,7 @@ export function MicrosoftIcon() {
 
 export function LandingPage() {
   const { t } = useI18n();
-  const { signIn } = useApp();
+  const { signIn, providers } = useApp();
 
   return (
     <section className="landing">
@@ -37,9 +37,11 @@ export function LandingPage() {
           <button className="provider" onClick={() => signIn('google')}>
             <GoogleIcon /> {t.signInGoogle}
           </button>
-          <button className="provider" onClick={() => signIn('microsoft')}>
-            <MicrosoftIcon /> {t.signInMicrosoft}
-          </button>
+          {providers.microsoft && (
+            <button className="provider" onClick={() => signIn('microsoft')}>
+              <MicrosoftIcon /> {t.signInMicrosoft}
+            </button>
+          )}
           <p className="muted small">{t.signInNote}</p>
           <div className="divider"><span>{t.orEmail}</span></div>
           <EmailAuth />
