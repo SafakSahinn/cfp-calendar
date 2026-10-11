@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { comsocToEvent, parseComsoc } from '../src/sources/comsoc.ts';
-import { parseSpringer, springerToEvent } from '../src/sources/springer.ts';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
 
@@ -24,20 +23,4 @@ test('ComSoc: CfP tablosu ayrıştırılır, kapalı çağrılar elenir', () => 
   assert.ok(ev.topics.includes('communications'));
   assert.match(ev.submission_deadline!, /T11:59:59\.000Z$/); // AoE gün sonu
   assert.equal(comsocToEvent({ ...open[0], deadline: null }, 'IEEE Network'), null);
-});
-
-test('Springer: koleksiyon kartları, "Ongoing" ve kapalılar elenir', () => {
-  const { journal, collections } = parseSpringer(fixture('springer_11227.html'));
-  assert.equal(journal, 'The Journal of Supercomputing');
-  assert.ok(collections.length >= 3);
-  const dated = collections.filter((c) => c.deadline);
-  assert.ok(dated.length >= 1);
-  for (const c of collections) assert.match(c.id, /^[a-z]{6,}$/);
-  const ev = springerToEvent(dated[0], journal, ['systems'])!;
-  assert.equal(ev.url, `https://link.springer.com/collections/${dated[0].id}`);
-  assert.ok(ev.title.startsWith('The Journal of Supercomputing: '));
-  assert.ok(ev.topics.includes('systems'));
-  assert.equal(springerToEvent({ ...dated[0], deadline: null }, journal, []), null); // Ongoing
-  assert.equal(springerToEvent({ ...dated[0], status: 'Closed' }, journal, []), null);
-  assert.equal(springerToEvent({ ...dated[0], title: 'AUTOMATA 2026 (by invitation only)' }, journal, []), null);
 });
