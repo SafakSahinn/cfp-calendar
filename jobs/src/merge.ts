@@ -1,6 +1,7 @@
+import { qualityFlags } from './quality.ts';
 import { SOURCE_PRIORITY, type NormalizedEvent } from './types.ts';
 
-export type Merged = Omit<NormalizedEvent, 'source_id'> & { source_ids: Record<string, string> };
+export type Merged = Omit<NormalizedEvent, 'source_id'> & { source_ids: Record<string, string>; flags: string[] };
 
 /** Aynı dedupe_key'e sahip kayıtları birleştirir: öncelikli kaynak kazanır, boşlukları diğerleri doldurur. */
 export function merge(events: NormalizedEvent[]): Merged[] {
@@ -15,7 +16,7 @@ export function merge(events: NormalizedEvent[]): Merged[] {
   for (const group of groups.values()) {
     group.sort((a, b) => SOURCE_PRIORITY[b.source] - SOURCE_PRIORITY[a.source]);
     const { source_id, ...head } = group[0];
-    const m: Merged = { ...head, source_ids: { [head.source]: source_id } };
+    const m: Merged = { ...head, source_ids: { [head.source]: source_id }, flags: [] };
     for (const other of group.slice(1)) {
       m.source_ids[other.source] ??= other.source_id;
       m.topics = [...new Set([...m.topics, ...other.topics])];
@@ -26,6 +27,7 @@ export function merge(events: NormalizedEvent[]): Merged[] {
       }
       if (m.deadlines.length === 0) m.deadlines = other.deadlines;
     }
+    m.flags = qualityFlags(m);
     out.push(m);
   }
   return out;

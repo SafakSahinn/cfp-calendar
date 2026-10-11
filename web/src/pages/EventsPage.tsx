@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TOPICS } from '../../../shared/topics';
 import { EventCard } from '../components/EventCard';
+import { FeedbackDialog } from '../components/FeedbackDialog';
 import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
@@ -15,9 +16,10 @@ interface Filters {
   ieee: boolean;
   ranked: boolean;
   followedOnly: boolean;
+  showCaution: boolean;
 }
 
-const EMPTY: Filters = { q: '', field: '', kind: '', topic: '', ieee: false, ranked: false, followedOnly: false };
+const EMPTY: Filters = { q: '', field: '', kind: '', topic: '', ieee: false, ranked: false, followedOnly: false, showCaution: false };
 
 function loadFilters(): Filters {
   try {
@@ -33,6 +35,7 @@ export function EventsPage() {
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [filters, setFilters] = useState<Filters>(loadFilters);
   const [limit, setLimit] = useState(PAGE);
+  const [dialog, setDialog] = useState<{ event: EventRow | null } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -73,6 +76,8 @@ export function EventsPage() {
       if (filters.ieee && !e.is_ieee) return false;
       if (filters.ranked && Object.keys(e.ranks).length === 0) return false;
       if (filters.followedOnly && !followed.has(e.id)) return false;
+      // Takip edilenler, işaretli olsa da her zaman görünür
+      if (!filters.showCaution && e.flags?.length > 0 && !followed.has(e.id)) return false;
       if (q && !`${e.acronym ?? ''} ${e.title} ${e.location ?? ''}`.toLocaleLowerCase(lang).includes(q)) return false;
       return true;
     });
@@ -110,6 +115,7 @@ export function EventsPage() {
         <label className="check"><input type="checkbox" checked={filters.ieee} onChange={(e) => set('ieee', e.target.checked)} /> {t.onlyIeee}</label>
         <label className="check"><input type="checkbox" checked={filters.ranked} onChange={(e) => set('ranked', e.target.checked)} /> {t.onlyRanked}</label>
         <label className="check"><input type="checkbox" checked={filters.followedOnly} onChange={(e) => set('followedOnly', e.target.checked)} /> {t.onlyFollowed}</label>
+        <label className="check" title={t.cautionHelp}><input type="checkbox" checked={filters.showCaution} onChange={(e) => set('showCaution', e.target.checked)} /> {t.showCaution}</label>
       </div>
 
       {!events ? (
@@ -118,10 +124,13 @@ export function EventsPage() {
         <p className="muted center">{t.noEvents}</p>
       ) : (
         <>
-          <p className="muted small">{visible.length} {t.results}</p>
+          <div className="list-head">
+            <p className="muted small">{visible.length} {t.results}</p>
+            <button className="small" onClick={() => setDialog({ event: null })}>➕ {t.suggest}</button>
+          </div>
           <div className="list">
             {visible.slice(0, limit).map((e) => (
-              <EventCard key={e.id} event={e} />
+              <EventCard key={e.id} event={e} onReport={(ev) => setDialog({ event: ev })} />
             ))}
           </div>
           {visible.length > limit && (
@@ -131,6 +140,7 @@ export function EventsPage() {
           )}
         </>
       )}
+      {dialog && <FeedbackDialog event={dialog.event} onClose={() => setDialog(null)} />}
     </section>
   );
 }

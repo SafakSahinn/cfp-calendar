@@ -32,7 +32,7 @@ interface AppState {
   disconnectCalendar: () => Promise<void>;
   toggleFollow: (eventId: string) => Promise<void>;
   toggleTopic: (topic: string) => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'display_name'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'email_notifications' | 'display_name'>>) => Promise<void>;
   refreshUnread: () => Promise<void>;
   addToCalendar: (eventId: string) => Promise<boolean>;
   /** Şifre sıfırlama bağlantısıyla gelindi: yeni şifre formu gösterilmeli. */

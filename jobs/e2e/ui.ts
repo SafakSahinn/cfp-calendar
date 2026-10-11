@@ -121,6 +121,35 @@ try {
     }
     await shot(page, `${kind}-03-events`, false);
 
+    // "Dikkat" filtresi: varsayılan gizli, açılınca sayı artar
+    const before = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
+    await page.getByLabel('Dikkat işaretlileri de göster').check();
+    const after = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
+    check('"dikkat" çağrıları varsayılan gizli, açılınca görünür', after > before, { before, after });
+    check('dikkat etiketi görünür', (await page.locator('.tag.caution').count()) > 0);
+    await page.getByLabel('Dikkat işaretlileri de göster').uncheck();
+
+    // Etkinlik öner formu
+    if (kind === 'desktop') {
+      await page.getByRole('button', { name: /Etkinlik öner/ }).click();
+      const dlg = page.locator('dialog.dialog');
+      await dlg.waitFor();
+      await dlg.getByRole('button', { name: 'Gönder' }).click();
+      check('öneri formu: bağlantısız gönderim uyarı verir', await dlg.getByText('Lütfen kısa bir açıklama yazın.').isVisible());
+      await dlg.locator('#fb-url').fill('https://example.org/test-conference');
+      await dlg.locator('#fb-msg').fill('Tarayıcı testi önerisi');
+      await dlg.getByRole('button', { name: 'Gönder' }).click();
+      await page.getByText('Teşekkürler! Bildiriminiz iletildi.').waitFor({ timeout: 10_000 });
+      const { data: fb } = await db.from('feedback').select('id, kind, url').eq('user_id', userId);
+      check('öneri veritabanına kaydedildi', fb?.length === 1 && fb[0].kind === 'suggest_event', fb);
+      await db.from('feedback').delete().eq('user_id', userId); // yöneticiye gitmesin
+
+      await page.locator('article.event').first().getByRole('button', { name: /Hata bildir/ }).click();
+      await page.locator('dialog.dialog').getByRole('heading', { name: 'Hatalı bilgi bildir' }).waitFor();
+      check('hata bildir formu etkinlik adıyla açılır', true);
+      await page.locator('dialog.dialog').getByRole('button', { name: 'Vazgeç' }).click();
+    }
+
     // Filtre: sadece takip ettiklerim
     await page.getByLabel('Takip ettiklerim').check();
     const followedCount = await page.locator('article.event').count();
@@ -153,6 +182,7 @@ try {
     check('profil: konu seçimleri işaretli', (await page.locator('.chip.on').count()) === 2, await page.locator('.chip.on').count());
     check('profil: şifre değiştirme (e-posta üyesi)', await page.getByRole('heading', { name: 'Şifre değiştir' }).isVisible());
     check('profil: hesap silme bölümü', await page.getByRole('heading', { name: 'Hesabı sil' }).isVisible());
+    check('profil: e-posta bildirimleri açık', await page.getByLabel('E-posta bildirimleri').isChecked());
     await shot(page, `${kind}-05-profile`);
 
     if (kind === 'desktop') {

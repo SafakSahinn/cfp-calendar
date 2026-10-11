@@ -6,8 +6,9 @@ import {
   type EventRow, type Locale, type Provider,
 } from '../../supabase/functions/_shared/calendar.ts';
 import { calendarEnv, db, selectAll } from './db.ts';
+import { isCaution } from './quality.ts';
 
-type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean };
+type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[] };
 
 interface Profile {
   id: string;
@@ -38,7 +39,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   const events = await selectAll<Event>((from, to) =>
     db
       .from('events')
-      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee`)
+      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee, flags`)
       .or(`submission_deadline.gt.${new Date(now - DAY).toISOString()},event_end.gte.${today}`)
       .range(from, to),
   );
@@ -147,6 +148,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
       const candidates = events
         .filter((ev) => {
           if (followed.has(ev.id) || notifiedEvents.has(ev.id)) return false;
+          if (isCaution(ev.flags ?? [])) return false; // ticari/indeks vaatli çağrılar önerilmez
           if (!ev.submission_deadline || new Date(ev.submission_deadline).getTime() < now + 2 * DAY) return false;
           if (openDateOf(ev) > today) return false;
           if (now - new Date(ev.first_seen_at).getTime() > TOPIC_MATCH_FRESH_DAYS * DAY) return false;

@@ -8,7 +8,7 @@ on:
       step:
         description: 'Çalışacak adım'
         type: choice
-        options: [all, fetch, dispatch]
+        options: [all, fetch, dispatch, email]
         default: all
 
 permissions:
@@ -45,4 +45,7 @@ jobs:
           MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
           MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
           SITE_URL: ${{ vars.SITE_URL }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
       - uses: liskin/gh-workflow-keepalive@v1

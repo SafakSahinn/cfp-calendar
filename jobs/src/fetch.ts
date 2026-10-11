@@ -2,6 +2,8 @@
 
 import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
+import { fetchComsoc } from './sources/comsoc.ts';
+import { fetchSpringer } from './sources/springer.ts';
 import { fetchWikiCfp } from './sources/wikicfp.ts';
 import { merge } from './merge.ts';
 import type { NormalizedEvent } from './types.ts';
@@ -9,8 +11,8 @@ import type { NormalizedEvent } from './types.ts';
 const COMPARE_KEYS = ['title', 'url', 'location', 'submission_deadline', 'abstract_deadline', 'event_start', 'event_end'] as const;
 
 export async function runFetch(log: (msg: string) => void = console.log): Promise<void> {
-  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log)]);
-  const names = ['ccf-deadlines', 'WikiCFP'];
+  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log), fetchComsoc(log), fetchSpringer(log)]);
+  const names = ['ccf-deadlines', 'WikiCFP', 'IEEE ComSoc', 'Springer'];
   const all: NormalizedEvent[] = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {

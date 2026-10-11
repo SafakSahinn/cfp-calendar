@@ -45,4 +45,4 @@ jobs:
       - name: Edge Functions
         run: |
           supabase functions deploy save-calendar-token respond delete-account --project-ref "$PROJECT_REF"
-          supabase functions deploy ics --no-verify-jwt --project-ref "$PROJECT_REF"
+          supabase functions deploy ics unsubscribe --no-verify-jwt --project-ref "$PROJECT_REF"

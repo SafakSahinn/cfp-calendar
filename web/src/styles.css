@@ -264,3 +264,14 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .card.danger .inline-field { width: 100%; max-width: 320px; }
 .danger-btn { background: var(--danger); border-color: var(--danger); color: #fff; }
 .danger-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 85%, black) !important; }
+
+/* --- dikkat etiketi, geri bildirim --- */
+.tag.caution { background: color-mix(in srgb, #d97706 16%, transparent); color: #b45309; cursor: help; }
+.list-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.list-head p { margin: 0; }
+.dialog { border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; width: min(480px, calc(100vw - 32px)); background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.dialog::backdrop { background: rgba(15, 17, 23, 0.45); }
+.dialog h2 { margin: 0; font-size: 1.15rem; }
+.dialog textarea, .dialog input { padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; resize: vertical; }
+.row.end { justify-content: flex-end; }
+@media (max-width: 640px) { .hide-sm { display: none; } }

@@ -87,6 +87,15 @@ export function ProfilePage() {
           />{' '}
           {t.topicNotifications}
         </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={profile.email_notifications}
+            onChange={(e) => updateProfile({ email_notifications: e.target.checked })}
+          />{' '}
+          {t.emailNotifications}
+        </label>
+        <p className="muted small">{t.emailNotificationsHelp}</p>
         {(['cs', 'ee'] as const).map((field) => (
           <div key={field} className="topic-group">
             <h4>{field === 'cs' ? t.fieldCs : t.fieldEe}</h4>

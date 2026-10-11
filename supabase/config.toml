@@ -429,3 +429,6 @@ enabled = true
 # Takvim aboneliği herkese açık URL ile çalışır (token parametresiyle korunur).
 [functions.ics]
 verify_jwt = false
+
+[functions.unsubscribe]
+verify_jwt = false

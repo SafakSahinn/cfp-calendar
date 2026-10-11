@@ -185,6 +185,45 @@ try {
   check('başarısız denemede bağlantı kaydedilmez', (stillNoConn ?? []).length === 0);
 
   // -------------------------------------------------------------------------
+  section('Geri bildirim');
+  const { error: fbErr } = await user.from('feedback').insert({
+    user_id: userId, kind: 'suggest_event', url: 'https://example.org/conf', message: 'E2E test önerisi',
+  });
+  check('üye etkinlik önerebilir', !fbErr, fbErr?.message);
+  const { error: fbForeign } = await user.from('feedback').insert({
+    user_id: '00000000-0000-0000-0000-000000000000', kind: 'other', message: 'başkası adına',
+  });
+  check('üye başkası adına geri bildirim gönderemez', !!fbForeign);
+  const { error: fbShort } = await user.from('feedback').insert({ user_id: userId, kind: 'other', message: 'x' });
+  check('çok kısa mesaj reddedilir', !!fbShort);
+  const { data: myFb } = await user.from('feedback').select('id, status');
+  check('üye kendi geri bildirimini görür', (myFb ?? []).length === 1 && myFb![0].status === 'new', myFb);
+  // Temizlik: test önerisi yöneticiye e-postayla gitmesin
+  await db.from('feedback').delete().eq('user_id', userId);
+
+  // -------------------------------------------------------------------------
+  section('E-posta tercihleri ve abonelikten çıkma');
+  check('e-posta bildirimleri varsayılan açık', profile.email_notifications === true);
+  const { error: tokenErr } = await user.from('profiles').update({ email_token: crypto.randomUUID() }).eq('id', userId);
+  check('üye abonelik token\'ını değiştiremez', !!tokenErr);
+  const unsub = await fetch(`${URL}/functions/v1/unsubscribe?token=${profile.email_token}`);
+  const unsubHtml = await unsub.text();
+  const { data: afterUnsub } = await db.from('profiles').select('email_notifications').eq('id', userId).single();
+  check('abonelikten çık bağlantısı → 200 + bildirimler kapandı', unsub.status === 200 && afterUnsub?.email_notifications === false && unsubHtml.includes('kapatıldı'), unsub.status);
+  const unsubBad = await fetch(`${URL}/functions/v1/unsubscribe?token=${crypto.randomUUID()}`);
+  check('geçersiz abonelik token\'ı → 404', unsubBad.status === 404, unsubBad.status);
+  const { error: reEnable } = await user.from('profiles').update({ email_notifications: true }).eq('id', userId);
+  check('üye e-posta bildirimlerini yeniden açabilir', !reEnable, reEnable?.message);
+
+  // -------------------------------------------------------------------------
+  section('Kalite işaretleri');
+  const { data: flagged } = await user.from('events').select('id, flags').neq('flags', '{}').limit(5);
+  check('işaretli etkinlikler var ve flags dizisi dolu', (flagged ?? []).length > 0 && flagged!.every((e) => e.flags.length > 0), flagged?.length);
+  const { data: n3 } = await user.from('notifications').select('event_id, events (flags)').eq('type', 'topic_match');
+  check('konu bildirimleri işaretli (dikkat) etkinlik içermez',
+    (n3 ?? []).every((n) => ((n as unknown as { events: { flags: string[] } | null }).events?.flags ?? []).length === 0));
+
+  // -------------------------------------------------------------------------
   section('Hesap silme');
   const del = await fn(user, 'delete-account', { delete_calendar_entries: true });
   check('hesap silme → 200', del.status === 200, del);

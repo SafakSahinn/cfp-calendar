@@ -11,7 +11,7 @@ export function KindTag({ kind }: { kind: EventRow['kind'] }) {
   return <span className={`tag kind-${kind}`}>{label}</span>;
 }
 
-export function EventCard({ event }: { event: EventRow }) {
+export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: EventRow) => void }) {
   const { t, lang } = useI18n();
   const { followed, toggleFollow, profile, addToCalendar } = useApp();
   const [busy, setBusy] = useState(false);
@@ -32,6 +32,11 @@ export function EventCard({ event }: { event: EventRow }) {
           {event.acronym && <strong className="acronym">{event.acronym}</strong>}
           <KindTag kind={event.kind} />
           {event.is_ieee && <span className="tag ieee">IEEE</span>}
+          {event.flags?.length > 0 && Object.keys(event.ranks).length === 0 && (
+            <span className="tag caution" title={event.flags.map((f) => t.flagReasons[f as keyof typeof t.flagReasons] ?? f).join(' · ')}>
+              ⚠ {t.caution}
+            </span>
+          )}
           {Object.entries(event.ranks).map(([k, v]) => (
             <span key={k} className="tag rank" title={k.toUpperCase()}>
               {k.toUpperCase()} {v}
@@ -85,6 +90,9 @@ export function EventCard({ event }: { event: EventRow }) {
               ↗ {t.details}
             </a>
           )}
+          <button className="small ghost" onClick={() => onReport(event)} title={t.reportTitle}>
+            ⚑ <span className="hide-sm">{t.report}</span>
+          </button>
         </div>
       </div>
     </article>

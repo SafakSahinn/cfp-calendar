@@ -26,6 +26,8 @@ export interface EventRow {
   topics: string[];
   ranks: Record<string, string>;
   is_ieee: boolean;
+  /** Kalite işaretleri (jobs/src/quality.ts): indexing_claims, organizer_prefix, ei_duplicate, generic_journal */
+  flags: string[];
   submission_open: string | null;
   abstract_deadline: string | null;
   submission_deadline: string | null;
@@ -46,6 +48,7 @@ export interface Profile {
   calendar_provider: Provider | null;
   calendar_account: string | null;
   topic_notifications: boolean;
+  email_notifications: boolean;
   ics_token: string;
 }
 

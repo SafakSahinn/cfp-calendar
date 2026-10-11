@@ -8,7 +8,7 @@ export interface DeadlineRound {
 
 /** Kaynaklardan gelen, ortak biçime dönüştürülmüş etkinlik. */
 export interface NormalizedEvent {
-  source: 'ccf' | 'wikicfp';
+  source: 'ccf' | 'wikicfp' | 'comsoc' | 'springer';
   source_id: string;
   dedupe_key: string;
   kind: 'conference' | 'workshop' | 'journal';
@@ -31,7 +31,7 @@ export interface NormalizedEvent {
 }
 
 /** Kaynak önceliği: yüksek olan alanları ezer, düşük olan boşlukları doldurur. */
-export const SOURCE_PRIORITY: Record<NormalizedEvent['source'], number> = { ccf: 2, wikicfp: 1 };
+export const SOURCE_PRIORITY: Record<NormalizedEvent['source'], number> = { ccf: 3, comsoc: 2, springer: 2, wikicfp: 1 };
 
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12,
