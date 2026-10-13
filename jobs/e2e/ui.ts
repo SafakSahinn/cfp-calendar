@@ -33,7 +33,7 @@ async function newPage(kind: 'desktop' | 'mobile') {
     ...(kind === 'mobile' ? devices['iPhone 13'] : { viewport: { width: 1280, height: 900 } }),
     locale: 'tr-TR',
     colorScheme: 'light',
-    permissions: ['clipboard-read', 'clipboard-write'],
+    permissions: ['clipboard-read', 'clipboard-write', 'notifications'],
   });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => pageErrors.push(`${kind}: ${e.message}`));
@@ -338,6 +338,14 @@ try {
     check('profil: hesap silme bölümü', await page.getByRole('heading', { name: 'Hesabı sil' }).isVisible());
     check('profil: e-posta bildirimleri açık', await page.getByLabel('E-posta bildirimleri').isChecked());
     await shot(page, `${kind}-05-profile`);
+    check('profil: anlık bildirim kartı', await page.getByRole('heading', { name: /Anlık bildirimler/ }).isVisible());
+    if (kind === 'desktop') {
+      await page.getByRole('button', { name: /Bu cihazda bildirimleri aç/ }).click();
+      const on = await page.getByText('Bu cihazda açık').waitFor({ timeout: 20_000 }).then(() => true).catch(() => false);
+      const { data: ps } = await db.from('push_subscriptions').select('endpoint').eq('user_id', userId);
+      check('profil: bildirim aboneliği açılır ve kaydedilir', on && ps?.length === 1 && ps[0].endpoint.startsWith('https://'), { on, ps: ps?.length, toast: await page.locator('.toast').textContent().catch(() => null) });
+      await shot(page, `${kind}-05b-push`, false);
+    }
 
     if (kind === 'desktop') {
       await page.getByLabel('Ad Soyad').fill('Deneme Kullanıcısı 2');

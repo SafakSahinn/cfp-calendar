@@ -30,6 +30,7 @@ flowchart LR
     G["📅 Google Calendar"]
     OSM["🗺️ OpenStreetMap"]
     M["✉️ Gmail SMTP"]
+    WP["🔔 Tarayıcı push servisleri"]
   end
 
   S1 & S2 & S3 & S4 --> A
@@ -37,6 +38,8 @@ flowchart LR
   A -- "konum çözümleme" --> OSM
   A -- "takvime ekle / güncelle" --> G
   A -- "haftalık özet,<br/>yönetici raporu" --> M
+  A -- "anlık bildirim (VAPID)" --> WP
+  WP -.-> U
   U --> P
   P -- "giriş" --> AUTH
   P -- "okuma, RPC" --> DB

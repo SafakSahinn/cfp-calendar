@@ -23,6 +23,7 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - Son tarih uzatılırsa takviminiz kendiliğinden güncellenir ve size mesaj gelir.
 - Takvim bağlamak için: **Profil → Google Takvim bağla**. Apple Takvim veya Outlook kullanıyorsanız profilinizdeki **Takvim aboneliği (ICS)** adresini takviminize ekleyin.
 - Tüm takip ettikleriniz **Takvimim** sayfasında bir arada.
+- 🔔 **Telefonunuza bildirim:** Profil → **Bu cihazda bildirimleri aç**. Başvuru açılınca, son tarih değişince veya yaklaşınca bildirim gelir. iPhone'da önce siteyi ana ekrana ekleyin.
 
 ### ✉️ İlginizi çekecek çağrılardan haberdar olun
 - **Profil → İlgi alanlarım** bölümünden konularınızı seçin. Yeni bir çağrı çıkınca **Mesajlar**'a "İlgileniyor musunuz?" gelir.

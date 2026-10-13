@@ -29,4 +29,5 @@ gh workflow run ui-test.yml                   # tarayıcı testleri (ekran gör�
 - **Supabase ücretsiz katman:** 7 gün hiç istek gelmezse proje uyku moduna geçer. 12 saatlik iş veritabanına yazdığı sürece bu olmaz.
 - **Google doğrulaması:** Doğrulanmadan takvim bağlama en fazla 100 kullanıcıyla sınırlıdır (bkz. [KURULUM.md](KURULUM.md) §3).
 - **E-posta:** `SMTP_USER` / `SMTP_PASS` secret'ları yoksa haftalık özet ve yönetici raporu sessizce atlanır; site normal çalışır.
+- **Anlık bildirim (Web Push):** VAPID anahtar çifti GitHub'da (`VAPID_PUBLIC_KEY` değişkeni, `VAPID_PRIVATE_KEY` secret). **Değiştirmeyin**; değişirse tüm cihaz abonelikleri geçersiz olur ve kullanıcıların bildirimleri yeniden açması gerekir. Bildirimler 12 saatlik işle gider (anlık değil, en geç 12 saat). İptal edilmiş abonelikler otomatik silinir.
 - **OpenStreetMap Nominatim:** Saniyede en fazla 1 istek kuralına uyulur, sonuçlar `geocache` tablosunda saklanır. Bulunamayan yerler 30 gün sonra yeniden denenir.

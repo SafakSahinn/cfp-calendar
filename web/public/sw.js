@@ -55,3 +55,39 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+// --- Anlık bildirimler (Web Push) ---------------------------------------------------------------
+// Sunucu yalnızca başlık, kısa metin ve site içi yol gönderir; kişisel veri taşımaz.
+self.addEventListener('push', (event) => {
+  let msg = { title: 'CFP Calendar', body: '', url: '#/mesajlar', tag: 'cfp' };
+  try {
+    msg = { ...msg, ...event.data.json() };
+  } catch {
+    // boş veya bozuk içerik: varsayılan mesaj
+  }
+  const url = typeof msg.url === 'string' && msg.url.startsWith('#/') ? msg.url : '#/mesajlar';
+  event.waitUntil(
+    self.registration.showNotification(String(msg.title).slice(0, 120), {
+      body: String(msg.body).slice(0, 300),
+      tag: String(msg.tag).slice(0, 80),
+      icon: new URL('icon-192.png', SHELL).href,
+      badge: new URL('icon-192.png', SHELL).href,
+      data: { url: SHELL + url },
+    }),
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url ?? SHELL;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      const open = wins.find((w) => w.url.startsWith(SHELL));
+      if (open) {
+        open.navigate(target).catch(() => {});
+        return open.focus();
+      }
+      return self.clients.openWindow(target);
+    }),
+  );
+});

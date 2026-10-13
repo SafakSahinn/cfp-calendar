@@ -35,6 +35,7 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           # OAuth istemci kimliği gizli değildir (tarayıcıda görünür); secret olarak tutulduğu için buradan verilir.
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
           VITE_BASE: /${{ github.event.repository.name }}/
       # SPA: bilinmeyen yollar da uygulamayı açsın
       - run: cp dist/index.html dist/404.html

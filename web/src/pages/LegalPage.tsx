@@ -68,6 +68,7 @@ export function PrivacyTr() {
         <li><strong>GitHub</strong> — sitenin barındırılması ve zamanlanmış işler (ABD).</li>
         <li><strong>Google / Microsoft</strong> — giriş ve (bağlarsanız) takvim hizmeti.</li>
         <li><strong>Gmail (Google)</strong> — hesap onay ve şifre sıfırlama e-postalarının gönderimi.</li>
+        <li><strong>Tarayıcı bildirim servisleri</strong> (Google, Apple, Mozilla) — yalnızca anlık bildirimleri açtığınız cihazlar için; bildirim metni (çağrı adı ve tarih) tarayıcınızın üreticisinin bildirim sunucusu üzerinden iletilir. Profil sayfasından veya çıkış yaparak kapatabilirsiniz.</li>
         <li><strong>OpenStreetMap</strong> — yalnızca “Harita” görünümünü açtığınızda harita görselleri OSM sunucularından yüklenir; bu sırada IP adresiniz OSM Vakfı’na iletilir. Konum aramaları sunucu tarafında yapılır, sizinle ilişkilendirilmez.</li>
       </ul>
 
@@ -135,6 +136,7 @@ export function PrivacyEn() {
         <li><strong>GitHub</strong> — website hosting and scheduled jobs (USA).</li>
         <li><strong>Google / Microsoft</strong> — sign-in and, if connected, calendar.</li>
         <li><strong>Gmail (Google)</strong> — sending account confirmation and password reset emails.</li>
+        <li><strong>Browser push services</strong> (Google, Apple, Mozilla) — only for devices where you enable push notifications; the notification text (call name and date) is delivered through your browser vendor’s push server. You can turn it off on the Profile page or by signing out.</li>
         <li><strong>OpenStreetMap</strong> — only when you open the “Map” view, map tiles are loaded from OSM servers, which receive your IP address. Place lookups run on our server and are not linked to you.</li>
       </ul>
 

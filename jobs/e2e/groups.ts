@@ -211,6 +211,30 @@ try {
   check('giriş yapmamış kişi seri takip edemez', !!sAnon);
 
   // -------------------------------------------------------------------------
+  section('Anlık bildirim abonelikleri');
+  const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${Date.now()}`;
+  const sub = { p_endpoint: endpoint, p_p256dh: 'BPe2eKey', p_auth: 'e2eAuth', p_user_agent: 'e2e' };
+  const { error: pErr } = await member.client.rpc('save_push_subscription', sub);
+  check('üye cihaz aboneliği kaydeder', !pErr, pErr?.message);
+  const { data: pMine } = await member.client.from('push_subscriptions').select('endpoint');
+  check('üye kendi aboneliğini görür', pMine?.length === 1);
+  const { data: pOut } = await outsider.client.from('push_subscriptions').select('endpoint');
+  check('başkası aboneliği göremez', (pOut ?? []).length === 0);
+  const { error: pUpd } = await member.client.from('push_subscriptions').update({ endpoint: 'https://evil.example/x' }).eq('endpoint', endpoint);
+  const { data: pAfter } = await db.from('push_subscriptions').select('endpoint').eq('user_id', member.id);
+  check('abonelik doğrudan değiştirilemez', !!pUpd || pAfter?.[0]?.endpoint === endpoint, pUpd?.message);
+  const { error: pBad } = await member.client.rpc('save_push_subscription', { ...sub, p_endpoint: 'http://insecure.example/x' });
+  check('https olmayan uç nokta reddedilir', !!pBad);
+  const { error: pAnon } = await anon.rpc('save_push_subscription', sub);
+  check('giriş yapmamış kişi abone olamaz', !!pAnon);
+  await outsider.client.rpc('save_push_subscription', sub); // aynı tarayıcıda başka hesapla giriş
+  const { data: pMoved } = await db.from('push_subscriptions').select('user_id').eq('endpoint', endpoint);
+  check('aynı cihaz başka hesapla abone olunca eski hesaba bildirim gitmez', pMoved?.length === 1 && pMoved[0].user_id === outsider.id, pMoved);
+  await outsider.client.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  const { count: pLeft } = await db.from('push_subscriptions').select('*', { count: 'exact', head: true }).eq('endpoint', endpoint);
+  check('kullanıcı aboneliğini kapatır (silinir)', pLeft === 0);
+
+  // -------------------------------------------------------------------------
   section('Üyelik yönetimi');
   const { error: memberKick } = await member.client.rpc('remove_group_member', { p_group: gid, p_user: owner.id });
   check('üye sahibi çıkaramaz', !!memberKick);

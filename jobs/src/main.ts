@@ -15,6 +15,7 @@ import { runDispatch } from './dispatch.ts';
 import { runEmails } from './email.ts';
 import { runFetch } from './fetch.ts';
 import { runGeocode } from './geocode.ts';
+import { runPush } from './push.ts';
 import { runStats } from './runStats.ts';
 
 const step = process.argv[2] ?? 'all';
@@ -32,6 +33,7 @@ try {
   if (step === 'all' || step === 'fetch') await runFetch(log);
   if (step === 'all' || step === 'fetch' || step === 'geocode') await runGeocode(log).catch((e) => log(`Konum adımı atlandı: ${e}`));
   if (step === 'all' || step === 'dispatch') await runDispatch(log);
+  if (step === 'all' || step === 'dispatch' || step === 'push') await runPush(log).catch((e) => log(`Anlık bildirim adımı hata: ${e}`));
   if (step === 'all' || step === 'email') await runEmails(log);
 } catch (e) {
   ok = false;
