@@ -95,3 +95,11 @@ test('takvim kaydı içeriği', () => {
   assert.deepEqual(days.allDay, { start: '2027-06-20', endExclusive: '2027-06-25' });
   assert.equal(entryHash(e, 'event_days'), 'days:2027-06-20:2027-06-24');
 });
+
+test('WikiCFP: resmi site bağlantısı ayrıştırılır, güvensiz bağlantı reddedilir', async () => {
+  const { parseOfficialLink } = await import('../src/sources/wikicfp.ts');
+  assert.equal(parseOfficialLink('<td>\n\tLink: <a href="https://aaiee.net" target="_newtab">https://aaiee.net</a>\n</td>'), 'https://aaiee.net');
+  assert.equal(parseOfficialLink('Link: <a href="javascript:alert(1)">x</a>'), null);
+  assert.equal(parseOfficialLink('Link: <a href="http://www.wikicfp.com/cfp/x">x</a>'), null);
+  assert.equal(parseOfficialLink('<p>no link here</p>'), null);
+});

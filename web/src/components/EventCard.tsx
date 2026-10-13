@@ -97,7 +97,7 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
           </button>
           {event.url && (
             <a className="button small ghost" href={event.url} target="_blank" rel="noreferrer">
-              ↗ {t.details}
+              ↗ {/wikicfp\.com/i.test(event.url) ? t.viewOnWikiCfp : t.details}
             </a>
           )}
           <button className="small ghost" onClick={() => onReport(event)} title={t.reportTitle}>

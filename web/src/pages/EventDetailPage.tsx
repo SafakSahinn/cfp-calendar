@@ -98,7 +98,7 @@ export function EventDetailPage({ id }: { id: string }) {
           <button onClick={onCalendar} disabled={busy || !profile?.calendar_provider || !open} title={profile?.calendar_provider ? undefined : t.needCalendar}>
             📅 {t.addToCalendar}
           </button>
-          {e.url && <a className="button" href={e.url} target="_blank" rel="noreferrer noopener">↗ {t.officialPage}</a>}
+          {e.url && <a className="button" href={e.url} target="_blank" rel="noreferrer noopener">↗ {/wikicfp\.com/i.test(e.url) ? t.viewOnWikiCfp : t.officialPage}</a>}
           <button onClick={share}>🔗 {t.share}</button>
           <button onClick={() => setRecommend(true)}>👥 {t.recommendTitle}</button>
           <button className="ghost" onClick={() => setReport(true)}>⚑ {t.report}</button>
@@ -133,7 +133,10 @@ export function EventDetailPage({ id }: { id: string }) {
             )}
             <div>
               <dt>{t.sourceLabel}</dt>
-              <dd>{e.source === 'manual' ? t.sourceManual : e.source === 'ccf' ? 'ccf-deadlines' : e.source === 'comsoc' ? 'IEEE ComSoc' : 'WikiCFP'}</dd>
+              <dd>
+                {e.source === 'manual' ? t.sourceManual : e.source === 'ccf' ? 'ccf-deadlines' : e.source === 'comsoc' ? 'IEEE ComSoc' : 'WikiCFP'}
+                {e.source_url && e.source_url !== e.url && <> · <a href={e.source_url} target="_blank" rel="noreferrer noopener">{t.sourceRecord} ↗</a></>}
+              </dd>
             </div>
             {caution && (
               <div>

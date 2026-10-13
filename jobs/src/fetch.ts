@@ -3,7 +3,7 @@
 import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
-import { fetchWikiCfp } from './sources/wikicfp.ts';
+import { enrichWikiLinks, fetchWikiCfp, isWikiUrl } from './sources/wikicfp.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { buildIndex, loadCore, matchCore } from './core.ts';
 import { buildSjrIndex, matchJournal, type SjrData } from './sjr.ts';
@@ -81,6 +81,8 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
 
     const rows = batch.map((e) => {
       const prev = byKey.get(e.dedupe_key) as Record<string, unknown> | undefined;
+      // Daha önce WikiCFP sayfasından bulunan resmi site, her çalışmada kaynak sayfasıyla ezilmesin
+      if (prev && isWikiUrl(e.url) && typeof prev.url === 'string' && !isWikiUrl(prev.url)) e.url = prev.url;
       const differs =
         !prev ||
         COMPARE_KEYS.some((k) => {
@@ -101,5 +103,6 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
     }
   }
   log(`Veritabanı: ${changed} yeni/değişen etkinlik`);
+  runStats.official_links = await enrichWikiLinks(db, log);
   runStats.events_changed = changed;
 }

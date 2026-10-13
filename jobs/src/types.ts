@@ -15,6 +15,8 @@ export interface NormalizedEvent {
   acronym: string | null;
   title: string;
   url: string | null;
+  /** Kaynaktaki kayıt sayfası (ör. WikiCFP); url resmi sitedir */
+  source_url?: string | null;
   location: string | null;
   fields: Field[];
   topics: string[];

@@ -27,6 +27,7 @@ export interface EventRow {
   acronym: string | null;
   title: string;
   url: string | null;
+  source_url: string | null;
   location: string | null;
   fields: string[];
   topics: string[];

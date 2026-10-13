@@ -102,7 +102,8 @@ function toEvent(row: Row, categoryTopics: string[]): NormalizedEvent | null {
     kind,
     acronym,
     title: row.title || row.short,
-    url: `http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=${row.eventId}`,
+    url: wikiUrl(row.eventId), // resmi site bilinmiyorsa geçici olarak kaynak sayfası (enrichWikiLinks düzeltir)
+    source_url: wikiUrl(row.eventId),
     location: row.where && row.where !== 'N/A' ? row.where : null,
     fields: tagged.fields,
     topics: tagged.topics,
@@ -161,4 +162,54 @@ export async function fetchWikiCfp(log: (msg: string) => void = console.log): Pr
     }
   }
   return [...byId.values()];
+}
+
+export const wikiUrl = (eventId: string) => `http://www.wikicfp.com/cfp/servlet/event.showcfp?eventid=${eventId}`;
+export const isWikiUrl = (u: string | null | undefined) => !!u && /wikicfp\.com/i.test(u);
+
+/** WikiCFP etkinlik sayfasındaki "Link: <a href=…>" resmi site bağlantısı; güvenli değilse null. */
+export function parseOfficialLink(html: string): string | null {
+  const m = html.match(/Link:\s*<a\s+href="([^"]+)"/i);
+  if (!m) return null;
+  const href = m[1].trim();
+  if (!/^https?:\/\/[^\s"<>]+$/i.test(href) || isWikiUrl(href)) return null;
+  return href;
+}
+
+/**
+ * Resmi sitesi henüz bilinmeyen (url hâlâ WikiCFP olan) güncel çağrıların WikiCFP sayfalarını açıp resmi bağlantıyı alır.
+ * Sunucuyu yormamak için çalışma başına en fazla `limit` sayfa; birkaç çalışmada tamamlanır.
+ */
+export async function enrichWikiLinks(
+  db: { from(t: string): any }, // eslint-disable-line @typescript-eslint/no-explicit-any
+  log: (m: string) => void,
+  limit = 150,
+): Promise<number> {
+  const { data } = await db
+    .from('events')
+    .select('id, source_ids')
+    .ilike('url', '%wikicfp.com%')
+    .gt('submission_deadline', new Date().toISOString())
+    .order('submission_deadline')
+    .limit(limit);
+  let found = 0;
+  for (const e of (data ?? []) as { id: string; source_ids: Record<string, string> }[]) {
+    const id = e.source_ids?.wikicfp;
+    if (!id) continue;
+    try {
+      const res = await fetch(wikiUrl(id), { headers: { 'User-Agent': UA } });
+      if (res.ok) {
+        const link = parseOfficialLink(await res.text());
+        if (link) {
+          await db.from('events').update({ url: link, source_url: wikiUrl(id) }).eq('id', e.id);
+          found++;
+        }
+      }
+    } catch (err) {
+      log(`  wikicfp bağlantı ${id}: ${err}`);
+    }
+    await sleep(600);
+  }
+  log(`WikiCFP resmi site bağlantısı: ${found}/${(data ?? []).length} çağrıya eklendi`);
+  return found;
 }
