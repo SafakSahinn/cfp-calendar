@@ -149,15 +149,18 @@ export function GroupPage({ id }: { id: string }) {
   const [tab, setTab] = useState<'calendar' | 'events' | 'members' | 'submissions' | 'settings'>('calendar');
   const [rows, setRows] = useState<GroupEventRow[] | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
+  const [applying, setApplying] = useState<Map<string, number>>(new Map());
   const g: MyGroup | undefined = groups?.find((x) => x.id === id);
   const isOwner = g?.role === 'owner';
   const me = session!.user.id;
 
   const load = useCallback(async () => {
-    const [{ data: ev }, { data: mem }] = await Promise.all([
+    const [{ data: ev }, { data: mem }, { data: part }] = await Promise.all([
       supabase.from('group_events').select('event_id, note, added_by, created_at, events(*)').eq('group_id', id).order('created_at', { ascending: false }),
       supabase.rpc('group_member_list', { p_group: id }),
+      supabase.rpc('group_participation', { p_group: id }),
     ]);
+    setApplying(new Map(((part ?? []) as { event_id: string; participants: number }[]).map((p) => [p.event_id, p.participants])));
     setRows(((ev ?? []) as unknown as GroupEventRow[]).filter((r) => r.events));
     setMembers((mem ?? []) as GroupMember[]);
   }, [id]);
@@ -213,6 +216,7 @@ export function GroupPage({ id }: { id: string }) {
               <p className="event-title">{r.events.title}</p>
               <p className="muted small">
                 {t.recommendedBy(nameOf.get(r.added_by ?? '') ?? '—')} · {timeAgo(r.created_at, lang)}
+                {applying.get(r.event_id) ? <> · <strong className="applying">{t.groupApplyingCount(applying.get(r.event_id)!)}</strong></> : null}
               </p>
               {r.note && <p className="note">💬 {r.note}</p>}
               {(isOwner || r.added_by === me) && (

@@ -57,6 +57,7 @@ export function InboxPage() {
     deadline_reminder: t.nReminder,
     announcement: t.nAnnouncement,
     group_recommendation: t.nGroup,
+    series_new: t.nSeries,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
@@ -65,6 +66,7 @@ export function InboxPage() {
     deadline_reminder: '⏰',
     announcement: '📣',
     group_recommendation: '👥',
+    series_new: '🔁',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;

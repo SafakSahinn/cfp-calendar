@@ -17,8 +17,9 @@
   color-scheme: light;
 }
 
+/* Karanlık tema: cihaz ayarı (kullanıcı "aydınlık" seçmediyse) veya düğmeyle seçilen */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0f1117;
     --surface: #181b24;
     --surface-2: #20242f;
@@ -36,6 +37,24 @@
     color-scheme: dark;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #0f1117;
+  --surface: #181b24;
+  --surface-2: #20242f;
+  --text: #e7e9f0;
+  --muted: #9095a8;
+  --border: #2a2f3c;
+  --accent: #7b8cff;
+  --accent-soft: #252b4d;
+  --accent-text: #0f1117;
+  --danger: #ff7272;
+  --danger-soft: #3a1f22;
+  --ok: #5fd08f;
+  --ieee: #5ab4e6;
+  --shadow: none;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -456,3 +475,13 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .maint-warn .maint-badge { background: color-mix(in srgb, #d97706 18%, transparent); color: #b45309; }
 .maint-todo { border-left-color: var(--danger); background: var(--danger-soft); }
 .maint-todo .maint-badge { background: var(--surface); color: var(--danger); }
+
+/* Detay sayfası: seri, gruptan başvuranlar, benzer çağrılar */
+ul.plain { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.45rem; }
+ul.plain li { line-height: 1.4; }
+.series, .participants, .similar { margin-top: 1rem; }
+.participants { border-left: 3px solid var(--accent); }
+.similar a { color: var(--text); }
+.similar a:hover span { text-decoration: underline; }
+.applying { color: var(--accent); font-weight: 600; }
+.theme-toggle { min-width: 2.2rem; }

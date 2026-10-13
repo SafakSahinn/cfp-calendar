@@ -22,6 +22,7 @@ export interface Submission {
   submitted_at: string | null;
   decision_at: string | null;
   shared_group_ids: string[];
+  share_with_members: boolean;
   updated_at: string;
   events?: EventRow;
 }
@@ -39,7 +40,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
   const { showToast, followed, toggleFollow } = useApp();
   const { groups } = useMyGroups();
   const [sub, setSub] = useState<Submission | null | undefined>(undefined);
-  const [form, setForm] = useState({ status: 'planning' as Status, paper_title: '', notes: '', shared: [] as string[] });
+  const [form, setForm] = useState({ status: 'planning' as Status, paper_title: '', notes: '', shared: [] as string[], members: false });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -47,7 +48,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
     supabase.from('submissions').select('*').eq('event_id', event.id).maybeSingle().then(({ data }) => {
       const s = data as Submission | null;
       setSub(s);
-      if (s) setForm({ status: s.status, paper_title: s.paper_title ?? '', notes: s.notes ?? '', shared: s.shared_group_ids });
+      if (s) setForm({ status: s.status, paper_title: s.paper_title ?? '', notes: s.notes ?? '', shared: s.shared_group_ids, members: s.share_with_members });
     });
   }, [event.id]);
 
@@ -60,6 +61,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
       paper_title: form.paper_title.trim() || null,
       notes: form.notes.trim() || null,
       shared_group_ids: form.shared,
+      share_with_members: form.shared.length > 0 && form.members,
     };
     const { data, error } = sub
       ? await supabase.from('submissions').update(row).eq('id', sub.id).select().single()
@@ -76,7 +78,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
     if (!sub || !window.confirm(t.confirmDeleteSubmission)) return;
     await supabase.from('submissions').delete().eq('id', sub.id);
     setSub(null);
-    setForm({ status: 'planning', paper_title: '', notes: '', shared: [] });
+    setForm({ status: 'planning', paper_title: '', notes: '', shared: [], members: false });
   };
 
   if (sub === undefined) return null;
@@ -102,7 +104,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
             {event.notification_date && ACTIVE.includes(sub.status) && `${t.dateNotification}: ${formatDate(event.notification_date, 'tr')} · `}
             {t.updated} {timeAgo(sub.updated_at, 'tr')}
           </p>
-          {sub.shared_group_ids.length > 0 && <p className="muted small">👥 {t.sharedWith(sub.shared_group_ids.length)}</p>}
+          {sub.shared_group_ids.length > 0 && <p className="muted small">👥 {t.sharedWith(sub.shared_group_ids.length)}{sub.share_with_members && ` · ${t.visibleToMembers}`}</p>}
           <button className="small" onClick={() => setOpen(true)}>{t.update}</button>
         </>
       )}
@@ -136,6 +138,11 @@ export function SubmissionCard({ event }: { event: EventRow }) {
                 </label>
               ))}
               <span className="muted small">{t.shareHint}</span>
+              <label className="check">
+                <input type="checkbox" disabled={form.shared.length === 0} checked={form.shared.length > 0 && form.members} onChange={(e) => setForm({ ...form, members: e.target.checked })} />{' '}
+                {t.shareWithMembers}
+              </label>
+              <span className="muted small">{t.shareMembersHint}</span>
             </fieldset>
           )}
           <div className="row end">

@@ -45,6 +45,9 @@ export interface EventRow {
   event_end: string | null;
   first_seen_at: string;
   source: string;
+  dedupe_key: string;
+  /** Konferans serisi (ör. "ICASSP"); dergilerde null */
+  series_key: string | null;
 }
 
 export interface Profile {
@@ -67,7 +70,7 @@ export interface Profile {
 export interface Notification {
   id: string;
   event_id: string | null;
-  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation';
+  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new';
   payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null };
   group_id: string | null;
   announcements: { title: string; body: string; url: string | null } | null;

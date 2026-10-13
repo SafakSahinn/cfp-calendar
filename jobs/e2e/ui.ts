@@ -221,6 +221,40 @@ try {
       check('başvuru veritabanında, gönderim tarihi otomatik', subs?.[0]?.status === 'submitted' && !!subs[0].submitted_at, subs);
       check('detay: TÜBİTAK kartı (varsa) doğru programla', (await page.locator('.funding').count()) === 0 || /2224-[AB]/.test((await page.locator('.funding h3').textContent()) ?? ''));
     }
+    if (kind === 'desktop') {
+      // Seri: geçmiş yılları olan bir konferans
+      const { data: ser } = await db.from('events').select('id, series_key').not('series_key', 'is', null)
+        .gt('submission_deadline', new Date().toISOString()).order('submission_deadline').limit(50);
+      const withPast = [];
+      for (const s of ser ?? []) {
+        const { count } = await db.from('events').select('*', { count: 'exact', head: true }).eq('series_key', s.series_key);
+        if ((count ?? 0) > 1) { withPast.push(s); break; }
+      }
+      check('seri anahtarı olan ve geçmiş yılı bulunan çağrı var', withPast.length === 1);
+      if (withPast[0]) {
+        await page.goto(`${SITE}#/etkinlik/${withPast[0].id}`);
+        await page.locator('.series').waitFor({ timeout: 10_000 });
+        check('detay: seri kartında önceki yılların son tarihleri', (await page.locator('.series .timeline > div').count()) >= 1);
+        await page.locator('.series').getByRole('button', { name: /Seriyi takip et/ }).click();
+        await page.locator('.series').getByRole('button', { name: /Seri takipte/ }).waitFor({ timeout: 5_000 });
+        const { data: sf } = await db.from('series_follows').select('series_key').eq('user_id', userId);
+        check('seri takibi veritabanına yazıldı', sf?.[0]?.series_key === withPast[0].series_key, sf);
+        await shot(page, `${kind}-03d-series`, true);
+        check('detay: benzer çağrılar listesi', (await page.locator('.similar li').count()) > 0);
+        await page.goBack();
+      }
+      // Tema düğmesi: seçilir, yenilemede hatırlanır
+      const before = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      await page.locator('.theme-toggle').click();
+      const theme = await page.evaluate(() => document.documentElement.dataset.theme);
+      const after = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      check('tema düğmesi temayı değiştirir', !!theme && before !== after, { theme, before, after });
+      await page.reload();
+      await page.locator('nav.nav').waitFor();
+      check('tema seçimi yenilemeden sonra hatırlanır', (await page.evaluate(() => document.documentElement.dataset.theme)) === theme);
+      await shot(page, `${kind}-03e-theme-${theme}`, false);
+      await page.locator('.theme-toggle').click(); // eski hâline
+    }
     const detailUrl = page.url();
     await page.goto(`${SITE}#/etkinlik/00000000-0000-0000-0000-000000000000`);
     const notFound = await page.getByText('Bu çağrı bulunamadı').waitFor({ timeout: 10_000 }).then(() => true).catch(() => false);

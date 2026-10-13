@@ -13,6 +13,7 @@ import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
+import { ThemeButton } from './components/ThemeButton';
 import { ProfilePage } from './pages/ProfilePage';
 
 type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join';
@@ -85,6 +86,7 @@ export function App() {
           <button className="ghost small" onClick={switchLang} aria-label={t.language}>
             {lang === 'tr' ? 'EN' : 'TR'}
           </button>
+          <ThemeButton />
           {session && (
             <button className="ghost small" onClick={signOut}>
               {t.signOut}

@@ -4,6 +4,10 @@ import { App } from './App';
 import { AppProvider } from './lib/app';
 import { I18nProvider } from './lib/i18n';
 import './styles.css';
+import { applyTheme, storedTheme } from './lib/theme';
+
+applyTheme(storedTheme()); // ilk çizimden önce
+
 
 // Ana ekrana kurulabilir uygulama (sadece yayın sürümünde; geliştirmede önbellek karışıklığı olmasın)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

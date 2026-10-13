@@ -5,6 +5,7 @@ import { FeedbackDialog } from '../components/FeedbackDialog';
 import { RecommendDialog } from '../components/RecommendDialog';
 import { SubmissionCard } from '../components/Submissions';
 import { FundingCard } from '../components/FundingCard';
+import { GroupParticipants, SeriesCard, SimilarCalls } from '../components/EventExtras';
 import { useApp } from '../lib/app';
 import { eventHref, useEvent } from '../lib/events';
 import { formatDate, formatDeadline, formatRange, timeLeft } from '../lib/format';
@@ -105,8 +106,10 @@ export function EventDetailPage({ id }: { id: string }) {
         </div>
       </div>
 
+      <GroupParticipants eventId={e.id} />
       <SubmissionCard event={e} />
       <FundingCard event={e} />
+      <SeriesCard event={e} />
 
       <div className="detail-grid">
         <section className="card">
@@ -148,6 +151,7 @@ export function EventDetailPage({ id }: { id: string }) {
           <p className="muted small">{t.verifyNote}</p>
         </section>
       </div>
+      <SimilarCalls event={e} />
       {report && <FeedbackDialog event={e} onClose={() => setReport(false)} />}
       {recommend && <RecommendDialog event={e} onClose={() => setRecommend(false)} />}
     </article>

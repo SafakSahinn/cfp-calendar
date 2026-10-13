@@ -22,6 +22,9 @@ interface AppState {
   ready: boolean;
   profile: Profile | null;
   followed: Set<string>;
+  /** Takip edilen konferans serileri (ör. "ICASSP") */
+  seriesFollowed: Set<string>;
+  toggleSeries: (key: string, label: string) => Promise<void>;
   topics: Set<string>;
   unread: number;
   toast: string | null;
@@ -54,6 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [followed, setFollowed] = useState<Set<string>>(new Set());
   const [topics, setTopics] = useState<Set<string>>(new Set());
+  const [seriesFollowed, setSeriesFollowed] = useState<Set<string>>(new Set());
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [recovery, setRecovery] = useState(false);
@@ -100,6 +104,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase.from('interests').select('event_id, topic').eq('user_id', userId);
     setFollowed(new Set((data ?? []).map((r) => r.event_id).filter(Boolean)));
     setTopics(new Set((data ?? []).map((r) => r.topic).filter(Boolean)));
+    const { data: series } = await supabase.from('series_follows').select('series_key');
+    setSeriesFollowed(new Set((series ?? []).map((r) => r.series_key)));
   }, [userId]);
 
   const refreshUnread = useCallback(async () => {
@@ -160,6 +166,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setFollowed(new Set());
       setTopics(new Set());
+      setSeriesFollowed(new Set());
       setUnread(0);
       setIsAdmin(null);
       return;
@@ -277,6 +284,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const toggleSeries = async (key: string, label: string) => {
+    if (!userId) return;
+    const next = new Set(seriesFollowed);
+    if (seriesFollowed.has(key)) {
+      next.delete(key);
+      setSeriesFollowed(next);
+      await supabase.from('series_follows').delete().eq('series_key', key);
+    } else {
+      next.add(key);
+      setSeriesFollowed(next);
+      const { error } = await supabase.from('series_follows').insert({ series_key: key, label });
+      if (error) {
+        setSeriesFollowed(seriesFollowed);
+        return showToast(error.message);
+      }
+      showToast(t.seriesFollowedToast(label));
+    }
+  };
+
   const toggleTopic = async (topic: string) => {
     if (!userId) return;
     const next = new Set(topics);
@@ -333,7 +359,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppContext.Provider
       value={{
         session, ready, profile, followed, topics, unread, toast, showToast,
-        signIn, signOut, connectCalendar, disconnectCalendar, toggleFollow, toggleTopic,
+        signIn, signOut, connectCalendar, disconnectCalendar, toggleFollow, toggleTopic, seriesFollowed, toggleSeries,
         updateProfile, refreshUnread, addToCalendar,
         recovery, endRecovery: () => setRecovery(false),
         providers, deleteAccount, isAdmin,
