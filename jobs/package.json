@@ -8,7 +8,8 @@
     "test": "node --test --import tsx test/*.test.ts",
     "dry-run": "tsx src/dry-run.ts",
     "e2e": "tsx e2e/e2e.ts && tsx e2e/groups.ts",
-    "ui": "tsx e2e/ui.ts"
+    "ui": "tsx e2e/ui.ts",
+    "build-sjr": "tsx scripts/build-sjr.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

@@ -46,7 +46,7 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
             </span>
           )}
           {Object.entries(event.ranks).map(([k, v]) => (
-            <span key={k} className="tag rank" title={k.toUpperCase()}>
+            <span key={k} className="tag rank" title={k === 'sjr' ? t.sjrHelp : k.toUpperCase()}>
               {k.toUpperCase()} {v}
             </span>
           ))}

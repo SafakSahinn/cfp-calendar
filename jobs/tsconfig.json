@@ -10,5 +10,5 @@
     "allowImportingTsExtensions": true,
     "skipLibCheck": true
   },
-  "include": ["src", "test", "e2e", "../shared", "../supabase/functions/_shared/calendar.ts", "../supabase/functions/_shared/crypto.ts"]
+  "include": ["src", "test", "e2e", "scripts", "../shared", "../supabase/functions/_shared/calendar.ts", "../supabase/functions/_shared/crypto.ts"]
 }

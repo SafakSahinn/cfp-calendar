@@ -4,7 +4,9 @@ import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
 import { fetchWikiCfp } from './sources/wikicfp.ts';
+import { existsSync, readFileSync } from 'node:fs';
 import { buildIndex, loadCore, matchCore } from './core.ts';
+import { buildSjrIndex, matchJournal, type SjrData } from './sjr.ts';
 import { merge } from './merge.ts';
 import { qualityFlags } from './quality.ts';
 import { runStats } from './runStats.ts';
@@ -43,6 +45,25 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
     }
   }
   log(`CORE: ${ranked} konferansa derece eşleşti`);
+
+  // SJR çeyreği: dergi çağrılarına (dergi adı başlıkta veya "Dergi: Özel sayı" biçiminde)
+  const sjrFile = new URL('../data/sjr.json', import.meta.url);
+  if (existsSync(sjrFile)) {
+    const sjr = JSON.parse(readFileSync(sjrFile, 'utf8')) as SjrData;
+    const idx = buildSjrIndex(sjr.journals);
+    let q = 0;
+    for (const e of merged) {
+      if (e.kind !== 'journal') continue;
+      const hit = matchJournal(idx, e.title.split(':')[0], e.acronym, e.title);
+      if (hit) {
+        e.ranks = { ...e.ranks, sjr: hit.quartile };
+        e.flags = qualityFlags(e);
+        q++;
+      }
+    }
+    log(`SJR ${sjr.year}: ${q} dergi çağrısına çeyrek eşleşti`);
+    runStats.sjr_ranked = q;
+  }
   runStats.core_ranked = ranked;
   runStats.events_total = merged.length;
   log(`Birleştirme sonrası: ${merged.length} etkinlik`);
