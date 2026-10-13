@@ -1,7 +1,7 @@
 // Özet e-postası şablonu (saf fonksiyon; veritabanı veya SMTP gerektirmez, test edilebilir).
 
 type Locale = 'tr' | 'en';
-type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder';
+type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation';
 
 export interface DigestEvent {
   acronym: string | null;
@@ -15,7 +15,7 @@ export interface DigestEvent {
 
 export interface DigestItem {
   type: NotifType;
-  payload: { old_deadline?: string };
+  payload: { old_deadline?: string; group_name?: string; by?: string | null };
   event: DigestEvent | null;
 }
 
@@ -30,8 +30,9 @@ const T = {
       topic_match: 'İlgi alanınızda yeni çağrı',
       dates_changed: 'Son tarih değişti',
       deadline_reminder: 'Son başvuruya 1 haftadan az kaldı',
+      group_recommendation: 'Grubunuzdan öneri',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥' },
     hello: (n: string | null) => (n ? `Merhaba ${n},` : 'Merhaba,'),
     intro: (n: number) => (n === 1 ? 'Takip ettiğiniz çağrılarla ilgili yeni bir bildiriminiz var:' : `Takip ettiğiniz çağrılarla ilgili ${n} yeni bildiriminiz var:`),
     deadline: 'Son başvuru',
@@ -53,8 +54,9 @@ const T = {
       topic_match: 'New call in your field',
       dates_changed: 'Deadline changed',
       deadline_reminder: 'Less than a week to the deadline',
+      group_recommendation: 'Recommended by your group',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥' },
     hello: (n: string | null) => (n ? `Hi ${n},` : 'Hi,'),
     intro: (n: number) => (n === 1 ? 'You have a new notification about calls you follow:' : `You have ${n} new notifications about calls you follow:`),
     deadline: 'Deadline',
@@ -118,7 +120,7 @@ export function renderDigest(opts: {
     if (e.event_start) lines.push(`${t.event}: ${esc(fmtRange(e.event_start, e.event_end, opts.locale))}${e.location ? ` · ${esc(e.location)}` : ''}`);
     const name = e.acronym ? `<strong>${esc(e.acronym)}</strong> – ${esc(e.title)}` : `<strong>${esc(e.title)}</strong>`;
     const title = e.url ? `<a href="${esc(e.url)}" style="color:#111827;text-decoration:none;">${name}</a>` : name;
-    const ask = i.type === 'topic_match'
+    const ask = i.type === 'topic_match' || i.type === 'group_recommendation'
       ? `<p style="margin:8px 0 0;font-size:13px;"><a href="${esc(inbox)}" style="color:${ACCENT};">${t.ask}</a></p>` : '';
     return `<tr><td style="padding:0 0 12px;">
   <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;">

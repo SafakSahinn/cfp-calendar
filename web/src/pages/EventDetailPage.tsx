@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TOPIC_BY_ID } from '../../../shared/topics';
 import { KindTag } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
+import { RecommendDialog } from '../components/RecommendDialog';
 import { useApp } from '../lib/app';
 import { eventHref, useEvent } from '../lib/events';
 import { formatDate, formatDeadline, formatRange, timeLeft } from '../lib/format';
@@ -14,6 +15,7 @@ export function EventDetailPage({ id }: { id: string }) {
   const { event: e, loading } = useEvent(id);
   const [busy, setBusy] = useState(false);
   const [report, setReport] = useState(false);
+  const [recommend, setRecommend] = useState(false);
 
   if (loading) return <p className="muted center">{t.loading}</p>;
   if (!e) {
@@ -96,6 +98,7 @@ export function EventDetailPage({ id }: { id: string }) {
           </button>
           {e.url && <a className="button" href={e.url} target="_blank" rel="noreferrer noopener">↗ {t.officialPage}</a>}
           <button onClick={share}>🔗 {t.share}</button>
+          <button onClick={() => setRecommend(true)}>👥 {t.recommendTitle}</button>
           <button className="ghost" onClick={() => setReport(true)}>⚑ {t.report}</button>
         </div>
       </div>
@@ -138,6 +141,7 @@ export function EventDetailPage({ id }: { id: string }) {
         </section>
       </div>
       {report && <FeedbackDialog event={e} onClose={() => setReport(false)} />}
+      {recommend && <RecommendDialog event={e} onClose={() => setRecommend(false)} />}
     </article>
   );
 }

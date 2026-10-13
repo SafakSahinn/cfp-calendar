@@ -9,7 +9,7 @@ import { formatDate, formatDeadline, timeAgo } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
-type Tab = 'overview' | 'feedback' | 'users' | 'events' | 'audit';
+type Tab = 'overview' | 'feedback' | 'users' | 'events' | 'announcements' | 'audit';
 
 interface Stats {
   users: number; users_new_7d: number; users_active_7d: number; calendar_connected: number; email_on: number;
@@ -63,6 +63,7 @@ export function AdminPage() {
     ['feedback', 'Geri bildirimler'],
     ['users', 'Üyeler'],
     ['events', 'Etkinlik ekle'],
+    ['announcements', 'Duyurular'],
     ['audit', 'İşlem kaydı'],
   ];
 
@@ -80,6 +81,7 @@ export function AdminPage() {
       {tab === 'feedback' && <Feedback />}
       {tab === 'users' && <Users />}
       {tab === 'events' && <ManualEvents />}
+      {tab === 'announcements' && <Announcements />}
       {tab === 'audit' && <Audit />}
     </section>
   );
@@ -386,6 +388,7 @@ function Audit() {
   const ACTIONS: Record<string, string> = {
     list_users: 'Üye listesini görüntüledi', update_feedback: 'Geri bildirim durumu', create_event: 'Etkinlik ekledi',
     update_event: 'Etkinlik düzenledi', delete_event: 'Etkinlik sildi',
+    create_announcement: 'Duyuru yayımladı', delete_announcement: 'Duyuru sildi',
   };
   if (error) return <div className="notice">{error}</div>;
   return (
@@ -403,6 +406,65 @@ function Audit() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+interface AnnouncementRow { id: string; title: string; body: string; url: string | null; created_at: string; recipients: number; read_count: number }
+
+function Announcements() {
+  const { showToast } = useApp();
+  const { data, error, reload } = useRpc<AnnouncementRow[]>('admin_list_announcements');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [url, setUrl] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const publish = async (e: FormEvent) => {
+    e.preventDefault();
+    if (title.trim().length < 3 || !body.trim()) return showToast('Başlık (en az 3 karakter) ve metin zorunlu.');
+    if (url.trim() && !/^https?:\/\/\S+$/.test(url.trim())) return showToast('Bağlantı https:// ile başlamalı.');
+    if (!window.confirm(`“${title.trim()}” duyurusu TÜM üyelerin mesaj kutusuna gönderilecek. Emin misiniz?`)) return;
+    setBusy(true);
+    const { data: sent, error } = await supabase.rpc('admin_create_announcement', { p_title: title.trim(), p_body: body.trim(), p_url: url.trim() || null });
+    setBusy(false);
+    if (error) return showToast(error.message);
+    showToast(`Duyuru ${sent} üyeye gönderildi.`);
+    setTitle(''); setBody(''); setUrl('');
+    reload();
+  };
+  const remove = async (a: AnnouncementRow) => {
+    if (!window.confirm(`“${a.title}” silinsin mi? Üyelerin mesaj kutusundan da kalkar.`)) return;
+    const { error } = await supabase.rpc('admin_delete_announcement', { p_id: a.id });
+    if (error) return showToast(error.message);
+    reload();
+  };
+
+  return (
+    <div className="admin-events">
+      <form className="card admin-form" onSubmit={publish}>
+        <h3>Yeni duyuru</h3>
+        <p className="muted small">Tüm üyelerin “Mesajlar” kutusuna düşer (ör. “SIU 2027 eklendi”, bakım duyurusu).</p>
+        <label className="inline-field"><span className="small muted">Başlık *</span><input maxLength={150} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
+        <label className="inline-field"><span className="small muted">Metin *</span><textarea rows={4} maxLength={3000} value={body} onChange={(e) => setBody(e.target.value)} /></label>
+        <label className="inline-field"><span className="small muted">Bağlantı (isteğe bağlı)</span><input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" /></label>
+        <div className="row end"><button type="submit" className="primary" disabled={busy}>Yayımla</button></div>
+      </form>
+      {error && <div className="notice">{error}</div>}
+      <h3>Yayımlanan duyurular</h3>
+      <div className="list">
+        {data?.length === 0 && <p className="muted">Henüz yok.</p>}
+        {data?.map((a) => (
+          <article key={a.id} className="card">
+            <div className="message-head"><strong>📣 {a.title}</strong><span className="muted small">{timeAgo(a.created_at, 'tr')}</span></div>
+            <p className="pre">{a.body}</p>
+            <div className="row">
+              <span className="muted small grow">{a.read_count} / {a.recipients} üye okudu</span>
+              <button className="small ghost" onClick={() => remove(a)}>Sil</button>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

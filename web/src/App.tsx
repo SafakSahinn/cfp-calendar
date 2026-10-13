@@ -7,13 +7,15 @@ import { REPO_URL, SITE_NAME } from './lib/site';
 import { LegalPage } from './pages/LegalPage';
 import { AdminPage } from './pages/AdminPage';
 import { EventDetailPage } from './pages/EventDetailPage';
+import { GroupPage, GroupsPage, JoinGroupPage } from './pages/GroupsPage';
+import { MyCalendarPage } from './pages/MyCalendarPage';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
 import { ProfilePage } from './pages/ProfilePage';
 
-type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail';
+type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join';
 
 function routeFromHash(h: string): Route {
   if (h.startsWith('#/mesajlar')) return 'inbox';
@@ -22,6 +24,10 @@ function routeFromHash(h: string): Route {
   if (h.startsWith('#/kosullar')) return 'terms';
   if (h.startsWith('#/yonetim')) return 'admin';
   if (h.startsWith('#/etkinlik/')) return 'detail';
+  if (h.startsWith('#/takvimim')) return 'mycal';
+  if (h.startsWith('#/gruplar')) return 'groups';
+  if (h.startsWith('#/grup/')) return 'group';
+  if (h.startsWith('#/katil/')) return 'join';
   return 'events';
 }
 
@@ -47,12 +53,15 @@ export function App() {
     if (profile) updateProfile({ locale: next });
   };
 
-  const nav: [Route, string, string][] = [
-    ['events', '#/', t.navEvents],
-    ['inbox', '#/mesajlar', t.navInbox],
-    ['profile', '#/profil', t.navProfile],
-    ...(isAdmin ? ([['admin', '#/yonetim', t.navAdmin]] as [Route, string, string][]) : []),
+  const nav: [Route, string, string, string][] = [
+    ['events', '#/', t.navEvents, '🔎'],
+    ['mycal', '#/takvimim', t.navMyCalendar, '📅'],
+    ['groups', '#/gruplar', t.navGroups, '👥'],
+    ['inbox', '#/mesajlar', t.navInbox, '✉️'],
+    ['profile', '#/profil', t.navProfile, '👤'],
+    ...(isAdmin ? ([['admin', '#/yonetim', t.navAdmin, '🛠️']] as [Route, string, string, string][]) : []),
   ];
+  const activeOf = (r: Route) => route === r || (r === 'events' && route === 'detail') || (r === 'groups' && (route === 'group' || route === 'join'));
 
   return (
     <div className="shell">
@@ -63,9 +72,10 @@ export function App() {
         </a>
         {session && (
           <nav className="nav">
-            {nav.map(([r, href, label]) => (
-              <a key={r} href={href} className={route === r || (r === 'events' && route === 'detail') ? 'active' : ''}>
-                {label}
+            {nav.map(([r, href, label, icon]) => (
+              <a key={r} href={href} className={activeOf(r) ? 'active' : ''}>
+                <span className="nav-icon" aria-hidden="true">{icon}</span>
+                <span className="nav-label">{label}</span>
                 {r === 'inbox' && unread > 0 && <span className="badge">{unread}</span>}
               </a>
             ))}
@@ -100,6 +110,14 @@ export function App() {
           <ProfilePage />
         ) : route === 'admin' ? (
           <AdminPage />
+        ) : route === 'mycal' ? (
+          <MyCalendarPage />
+        ) : route === 'groups' ? (
+          <GroupsPage />
+        ) : route === 'group' ? (
+          <GroupPage key={hash} id={hash.slice('#/grup/'.length)} />
+        ) : route === 'join' ? (
+          <JoinGroupPage code={hash.slice('#/katil/'.length)} />
         ) : route === 'detail' ? (
           <EventDetailPage key={hash} id={hash.slice('#/etkinlik/'.length)} />
         ) : (

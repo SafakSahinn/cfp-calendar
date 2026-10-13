@@ -62,7 +62,7 @@ export async function runEmails(log: (msg: string) => void = console.log): Promi
       const mail = renderDigest({
         locale: p.locale === 'en' ? 'en' : 'tr',
         name: p.display_name,
-        items: items.map((i) => ({ type: i.type, payload: i.payload ?? {}, event: i.events })),
+        items: items.filter((i) => i.type !== ('announcement' as string)).map((i) => ({ type: i.type, payload: i.payload ?? {}, event: i.events })),
         siteUrl,
         unsubscribeUrl,
       });

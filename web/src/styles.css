@@ -375,3 +375,40 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
   .filter-more.open { display: flex; flex-wrap: wrap; gap: 0.6rem; }
   .filter-toggle .badge { margin-left: 0.3rem; }
 }
+
+/* --- menü simgeleri (telefonda simge + kısa ad) --- */
+.nav a { display: inline-flex; align-items: center; gap: 0.35rem; }
+.nav-icon { font-size: 0.95rem; }
+@media (max-width: 640px) {
+  .nav { overflow-x: auto; gap: 0; scrollbar-width: none; }
+  .nav a { flex-direction: column; gap: 0; padding: 0.3rem 0.4rem; font-size: 0.7rem; min-width: 3.6rem; }
+  .nav-icon { font-size: 1.1rem; }
+  .nav .badge { position: absolute; top: 0; right: 0.2rem; margin: 0; }
+}
+
+/* --- sayfa düzeni, gruplar --- */
+.page-stack { display: flex; flex-direction: column; gap: 0.9rem; }
+.page-head h2 { margin-bottom: 0.25rem; }
+.page-head p { margin: 0; }
+.group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.75rem; }
+.group-card { display: flex; flex-direction: column; gap: 0.3rem; color: var(--text); align-items: flex-start; }
+.group-card:hover { text-decoration: none; border-color: var(--accent); }
+.two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.9rem; align-items: start; }
+.two-col .email-auth { max-width: none; }
+.join-card { max-width: 480px; margin: 2rem auto; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.join-card h2 { margin: 0; }
+.note { display: block; margin: 0.35rem 0; padding: 0.4rem 0.6rem; border-radius: 8px; background: var(--surface-2); font-size: 0.88rem; }
+.kind-toggles { gap: 0.9rem; }
+
+/* --- takvim kalem türleri --- */
+.cal-item.kind-deadline { background: var(--accent-soft); }
+.cal-item.kind-abstract { background: color-mix(in srgb, #8e44ad 16%, transparent); }
+.cal-item.kind-open { background: color-mix(in srgb, var(--ok) 16%, transparent); }
+.cal-item.kind-event { background: color-mix(in srgb, #d97706 18%, transparent); }
+.cal-item.followed { background: var(--accent); color: var(--accent-text); }
+.legend { display: inline-flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
+.legend-item { padding: 0 6px; border-radius: 4px; }
+.legend-item.kind-deadline { background: var(--accent-soft); }
+.legend-item.kind-abstract { background: color-mix(in srgb, #8e44ad 16%, transparent); }
+.legend-item.kind-open { background: color-mix(in srgb, var(--ok) 16%, transparent); }
+.legend-item.kind-event { background: color-mix(in srgb, #d97706 18%, transparent); }

@@ -25,23 +25,37 @@ const stamp = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const day = (date: string) => date.replace(/-/g, '');
 
 Deno.serve(async (req) => {
-  const token = new URL(req.url).searchParams.get('token') ?? '';
+  const params = new URL(req.url).searchParams;
+  const token = params.get('token') ?? '';
+  const groupId = params.get('group');
   if (!/^[0-9a-f-]{36}$/i.test(token)) return new Response('Not found', { status: 404 });
+  if (groupId !== null && !/^[0-9a-f-]{36}$/i.test(groupId)) return new Response('Not found', { status: 404 });
 
   const admin = adminClient();
   const { data: profile } = await admin.from('profiles').select('id, locale').eq('ics_token', token).maybeSingle();
   if (!profile) return new Response('Not found', { status: 404 });
 
-  // Takip edilen etkinlikler + "ilgileniyorum" denenler (ikisi de interests tablosuna yazılır).
-  const { data: rows } = await admin
-    .from('interests')
-    .select(`events (${EVENT_COLUMNS})`)
-    .eq('user_id', profile.id)
-    .not('event_id', 'is', null);
+  // ?group=… → grubun ortak takvimi (yalnızca token sahibi o grubun ÜYESİYSE); yoksa kişisel takip listesi.
+  let calName = 'CFP Calendar';
+  let rows: unknown[] | null;
+  if (groupId) {
+    const { data: member } = await admin
+      .from('group_members').select('group_id, groups (name)').eq('group_id', groupId).eq('user_id', profile.id).maybeSingle();
+    if (!member) return new Response('Not found', { status: 404 });
+    calName = `CFP Calendar · ${(member as unknown as { groups: { name: string } }).groups.name}`;
+    ({ data: rows } = await admin.from('group_events').select(`events (${EVENT_COLUMNS})`).eq('group_id', groupId));
+  } else {
+    // Takip edilen etkinlikler + "ilgileniyorum" denenler (ikisi de interests tablosuna yazılır).
+    ({ data: rows } = await admin
+      .from('interests')
+      .select(`events (${EVENT_COLUMNS})`)
+      .eq('user_id', profile.id)
+      .not('event_id', 'is', null));
+  }
 
   const siteUrl = env('SITE_URL');
   const now = stamp(new Date().toISOString());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CFP Calendar//TR', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:CFP Calendar'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CFP Calendar//TR', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${esc(calName)}`];
 
   for (const row of rows ?? []) {
     const e = (row as unknown as { events: EventRow }).events;

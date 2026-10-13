@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TOPIC_BY_ID } from '../../../shared/topics';
 import { KindTag } from '../components/EventCard';
+import { eventHref } from '../lib/events';
 import { useApp } from '../lib/app';
 import { formatDeadline, formatRange, timeAgo } from '../lib/format';
 import { useI18n } from '../lib/i18n';
@@ -16,7 +17,7 @@ export function InboxPage() {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('notifications')
-      .select('*, events(*)')
+      .select('*, events(*), announcements(title, body, url)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(200);
@@ -54,12 +55,16 @@ export function InboxPage() {
     topic_match: t.nTopic,
     dates_changed: t.nChanged,
     deadline_reminder: t.nReminder,
+    announcement: t.nAnnouncement,
+    group_recommendation: t.nGroup,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
     topic_match: '✨',
     dates_changed: '🔄',
     deadline_reminder: '⏰',
+    announcement: '📣',
+    group_recommendation: '👥',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;
@@ -71,7 +76,8 @@ export function InboxPage() {
       <div className="list">
         {items.map((n) => {
           const e = n.events;
-          const askable = n.type === 'submission_open' || n.type === 'topic_match';
+          const askable = n.type === 'submission_open' || n.type === 'topic_match' || n.type === 'group_recommendation';
+          const a = n.announcements;
           return (
             <article key={n.id} className={`card message ${n.read_at ? '' : 'unread'}`}>
               <div className="message-head">
@@ -79,6 +85,20 @@ export function InboxPage() {
                 <strong>{heading[n.type]}</strong>
                 <span className="muted small">{timeAgo(n.created_at, lang)}</span>
               </div>
+              {n.type === 'announcement' && a && (
+                <div className="message-body">
+                  <p className="event-title"><strong>{a.title}</strong></p>
+                  <p className="pre">{a.body}</p>
+                  {a.url && <a href={a.url} target="_blank" rel="noreferrer noopener" className="small">↗ {a.url}</a>}
+                </div>
+              )}
+              {n.type === 'group_recommendation' && (
+                <p className="message-body small">
+                  {t.groupRecLine(n.payload.by ?? '—', n.payload.group_name ?? '')}
+                  {n.group_id && <> · <a href={`#/grup/${n.group_id}`}>{t.openGroup}</a></>}
+                  {n.payload.note && <span className="note">💬 {n.payload.note}</span>}
+                </p>
+              )}
               {e && (
                 <div className="message-body">
                   <div className="event-head">
@@ -86,7 +106,7 @@ export function InboxPage() {
                     <KindTag kind={e.kind} />
                     {e.is_ieee && <span className="tag ieee">IEEE</span>}
                   </div>
-                  <p className="event-title">{e.title}</p>
+                  <p className="event-title"><a href={eventHref(e.id)} className="title-link">{e.title}</a></p>
                   <ul className="facts">
                     {n.type === 'dates_changed' && n.payload.old_deadline && (
                       <li>

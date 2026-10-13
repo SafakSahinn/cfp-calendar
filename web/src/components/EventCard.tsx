@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TOPIC_BY_ID } from '../../../shared/topics';
 import { useApp } from '../lib/app';
+import { RecommendDialog } from './RecommendDialog';
 import { eventHref } from '../lib/events';
 import { daysUntil, formatDeadline, formatRange, timeLeft } from '../lib/format';
 import { useI18n } from '../lib/i18n';
@@ -16,6 +17,7 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
   const { t, lang } = useI18n();
   const { followed, toggleFollow, profile, addToCalendar } = useApp();
   const [busy, setBusy] = useState(false);
+  const [recommend, setRecommend] = useState(false);
   const isFollowed = followed.has(event.id);
   const days = event.submission_deadline ? daysUntil(event.submission_deadline) : null;
   const urgent = days !== null && days <= 7;
@@ -96,8 +98,12 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
           <button className="small ghost" onClick={() => onReport(event)} title={t.reportTitle}>
             ⚑ <span className="hide-sm">{t.report}</span>
           </button>
+          <button className="small ghost" onClick={() => setRecommend(true)} title={t.recommendTitle}>
+            👥 <span className="hide-sm">{t.recommend}</span>
+          </button>
         </div>
       </div>
+      {recommend && <RecommendDialog event={event} onClose={() => setRecommend(false)} />}
     </article>
   );
 }

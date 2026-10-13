@@ -7,7 +7,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test --import tsx test/*.test.ts",
     "dry-run": "tsx src/dry-run.ts",
-    "e2e": "tsx e2e/e2e.ts",
+    "e2e": "tsx e2e/e2e.ts && tsx e2e/groups.ts",
     "ui": "tsx e2e/ui.ts"
   },
   "dependencies": {

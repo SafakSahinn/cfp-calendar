@@ -65,8 +65,10 @@ export interface Profile {
 export interface Notification {
   id: string;
   event_id: string | null;
-  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder';
-  payload: { deadline?: string; old_deadline?: string; topics?: string[] };
+  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation';
+  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null };
+  group_id: string | null;
+  announcements: { title: string; body: string; url: string | null } | null;
   response: 'interested' | 'not_interested' | null;
   read_at: string | null;
   created_at: string;

@@ -276,6 +276,46 @@ try {
       check('profil: başlıkta unvan ve kurum görünür', true);
     }
 
+    // Takvimim + Gruplar (masaüstü)
+    if (kind === 'desktop') {
+      await page.getByRole('link', { name: 'Takvimim' }).click();
+      await page.getByRole('heading', { name: 'Takvimim' }).waitFor({ timeout: 10_000 });
+      await page.locator('.calendar').waitFor({ timeout: 10_000 });
+      check('Takvimim: takip edilen çağrılarla takvim açılır', (await page.locator('.cal-item').count()) > 0 || (await page.locator('.cal-agenda').count()) > 0);
+      check('Takvimim: tür açıklaması (açılış/özet/son başvuru/etkinlik)', (await page.locator('.legend-item').count()) === 4);
+      await shot(page, `${kind}-11-mycalendar`, false);
+
+      await page.getByRole('link', { name: 'Gruplar' }).click();
+      await page.getByLabel('Grup adı').fill('UI Test Grubu');
+      await page.getByRole('button', { name: 'Grup oluştur' }).click();
+      await page.getByRole('heading', { name: 'UI Test Grubu' }).waitFor({ timeout: 10_000 });
+      check('grup oluşturulunca grup sayfası açılır', page.url().includes('#/grup/'));
+      const groupUrl = page.url();
+      await page.getByRole('tab', { name: 'Ayarlar' }).click();
+      const invite = await page.locator('input.mono').first().inputValue();
+      check('grup sahibi davet bağlantısını görür', /#\/katil\/[0-9a-f]{16}$/.test(invite), invite);
+      check('grup takvimi abonelik adresi var', (await page.locator('input.mono').nth(1).inputValue()).includes('&group='));
+      await shot(page, `${kind}-12-group-settings`, true);
+
+      await page.goto(`${SITE}#/`);
+      await page.locator('article.event').first().waitFor();
+      await page.locator('article.event').first().getByRole('button', { name: /Gruba öner/ }).click();
+      const rd = page.locator('dialog.dialog');
+      await rd.getByLabel('Grup').waitFor({ timeout: 10_000 });
+      await rd.locator('#rec-note').fill('UI testi önerisi');
+      await rd.getByRole('button', { name: 'Gruba öner' }).click();
+      await page.getByText(/Gruba eklendi/).waitFor({ timeout: 10_000 });
+      check('çağrı gruba önerilir', true);
+      await page.goto(groupUrl);
+      await page.getByRole('tab', { name: 'Önerilen çağrılar' }).click();
+      await page.getByText('💬 UI testi önerisi').waitFor({ timeout: 10_000 });
+      check('önerilen çağrı notuyla grup listesinde', true);
+      await page.getByRole('tab', { name: 'Üyeler' }).click();
+      check('üye listesinde e-posta görünmez', (await page.locator('.followed').getByText('@').count()) === 0);
+      const gid = groupUrl.split('#/grup/')[1];
+      await db.from('groups').delete().eq('id', gid);
+    }
+
     // Yönetici paneli (masaüstü): önce yönetici olmadan, sonra yönetici olarak
     if (kind === 'desktop') {
       check('yönetici olmayan için "Yönetim" menüsü yok', (await page.getByRole('link', { name: 'Yönetim' }).count()) === 0);

@@ -199,7 +199,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signIn = async (p: Provider) => {
     // OAuth dönüşü hash'i taşımaz: paylaşılan etkinlik bağlantısıyla gelindiyse girişten sonra oraya dön
     try {
-      if (window.location.hash.startsWith('#/etkinlik/')) sessionStorage.setItem('cfp.returnTo', window.location.hash);
+      if (/^#\/(etkinlik|katil)\//.test(window.location.hash)) sessionStorage.setItem('cfp.returnTo', window.location.hash);
     } catch {
       // yok say
     }
