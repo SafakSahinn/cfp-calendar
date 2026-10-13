@@ -439,3 +439,10 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .tag.st-rejected, .tag.st-withdrawn { background: var(--danger-soft); color: var(--danger); }
 .pipe.st-accepted strong { color: var(--ok); }
 .pipe.st-rejected strong { color: var(--danger); }
+
+/* --- TÜBİTAK desteği --- */
+.tag.fund { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.funding.open { border-color: color-mix(in srgb, var(--ok) 50%, var(--border)); }
+.funding h3 { margin: 0; }
+.funding p { margin: 0.4rem 0; }
+.cal-item.kind-funding, .legend-item.kind-funding { background: color-mix(in srgb, #0d9488 18%, transparent); }

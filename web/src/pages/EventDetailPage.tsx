@@ -4,6 +4,7 @@ import { KindTag } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { RecommendDialog } from '../components/RecommendDialog';
 import { SubmissionCard } from '../components/Submissions';
+import { FundingCard } from '../components/FundingCard';
 import { useApp } from '../lib/app';
 import { eventHref, useEvent } from '../lib/events';
 import { formatDate, formatDeadline, formatRange, timeLeft } from '../lib/format';
@@ -105,6 +106,7 @@ export function EventDetailPage({ id }: { id: string }) {
       </div>
 
       <SubmissionCard event={e} />
+      <FundingCard event={e} />
 
       <div className="detail-grid">
         <section className="card">

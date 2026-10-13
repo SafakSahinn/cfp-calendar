@@ -1,9 +1,10 @@
 // Etkinliklerden aylık takvime yerleştirilecek kalemler üretir (son başvuru, özet, açılış, etkinlik günleri).
 
 import { eventHref } from './events';
+import { funding } from './funding';
 import type { EventRow } from './supabase';
 
-export type ItemKind = 'open' | 'abstract' | 'deadline' | 'event';
+export type ItemKind = 'open' | 'abstract' | 'deadline' | 'event' | 'funding';
 
 export interface CalItem {
   key: string;
@@ -43,8 +44,14 @@ export function itemsForEvent(e: EventRow, kinds: ItemKind[], highlight = false)
     add(localKey(new Date(e.abstract_deadline)), 'abstract');
   }
   if (kinds.includes('deadline') && e.submission_deadline) add(localKey(new Date(e.submission_deadline)), 'deadline');
+  if (kinds.includes('funding')) {
+    const f = funding(e);
+    if (f && !f.missed && !f.period.estimated) {
+      out.push({ key: `${e.id}-funding`, day: localKey(new Date(f.period.close)), kind: 'funding', label: `${f.program} · ${name}`, title: `TÜBİTAK ${f.program} (${f.period.name}) — ${title}`, href, highlight });
+    }
+  }
   if (kinds.includes('event') && e.event_start && e.kind !== 'journal') for (const d of eachDay(e.event_start, e.event_end)) add(d, 'event');
   return out;
 }
 
-export const KIND_ICON: Record<ItemKind, string> = { open: '📝', abstract: '✍️', deadline: '⏰', event: '🎤' };
+export const KIND_ICON: Record<ItemKind, string> = { open: '📝', abstract: '✍️', deadline: '⏰', event: '🎤', funding: '💰' };

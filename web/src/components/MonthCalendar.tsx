@@ -6,7 +6,7 @@ import { KIND_ICON, localKey, type CalItem } from '../lib/calendarItems';
 import { useI18n } from '../lib/i18n';
 
 const MAX_IN_CELL = 3;
-const KIND_ORDER = { deadline: 0, abstract: 1, open: 2, event: 3 } as const;
+const KIND_ORDER = { deadline: 0, abstract: 1, funding: 2, open: 3, event: 4 } as const;
 
 export function MonthCalendar({
   items,
@@ -125,7 +125,7 @@ export function KindLegend() {
   const { t } = useI18n();
   return (
     <span className="legend">
-      {(['open', 'abstract', 'deadline', 'event'] as const).map((k) => (
+      {(['open', 'abstract', 'deadline', 'funding', 'event'] as const).map((k) => (
         <span key={k} className={`legend-item kind-${k}`}>{KIND_ICON[k]} {t.kindLabels[k]}</span>
       ))}
     </span>

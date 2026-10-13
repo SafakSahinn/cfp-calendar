@@ -5,6 +5,7 @@ import { EventCard } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { useApp } from '../lib/app';
 import { IN_TURKEY, IS_ONLINE, useOpenEvents } from '../lib/events';
+import { funding } from '../lib/funding';
 import { useI18n } from '../lib/i18n';
 import type { EventRow } from '../lib/supabase';
 
@@ -23,11 +24,12 @@ interface Filters {
   followedOnly: boolean;
   showCaution: boolean;
   turkey: boolean;
+  fundingOpen: boolean;
 }
 
 const EMPTY: Filters = {
   q: '', field: '', kind: '', topic: '', within: '', format: '', sort: 'deadline',
-  ieee: false, ranked: false, followedOnly: false, showCaution: false, turkey: false,
+  ieee: false, ranked: false, followedOnly: false, showCaution: false, turkey: false, fundingOpen: false,
 };
 
 function loadStored<T>(key: string, fallback: T): T {
@@ -82,6 +84,7 @@ export function EventsPage() {
       if (filters.ranked && Object.keys(e.ranks).length === 0) return false;
       if (filters.followedOnly && !followed.has(e.id)) return false;
       if (filters.turkey && !IN_TURKEY.test(e.location ?? '')) return false;
+      if (filters.fundingOpen && !funding(e)?.openNow) return false;
       // Takip edilenler, işaretli olsa da her zaman görünür
       if (!filters.showCaution && e.flags?.length > 0 && !followed.has(e.id)) return false;
       if (q && !`${e.acronym ?? ''} ${e.title} ${e.location ?? ''}`.toLocaleLowerCase(lang).includes(q)) return false;
@@ -137,6 +140,7 @@ export function EventsPage() {
         <label className="check"><input type="checkbox" checked={filters.ranked} onChange={(e) => set('ranked', e.target.checked)} /> {t.onlyRanked}</label>
         <label className="check"><input type="checkbox" checked={filters.followedOnly} onChange={(e) => set('followedOnly', e.target.checked)} /> {t.onlyFollowed}</label>
         <label className="check"><input type="checkbox" checked={filters.turkey} onChange={(e) => set('turkey', e.target.checked)} /> 🇹🇷 {t.inTurkey}</label>
+        <label className="check" title={t.fundingBadgeTitle}><input type="checkbox" checked={filters.fundingOpen} onChange={(e) => set('fundingOpen', e.target.checked)} /> 💰 {t.fundingFilter}</label>
         <label className="check" title={t.cautionHelp}><input type="checkbox" checked={filters.showCaution} onChange={(e) => set('showCaution', e.target.checked)} /> {t.showCaution}</label>
         {active > 0 && (
           <button className="small ghost" onClick={() => setFilters({ ...EMPTY, sort: filters.sort })}>✕ {t.clearFilters}</button>

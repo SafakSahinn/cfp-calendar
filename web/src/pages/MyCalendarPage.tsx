@@ -8,7 +8,7 @@ import { itemsForEvent, type ItemKind } from '../lib/calendarItems';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
-const ALL_KINDS: ItemKind[] = ['open', 'abstract', 'deadline', 'event'];
+const ALL_KINDS: ItemKind[] = ['open', 'abstract', 'deadline', 'funding', 'event'];
 
 export function MyCalendarPage() {
   const { t } = useI18n();

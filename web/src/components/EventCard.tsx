@@ -3,6 +3,7 @@ import { TOPIC_BY_ID } from '../../../shared/topics';
 import { useApp } from '../lib/app';
 import { RecommendDialog } from './RecommendDialog';
 import { eventHref } from '../lib/events';
+import { funding } from '../lib/funding';
 import { daysUntil, formatDeadline, formatRange, timeLeft } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import type { EventRow } from '../lib/supabase';
@@ -35,6 +36,10 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
           {event.acronym && <strong className="acronym">{event.acronym}</strong>}
           <KindTag kind={event.kind} />
           {event.is_ieee && <span className="tag ieee">IEEE</span>}
+          {(() => {
+            const f = funding(event);
+            return f?.openNow ? <span className="tag fund" title={t.fundingBadgeTitle}>💰 {f.program}</span> : null;
+          })()}
           {event.flags?.length > 0 && Object.keys(event.ranks).length === 0 && (
             <span className="tag caution" title={event.flags.map((f) => t.flagReasons[f as keyof typeof t.flagReasons] ?? f).join(' · ')}>
               ⚠ {t.caution}

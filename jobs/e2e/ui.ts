@@ -210,6 +210,17 @@ try {
       const copied = await page.evaluate(() => navigator.clipboard.readText());
       check('detay: paylaş bağlantıyı kopyalar', copied === page.url(), { copied, url: page.url() });
     }
+    if (kind === 'desktop') {
+      await page.getByRole('button', { name: /Başvuruyu takip et/ }).click();
+      await page.getByLabel('Durum').selectOption('submitted');
+      await page.getByLabel('Makale başlığı').fill('UI Test Makalesi');
+      await page.locator('.submission').getByRole('button', { name: 'Kaydet' }).click();
+      await page.locator('.submission .tag.st-submitted').waitFor({ timeout: 10_000 });
+      check('detay: başvuru takibi kaydedilir (Gönderildi)', true);
+      const { data: subs } = await db.from('submissions').select('status, paper_title, submitted_at').eq('user_id', userId);
+      check('başvuru veritabanında, gönderim tarihi otomatik', subs?.[0]?.status === 'submitted' && !!subs[0].submitted_at, subs);
+      check('detay: TÜBİTAK kartı (varsa) doğru programla', (await page.locator('.funding').count()) === 0 || /2224-[AB]/.test((await page.locator('.funding h3').textContent()) ?? ''));
+    }
     const detailUrl = page.url();
     await page.goto(`${SITE}#/etkinlik/00000000-0000-0000-0000-000000000000`);
     const notFound = await page.getByText('Bu çağrı bulunamadı').waitFor({ timeout: 10_000 }).then(() => true).catch(() => false);
@@ -282,8 +293,12 @@ try {
       await page.getByRole('heading', { name: 'Takvimim' }).waitFor({ timeout: 10_000 });
       await page.locator('.calendar').waitFor({ timeout: 10_000 });
       check('Takvimim: takip edilen çağrılarla takvim açılır', (await page.locator('.cal-item').count()) > 0 || (await page.locator('.cal-agenda').count()) > 0);
-      check('Takvimim: tür açıklaması (açılış/özet/son başvuru/etkinlik)', (await page.locator('.legend-item').count()) === 4);
+      check('Takvimim: tür açıklaması (açılış/özet/son başvuru/TÜBİTAK/etkinlik)', (await page.locator('.legend-item').count()) === 5);
       await shot(page, `${kind}-11-mycalendar`, false);
+      await page.getByRole('tab', { name: /Başvurularım/ }).click();
+      await page.getByText('UI Test Makalesi').waitFor({ timeout: 10_000 });
+      check('Takvimim → Başvurularım listesinde görünür', (await page.locator('.pipe').count()) >= 1);
+      await shot(page, `${kind}-11b-submissions`, false);
 
       await page.getByRole('link', { name: 'Gruplar' }).click();
       await page.getByLabel('Grup adı').fill('UI Test Grubu');
