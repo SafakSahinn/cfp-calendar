@@ -59,6 +59,7 @@ export interface Profile {
   calendar_account: string | null;
   topic_notifications: boolean;
   email_notifications: boolean;
+  email_frequency: 'weekly' | 'instant';
   ics_token: string;
 }
 

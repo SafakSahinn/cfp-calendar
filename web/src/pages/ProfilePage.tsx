@@ -103,7 +103,15 @@ export function ProfilePage() {
           />{' '}
           {t.emailNotifications}
         </label>
-        <p className="muted small">{t.emailNotificationsHelp}</p>
+        {profile.email_notifications && (
+          <label className="inline-field freq">
+            <span className="small muted">{t.emailFrequency}</span>
+            <select value={profile.email_frequency} onChange={(e) => updateProfile({ email_frequency: e.target.value as 'weekly' | 'instant' })}>
+              <option value="weekly">{t.freqWeekly}</option>
+              <option value="instant">{t.freqInstant}</option>
+            </select>
+          </label>
+        )}
         {(['cs', 'ee'] as const).map((field) => (
           <div key={field} className="topic-group">
             <h4>{field === 'cs' ? t.fieldCs : t.fieldEe}</h4>

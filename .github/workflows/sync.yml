@@ -10,6 +10,14 @@ on:
         type: choice
         options: [all, fetch, dispatch, email]
         default: all
+      test_to_admin:
+        description: 'E-posta denemesi: SADECE yönetici adresine gönder (diğer üyelere gitmez)'
+        type: boolean
+        default: false
+      force_weekly:
+        description: 'Haftalık özeti pazartesiyi beklemeden gönder'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -48,4 +56,6 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+          EMAIL_ONLY_TO: ${{ inputs.test_to_admin && vars.ADMIN_EMAIL || '' }}
+          FORCE_WEEKLY: ${{ inputs.force_weekly && '1' || '' }}
       - uses: liskin/gh-workflow-keepalive@v1

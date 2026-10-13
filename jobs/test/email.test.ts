@@ -43,3 +43,39 @@ test('25\'ten fazla bildirim kısaltılır', () => {
   assert.match(m.html, /…ve 5 bildirim daha/);
   assert.equal((m.html.match(/İlgi alanınızda yeni çağrı/g) ?? []).length, 25);
 });
+
+test('haftalık özet: bölümler, bağlantılar, boşsa gönderilmez', async () => {
+  const { renderWeekly } = await import('../src/emailRender.ts');
+  const e = { ...ev('DAC'), id: 'e1', ranks: { core: 'A' }, is_ieee: true, abstract_deadline: '2026-11-09T11:59:59.000Z' };
+  const m = renderWeekly({ ...base, locale: 'tr', data: {
+    followedSoon: [e], forYou: [{ ...ev('ISCAS'), id: 'e2' }],
+    groupNews: [{ group: 'Gömülü Lab', by: 'Doç. Dr. X', note: 'Tezinle uyumlu', event: { ...ev('DATE'), id: 'e3' } }],
+  } })!;
+  assert.equal(m.subject, 'CFP Calendar · Bu hafta: 1 son tarih');
+  assert.match(m.html, /Takip ettikleriniz/);
+  assert.match(m.html, /Gruplarınızdan öneriler/);
+  assert.match(m.html, /Doç\. Dr\. X · Gömülü Lab — “Tezinle uyumlu”/);
+  assert.match(m.html, /https:\/\/site\/cfp\/#\/etkinlik\/e1/);
+  assert.match(m.html, /CORE A/);
+  assert.match(m.html, /Özet: 9 Kasım 2026 14:59 TSİ/);
+  assert.match(m.html, /#\/takvimim/);
+  assert.equal(renderWeekly({ ...base, locale: 'tr', data: { followedSoon: [], forYou: [], groupNews: [] } }), null);
+});
+
+test('haftalık özet içeriği: pencereler, dikkat işaretlileri, takip edilenler hariç', async () => {
+  const { buildWeekly } = await import('../src/weekly.ts');
+  const now = Date.parse('2026-10-12T06:00:00Z');
+  const d = (days: number) => new Date(now + days * 86_400_000).toISOString();
+  const e = (id: string, deadlineDays: number, extra: object = {}) => ({
+    id, acronym: id, title: id, url: null, location: null, submission_deadline: d(deadlineDays), event_start: null, event_end: null,
+    abstract_deadline: null, topics: ['vlsi'], ranks: {}, is_ieee: false, flags: [], ...extra,
+  });
+  const w = buildWeekly({
+    now, followed: new Set(['F1', 'F2']), topics: new Set(['vlsi']),
+    followedEvents: [e('F1', 3), e('F2', 20, { abstract_deadline: d(5) })],
+    open: [e('F1', 3), e('A', 10, { ranks: { core: 'B' } }), e('B', 5), e('C', 1), e('D', 30), e('X', 8, { flags: ['organizer_prefix'] }), e('Y', 9, { topics: ['ai-ml'] })],
+    groupNews: [],
+  });
+  assert.deepEqual(w.followedSoon.map((x) => x.id), ['F1', 'F2']); // F2: özet son tarihi bu hafta
+  assert.deepEqual(w.forYou.map((x) => x.id), ['A', 'B']); // dereceli önce; C çok yakın, D uzak, X dikkat, Y konu dışı, F1 takipte
+});
