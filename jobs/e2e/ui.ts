@@ -48,6 +48,12 @@ async function newPage(kind: 'desktop' | 'mobile') {
   return page;
 }
 
+/** Telefonda filtre paneli katlıdır; filtreye dokunmadan önce açık olduğundan emin ol. */
+async function openFilters(page: Page) {
+  const toggle = page.getByRole('button', { name: /Filtreler/ });
+  if (await toggle.isVisible() && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+}
+
 async function signIn(page: Page) {
   await page.goto(SITE);
   await page.locator('form.email-auth input[type=email]').fill(email);
@@ -212,6 +218,7 @@ try {
     await page.locator('article.event').first().waitFor();
 
     // Türkiye filtresi
+    await openFilters(page);
     const total = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
     await page.getByLabel(/Türkiye'de/).check();
     const inTr = +(await page.locator('.list-head p').textContent().catch(() => '0') ?? '0').split(' ')[0];
@@ -219,6 +226,7 @@ try {
     await page.getByLabel(/Türkiye'de/).uncheck();
 
     // Filtre: sadece takip ettiklerim
+    await openFilters(page);
     await page.getByLabel('Takip ettiklerim').check();
     const followedCount = await page.locator('article.event').count();
     check('"Takip ettiklerim" filtresi', followedCount >= follow.length, followedCount);
