@@ -93,6 +93,7 @@ interface SyncRun { started_at: string; finished_at: string | null; trigger: str
 function Overview() {
   const { data, error } = useRpc<Stats>('admin_stats');
   const { data: runs } = useRpc<SyncRun[]>('admin_sync_runs');
+  const { data: maint } = useRpc<{ items?: { key: string; level: 'ok' | 'warn' | 'todo'; title: string; detail: string }[]; updated_at?: string }>('admin_maintenance');
   if (error) return <div className="notice">{error}</div>;
   if (!data) return <p className="muted">Yükleniyor…</p>;
   const tiles: [string, number | string, string?][] = [
@@ -120,6 +121,20 @@ function Overview() {
           </div>
         ))}
       </div>
+      {(maint?.items?.length ?? 0) > 0 && (
+        <div>
+          <h3>🛠️ Bakım</h3>
+          <div className="maint-list">
+            {maint!.items!.map((m) => (
+              <div key={m.key} className={`maint maint-${m.level}`}>
+                <span className="maint-badge">{m.level === 'todo' ? 'Yapılacak' : m.level === 'warn' ? 'Takip et' : 'Güncel'}</span>
+                <strong>{m.title}</strong>
+                <p>{m.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div>
         <h3>Sistem durumu — veri güncellemeleri</h3>
         <p className="muted small">

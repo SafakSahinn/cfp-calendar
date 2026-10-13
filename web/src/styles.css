@@ -446,3 +446,13 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .funding h3 { margin: 0; }
 .funding p { margin: 0.4rem 0; }
 .cal-item.kind-funding, .legend-item.kind-funding { background: color-mix(in srgb, #0d9488 18%, transparent); }
+
+/* --- bakım hatırlatmaları (yönetim) --- */
+.maint-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.maint { border-left: 4px solid var(--ok); background: var(--surface); border-radius: 0 10px 10px 0; padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.maint p { margin: 0.25rem 0 0; font-size: 0.88rem; color: var(--muted); }
+.maint-badge { display: inline-block; margin-right: 0.5rem; padding: 0 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.maint-warn { border-left-color: #d97706; }
+.maint-warn .maint-badge { background: color-mix(in srgb, #d97706 18%, transparent); color: #b45309; }
+.maint-todo { border-left-color: var(--danger); background: var(--danger-soft); }
+.maint-todo .maint-badge { background: var(--surface); color: var(--danger); }

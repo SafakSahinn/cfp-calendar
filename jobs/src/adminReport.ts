@@ -3,14 +3,13 @@
 
 import nodemailer from 'nodemailer';
 import { db } from './db.ts';
+import { renderAdminReport, type ReportRun } from './adminReportRender.ts';
+import type { MaintenanceItem } from './maintenance.ts';
 
 const BRAND = 'CFP Calendar';
 const DAY = 86_400_000;
 
 const trDate = (d = new Date()) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' }).format(d); // YYYY-MM-DD
-const trTime = (iso: string) =>
-  new Date(iso).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 async function count(table: string, filter?: (q: any) => any): Promise<number> { // eslint-disable-line @typescript-eslint/no-explicit-any
   let q = db.from(table).select('*', { count: 'exact', head: true });
@@ -35,7 +34,7 @@ async function authUserStats(): Promise<{ total: number; new24h: number; active7
   return { total, new24h, active7d };
 }
 
-export async function adminReport(opts: { ok: boolean; error?: string; log: (m: string) => void }) {
+export async function adminReport(opts: { ok: boolean; error?: string; log: (m: string) => void; maintenance: MaintenanceItem[] }) {
   const admin = process.env.ADMIN_EMAIL;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
@@ -58,42 +57,10 @@ export async function adminReport(opts: { ok: boolean; error?: string; log: (m: 
     count('events', (q) => q.gt('submission_deadline', new Date().toISOString())),
   ]);
 
-  const runRows = (runs ?? []).map((r) => {
-    const s = (r.stats ?? {}) as Record<string, unknown>;
-    const sources = Object.entries((s.sources ?? {}) as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join(', ');
-    return `<tr><td>${trTime(r.started_at)}</td><td>${r.ok === null ? '⏳' : r.ok ? '✅' : '❌'}</td>
-      <td>${esc(sources || '—')}</td><td>${s.events_changed ?? '—'}</td><td>${s.notifications ?? '—'}</td>
-      <td>${r.error ? esc(String(r.error).slice(0, 200)) : ''}</td></tr>`;
-  }).join('');
-
-  const tiles: [string, string | number][] = [
-    ['Üye', `${users.total} (son 24 saatte +${users.new24h})`],
-    ['Aktif (7 gün)', users.active7d],
-    ['Grup', `${groups} (${members} üyelik)`],
-    ['Başvuru kaydı', submissions],
-    ['Takvim bağlı', calendar],
-    ['Açık çağrı', openEvents],
-    ['Yeni geri bildirim', feedbackNew],
-  ];
-
-  const subject = opts.ok
-    ? `${BRAND} · Günlük sistem raporu (${today}) · ${users.total} üye`
-    : `⚠️ ${BRAND} · Veri güncellemesi BAŞARISIZ`;
-  const html = `<!doctype html><html lang="tr"><body style="margin:0;padding:24px;background:#f3f4f8;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#111827">
-<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px">
-<h2 style="margin:0 0 4px">${opts.ok ? 'Günlük sistem raporu' : '⚠️ Veri güncellemesi başarısız'}</h2>
-<p style="margin:0 0 16px;color:#6b7280">${esc(today)}</p>
-${opts.ok ? '' : `<p style="padding:10px 12px;border-radius:8px;background:#fdecec;color:#b91c1c">${esc(opts.error ?? 'Bilinmeyen hata')}</p>
-<p style="color:#374151">Ayrıntılar: GitHub → Actions → “Veri çek ve dağıt”. Site çalışmaya devam ediyor; sadece veriler güncellenmedi.</p>`}
-<table style="width:100%;border-collapse:collapse;margin:8px 0 16px">${tiles.map(([k, v]) =>
-    `<tr><td style="padding:6px 0;color:#6b7280">${k}</td><td style="padding:6px 0;text-align:right;font-weight:600">${v}</td></tr>`).join('')}</table>
-<h3 style="margin:16px 0 8px;font-size:15px">Son 24 saatteki veri güncellemeleri</h3>
-<table style="width:100%;border-collapse:collapse;font-size:12px" cellpadding="6">
-<tr style="background:#f3f4f8;text-align:left"><th>Saat (TSİ)</th><th></th><th>Kaynaklar</th><th>Değişen</th><th>Bildirim</th><th>Hata</th></tr>
-${runRows || '<tr><td colspan="6" style="color:#6b7280">Kayıt yok</td></tr>'}
-</table>
-<p style="margin-top:18px"><a href="${esc(process.env.SITE_URL ?? '')}#/yonetim" style="color:#3d5afe">Yönetim paneline git →</a></p>
-</div></body></html>`;
+  const { subject, html } = renderAdminReport({
+    ok: opts.ok, error: opts.error, date: today, siteUrl: process.env.SITE_URL ?? '', users, groups, members,
+    submissions, calendar, openEvents, feedbackNew, runs: (runs ?? []) as ReportRun[], maintenance: opts.maintenance,
+  });
 
   const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
   await transport.sendMail({ from: { name: BRAND, address: user }, to: admin, subject, html });

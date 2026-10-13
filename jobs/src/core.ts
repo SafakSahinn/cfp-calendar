@@ -3,6 +3,7 @@
 // eşleşme için kısaltma YETMEZ: başlıklar da büyük ölçüde örtüşmelidir.
 
 import { readFileSync } from 'node:fs';
+import { runStats } from './runStats.ts';
 
 const CORE_URL = 'https://portal.core.edu.au/conf-ranks/?search=&by=all&source=ICORE2026&sort=arank&page=1&do=Export';
 const SNAPSHOT = new URL('../data/core-icore2026.csv', import.meta.url);
@@ -56,9 +57,11 @@ export async function loadCore(log: (msg: string) => void = console.log): Promis
     if (!res.ok) throw new Error(String(res.status));
     const entries = parseCore(await res.text());
     if (entries.length < 300) throw new Error(`beklenenden az kayıt: ${entries.length}`);
+    runStats.core_source = 'live';
     return entries;
   } catch (e) {
     log(`  CORE canlı liste alınamadı (${e}), depodaki kopya kullanılıyor`);
+    runStats.core_source = 'snapshot';
     return parseCore(readFileSync(SNAPSHOT, 'utf8'));
   }
 }
