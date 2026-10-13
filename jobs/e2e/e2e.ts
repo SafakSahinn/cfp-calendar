@@ -246,6 +246,7 @@ try {
     ['admin_save_event', { p: { title: 'Saldırı', submission_deadline: '2030-01-01T00:00:00Z', fields: [], topics: [] } }],
     ['admin_delete_event', { p_id: later.id }],
     ['admin_list_audit', {}],
+    ['admin_sync_runs', {}],
   ];
   for (const [fnName, args] of adminRpcs) {
     const { data: d, error: e } = await user.rpc(fnName, args);
@@ -265,6 +266,9 @@ try {
   check('üye kendini yönetici yapamaz', !!selfPromote);
   const { data: stillNot } = await user.rpc('is_admin');
   check('kendini yükseltme denemesinden sonra hâlâ yönetici değil', stillNot === false);
+  const { data: runRows } = await user.from('sync_runs').select('*');
+  const { data: stateRows } = await user.from('app_state').select('*');
+  check('sistem durumu ve uygulama ayarları okunamaz', (runRows ?? []).length === 0 && (stateRows ?? []).length === 0);
   const { data: auditRows } = await user.from('admin_audit').select('*');
   check('işlem kaydı okunamaz', (auditRows ?? []).length === 0);
   const { data: survived } = await db.from('events').select('id').eq('id', later.id);
@@ -286,6 +290,9 @@ try {
   check('service role ile atanınca is_admin() → true', isAdm === true);
   const { data: stats, error: statsErr } = await user.rpc('admin_stats');
   check('yönetici istatistikleri görür', !statsErr && typeof stats?.users === 'number' && stats.users >= 1, statsErr?.message);
+  const { data: runsAdm, error: runsErr } = await user.rpc('admin_sync_runs');
+  check('yönetici sistem durumunu (güncelleme kayıtları) görür', !runsErr && Array.isArray(runsAdm) && runsAdm.length > 0, runsErr?.message);
+  check('istatistiklerde grup ve başvuru sayıları', typeof stats?.groups === 'number' && typeof stats?.submissions === 'number');
   const { data: users, error: usersErr } = await user.rpc('admin_list_users', { p_search: 'e2e-' });
   const me = (users ?? []).find((u: { id: string }) => u.id === userId);
   check('yönetici üyeleri listeler (arama çalışır)', !usersErr && !!me && me.email === email && me.is_admin === true, usersErr?.message);
