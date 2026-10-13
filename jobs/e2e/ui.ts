@@ -115,6 +115,11 @@ try {
     await page.locator('article.event').first().waitFor({ timeout: 20_000 });
     const count = await page.locator('article.event').count();
     check('çağrı listesi yüklendi', count > 0, count);
+    if (kind === 'mobile') {
+      check('telefonda filtreler varsayılan katlı', !(await page.getByLabel('Her zaman').isVisible()));
+      await page.getByRole('button', { name: /Filtreler/ }).click();
+      check('telefonda "Filtreler" butonu filtreleri açar', await page.getByLabel('Her zaman').isVisible());
+    }
     if (kind === 'desktop') {
       // (mobilde mesajlar masaüstü testinde okunmuş olur)
       const badge = await page.locator('.nav .badge').textContent().catch(() => null);

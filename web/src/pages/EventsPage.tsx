@@ -56,6 +56,7 @@ export function EventsPage() {
   const [filters, setFilters] = useState<Filters>(() => loadStored('cfp.filters', EMPTY));
   const [view, setView] = useState<'list' | 'calendar'>(() => loadStored('cfp.view', { v: 'list' as 'list' | 'calendar' }).v);
   const [limit, setLimit] = useState(PAGE);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialog, setDialog] = useState<{ event: EventRow | null } | null>(null);
 
   useEffect(() => {
@@ -100,6 +101,10 @@ export function EventsPage() {
     <section>
       <div className="filters card">
         <input type="search" placeholder={t.search} value={filters.q} onChange={(e) => set('q', e.target.value)} className="grow" />
+        <button className="small filter-toggle" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
+          ⚙ {t.filters}{active > 0 && <span className="badge">{active}</span>}
+        </button>
+        <div className={`filter-more ${filtersOpen ? 'open' : ''}`}>
         <select value={filters.field} onChange={(e) => set('field', e.target.value as Filters['field'])} aria-label={t.allFields}>
           <option value="">{t.allFields}</option>
           <option value="cs">{t.fieldCs}</option>
@@ -136,6 +141,7 @@ export function EventsPage() {
         {active > 0 && (
           <button className="small ghost" onClick={() => setFilters({ ...EMPTY, sort: filters.sort })}>✕ {t.clearFilters}</button>
         )}
+        </div>
       </div>
 
       <div className="list-head">

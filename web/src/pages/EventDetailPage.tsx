@@ -51,11 +51,12 @@ export function EventDetailPage({ id }: { id: string }) {
   };
 
   // Tarih çizelgesi: sadece bilinen tarihler
-  const otherRounds = (e.deadlines ?? []).filter((r) => r.deadline !== e.submission_deadline);
+  const main = e.submission_deadline ? new Date(e.submission_deadline).getTime() : null;
+  const otherRounds = (e.deadlines ?? []).filter((r) => new Date(r.deadline).getTime() !== main);
   const timeline: [string, string, boolean?][] = [];
   if (e.submission_open) timeline.push([t.dateOpen, formatDate(e.submission_open, lang)]);
   else timeline.push([t.dateFirstSeen, formatDate(e.first_seen_at.slice(0, 10), lang)]);
-  if (e.abstract_deadline && e.abstract_deadline !== e.submission_deadline) timeline.push([t.abstract, formatDeadline(e.abstract_deadline, lang)]);
+  if (e.abstract_deadline && new Date(e.abstract_deadline).getTime() !== main) timeline.push([t.abstract, formatDeadline(e.abstract_deadline, lang)]);
   if (e.submission_deadline) timeline.push([t.deadline, formatDeadline(e.submission_deadline, lang), true]);
   for (const r of otherRounds) timeline.push([`${t.deadline}${r.comment ? ` (${r.comment})` : ''}`, formatDeadline(r.deadline, lang)]);
   if (e.notification_date) timeline.push([t.dateNotification, formatDate(e.notification_date, lang)]);
@@ -114,7 +115,7 @@ export function EventDetailPage({ id }: { id: string }) {
         </section>
 
         <section className="card">
-          <h3>{t.details}</h3>
+          <h3>{t.detailsHeading}</h3>
           <dl className="facts-dl">
             {e.topics.length > 0 && (
               <div>

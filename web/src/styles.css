@@ -364,3 +364,14 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .profile-form select { width: 100%; }
 .profile-form .span2 { grid-column: span 2; }
 @media (max-width: 640px) { .profile-form { grid-template-columns: 1fr; } .profile-form .span2 { grid-column: auto; } }
+
+/* --- telefonda katlanır filtreler --- */
+.filter-more { display: contents; }
+.filter-toggle { display: none; }
+@media (max-width: 640px) {
+  .filter-toggle { display: inline-flex; }
+  .filters input[type='search'] { flex: 1 1 0; }
+  .filter-more { display: none; width: 100%; }
+  .filter-more.open { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .filter-toggle .badge { margin-left: 0.3rem; }
+}
