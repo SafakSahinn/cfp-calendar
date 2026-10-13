@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { KindLegend, MonthCalendar } from '../components/MonthCalendar';
+import { MySubmissions } from '../components/Submissions';
 import { useApp } from '../lib/app';
 import { itemsForEvent, type ItemKind } from '../lib/calendarItems';
 import { useI18n } from '../lib/i18n';
@@ -14,6 +15,7 @@ export function MyCalendarPage() {
   const { followed, profile } = useApp();
   const [events, setEvents] = useState<EventRow[] | null>(null);
   const [kinds, setKinds] = useState<ItemKind[]>(ALL_KINDS);
+  const [tab, setTab] = useState<'calendar' | 'submissions'>(() => (window.location.hash.includes('basvurular') ? 'submissions' : 'calendar'));
 
   useEffect(() => {
     if (followed.size === 0) return setEvents([]);
@@ -29,6 +31,11 @@ export function MyCalendarPage() {
         <h2>{t.navMyCalendar}</h2>
         <p className="muted">{t.myCalendarText}</p>
       </div>
+      <div className="tabs admin-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'calendar'} className={tab === 'calendar' ? 'on' : ''} onClick={() => setTab('calendar')}>📅 {t.calendarTab}</button>
+        <button role="tab" aria-selected={tab === 'submissions'} className={tab === 'submissions' ? 'on' : ''} onClick={() => setTab('submissions')}>📄 {t.mySubmissions}</button>
+      </div>
+      {tab === 'submissions' ? <MySubmissions /> : <>
       <div className="row kind-toggles">
         {ALL_KINDS.map((k) => (
           <label key={k} className={`check kind-${k}`}>
@@ -50,6 +57,7 @@ export function MyCalendarPage() {
       {profile && !profile.calendar_provider && events && events.length > 0 && (
         <p className="muted small">{t.myCalendarConnectHint} <a href="#/profil">{t.navProfile} →</a></p>
       )}
+      </>}
     </section>
   );
 }

@@ -421,3 +421,21 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 }
 
 .inline-field.freq { max-width: 420px; margin: 0.4rem 0; }
+
+/* --- başvuru takibi --- */
+.submission .row h3 { margin: 0; }
+.share-groups { border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.share-groups legend { padding: 0 0.3rem; color: var(--muted); }
+.pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.5rem; }
+.pipe { display: flex; flex-direction: column; align-items: center; padding: 0.6rem; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.pipe strong { font-size: 1.4rem; }
+.pipe span { font-size: 0.78rem; color: var(--muted); }
+.sub-row { display: flex; flex-direction: column; gap: 0.2rem; color: var(--text); }
+.sub-row:hover { text-decoration: none; border-color: var(--accent); }
+.tag.st-planning { background: var(--surface-2); color: var(--muted); }
+.tag.st-submitted, .tag.st-under_review { background: var(--accent-soft); color: var(--accent); }
+.tag.st-revision { background: color-mix(in srgb, #d97706 16%, transparent); color: #b45309; }
+.tag.st-accepted { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.tag.st-rejected, .tag.st-withdrawn { background: var(--danger-soft); color: var(--danger); }
+.pipe.st-accepted strong { color: var(--ok); }
+.pipe.st-rejected strong { color: var(--danger); }

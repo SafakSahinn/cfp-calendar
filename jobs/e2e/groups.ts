@@ -143,6 +143,33 @@ try {
   check('geçersiz grup parametresi → 404', icsBad.status === 404, icsBad.status);
 
   // -------------------------------------------------------------------------
+  section('Başvuru takibi ve danışman görünümü');
+  const { data: subIns, error: subErr } = await member.client.from('submissions')
+    .insert({ event_id: ev3, status: 'submitted', paper_title: 'Gizli Makale', notes: 'ÖZEL NOT', shared_group_ids: [gid] }).select().single();
+  check('üye başvuru kaydı oluşturur (gruba paylaşımlı)', !subErr && subIns?.submitted_at != null, subErr?.message);
+  const { data: outSubs } = await outsider.client.from('submissions').select('id');
+  check('başkası başvuruyu göremez', (outSubs ?? []).length === 0);
+  const { data: ownerSubsDirect } = await owner.client.from('submissions').select('id');
+  check('grup sahibi tabloyu doğrudan okuyamaz', (ownerSubsDirect ?? []).length === 0);
+  const { data: advisor, error: advErr } = await owner.client.rpc('group_submissions', { p_group: gid });
+  check('danışman (grup sahibi) paylaşılan başvuruyu görür', !advErr && advisor?.length === 1 && advisor[0].paper_title === 'Gizli Makale' && advisor[0].status === 'submitted', advErr?.message ?? advisor);
+  check('danışman görünümünde kişisel NOT YOK', !JSON.stringify(advisor).includes('ÖZEL NOT') && !Object.keys(advisor?.[0] ?? {}).includes('notes'));
+  const { error: memberAdv } = await member.client.rpc('group_submissions', { p_group: gid });
+  check('üye (sahip değil) danışman görünümünü açamaz', !!memberAdv);
+  const { data: otherGid } = await outsider.client.rpc('create_group', { p_name: 'Başka Grup' });
+  const { error: foreignShare } = await member.client.from('submissions').update({ shared_group_ids: [gid, otherGid] }).eq('id', subIns!.id);
+  check('üyesi olmadığı grupla paylaşamaz', !!foreignShare && /not_a_member/.test(foreignShare.message), foreignShare?.message);
+  const { data: advOther } = await outsider.client.rpc('group_submissions', { p_group: otherGid });
+  check('başka grubun sahibi bu başvuruyu görmez', (advOther ?? []).length === 0);
+  await member.client.from('submissions').insert({ event_id: ev2, status: 'planning', paper_title: 'Paylaşılmayan' });
+  const { data: advisor2 } = await owner.client.rpc('group_submissions', { p_group: gid });
+  check('paylaşılmayan başvuru danışmana görünmez', advisor2?.length === 1, advisor2?.length);
+  await member.client.from('submissions').update({ status: 'accepted' }).eq('id', subIns!.id);
+  const { data: accepted } = await member.client.from('submissions').select('decision_at').eq('id', subIns!.id).single();
+  check('kabul edilince karar tarihi otomatik dolar', !!accepted?.decision_at);
+  await db.from('groups').delete().eq('id', otherGid);
+
+  // -------------------------------------------------------------------------
   section('Üyelik yönetimi');
   const { error: memberKick } = await member.client.rpc('remove_group_member', { p_group: gid, p_user: owner.id });
   check('üye sahibi çıkaramaz', !!memberKick);
@@ -158,6 +185,10 @@ try {
   check('çıkarılan üye ortak takvimi artık göremez', (afterKick ?? []).length === 0);
   const icsAfter = await fetch(`${URL}/functions/v1/ics?token=${memberProfile!.ics_token}&group=${gid}`);
   check('çıkarılan üyenin takvim aboneliği kapanır', icsAfter.status === 404, icsAfter.status);
+  const { data: subAfter } = await member.client.from('submissions').select('shared_group_ids').eq('event_id', ev3).single();
+  check('çıkarılan üyenin başvuru paylaşımı gruptan otomatik kalkar', subAfter?.shared_group_ids.length === 0, subAfter);
+  const { data: advAfter } = await owner.client.rpc('group_submissions', { p_group: gid });
+  check('danışman çıkarılan üyenin başvurusunu artık görmez', (advAfter ?? []).length === 0);
 
   // -------------------------------------------------------------------------
   section('Duyurular');
@@ -194,7 +225,6 @@ try {
   check('sahip grubu siler, üyelik ve takvim de gider', !delErr && leftMembers === 0 && leftEvents === 0, delErr?.message);
   const { data: stillFollowed } = await member.client.from('interests').select('event_id').eq('event_id', ev1);
   check('grup silinince üyenin kendi takip listesi korunur', (stillFollowed ?? []).length === 1);
-  void ev3;
 } catch (e) {
   failures++;
   console.error('\n✖ Beklenmeyen hata:', e);

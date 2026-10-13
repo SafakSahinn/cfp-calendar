@@ -3,6 +3,7 @@ import { TOPIC_BY_ID } from '../../../shared/topics';
 import { KindTag } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { RecommendDialog } from '../components/RecommendDialog';
+import { SubmissionCard } from '../components/Submissions';
 import { useApp } from '../lib/app';
 import { eventHref, useEvent } from '../lib/events';
 import { formatDate, formatDeadline, formatRange, timeLeft } from '../lib/format';
@@ -102,6 +103,8 @@ export function EventDetailPage({ id }: { id: string }) {
           <button className="ghost" onClick={() => setReport(true)}>⚑ {t.report}</button>
         </div>
       </div>
+
+      <SubmissionCard event={e} />
 
       <div className="detail-grid">
         <section className="card">

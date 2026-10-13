@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { KindLegend, MonthCalendar } from '../components/MonthCalendar';
+import { GroupSubmissions } from '../components/Submissions';
 import { useApp } from '../lib/app';
 import { itemsForEvent } from '../lib/calendarItems';
 import { eventHref } from '../lib/events';
@@ -145,7 +146,7 @@ export function GroupPage({ id }: { id: string }) {
   const { t, lang } = useI18n();
   const { session, profile, showToast } = useApp();
   const { groups, reload } = useMyGroups();
-  const [tab, setTab] = useState<'calendar' | 'events' | 'members' | 'settings'>('calendar');
+  const [tab, setTab] = useState<'calendar' | 'events' | 'members' | 'submissions' | 'settings'>('calendar');
   const [rows, setRows] = useState<GroupEventRow[] | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const g: MyGroup | undefined = groups?.find((x) => x.id === id);
@@ -188,7 +189,7 @@ export function GroupPage({ id }: { id: string }) {
       </div>
 
       <div className="tabs admin-tabs" role="tablist">
-        {([['calendar', t.groupCalendar], ['events', t.groupEvents], ['members', t.members], ['settings', isOwner ? t.settings : t.groupInfo]] as const).map(([k, label]) => (
+        {([['calendar', t.groupCalendar], ['events', t.groupEvents], ['members', t.members], ...(isOwner ? [['submissions', t.submissionsTab]] : []), ['settings', isOwner ? t.settings : t.groupInfo]] as [typeof tab, string][]).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{label}</button>
         ))}
       </div>
@@ -221,6 +222,8 @@ export function GroupPage({ id }: { id: string }) {
           ))}
         </div>
       )}
+
+      {tab === 'submissions' && isOwner && <GroupSubmissions groupId={id} />}
 
       {tab === 'members' && <Members group={g} members={members} reload={() => { load(); reload(); }} />}
 
