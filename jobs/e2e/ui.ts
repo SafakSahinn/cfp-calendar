@@ -237,6 +237,7 @@ try {
         check('detay: seri kartında önceki yılların son tarihleri', (await page.locator('.series .timeline > div').count()) >= 1);
         await page.locator('.series').getByRole('button', { name: /Seriyi takip et/ }).click();
         await page.locator('.series').getByRole('button', { name: /Seri takipte/ }).waitFor({ timeout: 5_000 });
+        await page.getByText(/serisi takipte: yeni/).first().waitFor({ timeout: 10_000 }); // kayıt yazılınca çıkan bildirim
         const { data: sf } = await db.from('series_follows').select('series_key').eq('user_id', userId);
         check('seri takibi veritabanına yazıldı', sf?.[0]?.series_key === withPast[0].series_key, sf);
         await shot(page, `${kind}-03d-series`, true);
@@ -295,6 +296,7 @@ try {
     if (kind === 'desktop') {
       await page.locator('.tr-row', { hasText: 'UBMK' }).getByRole('button', { name: /Seriyi takip et/ }).click();
       await page.locator('.tr-row', { hasText: 'UBMK' }).getByRole('button', { name: /Seri takipte/ }).waitFor({ timeout: 5_000 });
+      await page.getByText(/serisi takipte: yeni/).first().waitFor({ timeout: 10_000 }); // kayıt yazılınca çıkan bildirim
       const { data: trf } = await db.from('series_follows').select('series_key').eq('user_id', userId).eq('series_key', 'UBMK');
       check('Türkiye serisi takip edilir (UBMK)', trf?.length === 1);
       await shot(page, `${kind}-03g-turkey-series`, false);
