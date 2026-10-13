@@ -9,6 +9,7 @@ Site kendi kendine çalışır; aşağıdakiler dönemsel olarak elle yapılmas�
 | TÜBİTAK yeni yılın 2224 takvimini açıklayınca (genelde Ocak) | Dönem tarihlerini güncelle | `shared/tubitak.ts` → `KNOWN_PERIODS` |
 | Her yıl Haziran sonrası (yeni SJR listesi) | Dergi çeyreklerini yenile | scimagojr.com → *Journal Rankings* → **Download data** (tarayıcıyla; otomatik indirme Cloudflare'e takılır) → `cd jobs && npm run build-sjr -- "<csv yolu>"` → `jobs/data/sjr.json` commit |
 | CORE yeni liste yayımlayınca | Canlı liste otomatik çekilir; sitesi erişilemezse `jobs/data/core-icore2026.csv` yedeği kullanılır | Yeni yedek için CSV'yi `jobs/data/` altına koy, `jobs/src/core.ts` içindeki dosya adını güncelle |
+| Panel "Türkiye konferansları: … kontrol edilmeli" dediğinde | Serinin yeni yıl çağrısını ekle | Yönetim paneli → **Etkinlik ekle**, aynı kısaltmayla (ör. `SIU 2027`) — seriye otomatik bağlanır, takip edenlere mesaj gider. Ya da `shared/turkiye.ts` → ilgili serinin `editions` listesi. Yeni seri eklemek için de aynı dosya. |
 | Bir kaynak "0 çağrı" uyarısı verirse | Sayfa yapısı değişmiş olabilir | Actions günlüğünde `UYARI` satırına bak, `jobs/src/sources/` altındaki ayrıştırıcıyı güncelle |
 
 ## Elle çalıştırma

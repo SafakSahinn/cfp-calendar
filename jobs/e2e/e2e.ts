@@ -308,8 +308,9 @@ try {
     event_start: '2027-06-01', event_end: '2027-06-03', topics: ['vlsi'], fields: ['ee'], is_ieee: true,
   } });
   check('yönetici etkinlik ekler', !saveErr && typeof newEventId === 'string', saveErr?.message);
-  const { data: manual } = await user.from('events').select('source, dedupe_key, title, topics, abstract_deadline').eq('id', newEventId).single();
+  const { data: manual } = await user.from('events').select('source, dedupe_key, title, topics, abstract_deadline, series_key').eq('id', newEventId).single();
   check('elle eklenen etkinlik: source=manual, MANUAL- anahtarı', manual?.source === 'manual' && manual.dedupe_key.startsWith('MANUAL-'), manual);
+  check('elle eklenen konferans seriye bağlanır ("E2ETK 2027" → E2ETK)', manual?.series_key === 'E2ETK', manual?.series_key);
   const { error: badUrl } = await user.rpc('admin_save_event', { p: { title: 'Kötü bağlantı', url: 'javascript:alert(1)', submission_deadline: '2027-03-01T00:00:00Z', fields: [], topics: [] } });
   check('geçersiz (javascript:) bağlantı reddedilir', !!badUrl, badUrl?.message);
   const { error: badFields } = await user.rpc('admin_save_event', { p: { title: 'Kötü alan', submission_deadline: '2027-03-01T00:00:00Z', fields: ['xx'], topics: [] } });

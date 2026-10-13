@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TOPICS } from '../../../shared/topics';
 import { CalendarView } from '../components/CalendarView';
+import { TurkeySeries } from '../components/TurkeySeries';
 import { lazy, Suspense } from 'react';
 
 const MapView = lazy(() => import('../components/MapView'));
@@ -153,6 +154,8 @@ export function EventsPage() {
         )}
         </div>
       </div>
+
+      {filters.turkey && events && <TurkeySeries events={events} />}
 
       <div className="list-head">
         <p className="muted small">{events ? `${visible.length} ${t.results}` : t.loading}</p>

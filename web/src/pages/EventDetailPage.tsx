@@ -137,7 +137,7 @@ export function EventDetailPage({ id }: { id: string }) {
             <div>
               <dt>{t.sourceLabel}</dt>
               <dd>
-                {e.source === 'manual' ? t.sourceManual : e.source === 'ccf' ? 'ccf-deadlines' : e.source === 'comsoc' ? 'IEEE ComSoc' : e.source === 'ieee' ? 'IEEE' : 'WikiCFP'}
+                {e.source === 'manual' ? t.sourceManual : e.source === 'ccf' ? 'ccf-deadlines' : e.source === 'comsoc' ? 'IEEE ComSoc' : e.source === 'ieee' ? 'IEEE' : e.source === 'turkiye' ? t.sourceCurated : 'WikiCFP'}
                 {e.source_url && e.source_url !== e.url && <> · <a href={e.source_url} target="_blank" rel="noreferrer noopener">{t.sourceRecord} ↗</a></>}
               </dd>
             </div>

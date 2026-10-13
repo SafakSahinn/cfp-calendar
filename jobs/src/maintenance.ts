@@ -1,17 +1,19 @@
 // Yıllık/dönemsel bakım hatırlatmaları (saf fonksiyon). Yönetici raporu e-postası ve yönetim paneli gösterir.
 
 import type { Period } from '../../shared/tubitak.ts';
+import type { TrSeries } from '../../shared/turkiye.ts';
 
 export type Level = 'ok' | 'warn' | 'todo';
 
 export interface MaintenanceItem {
-  key: 'sjr' | 'tubitak' | 'core';
+  key: 'sjr' | 'tubitak' | 'core' | 'turkiye';
   level: Level;
   title: string;
   detail: string;
 }
 
 const DAY = 86_400_000;
+const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const trDate = (iso: string) => new Date(iso).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'long', year: 'numeric' });
 
 export function computeMaintenance(opts: {
@@ -19,6 +21,7 @@ export function computeMaintenance(opts: {
   sjr: { year: string; count: number } | null;
   knownPeriods: Period[];
   coreSource: 'live' | 'snapshot' | null;
+  trSeries?: TrSeries[];
 }): MaintenanceItem[] {
   const items: MaintenanceItem[] = [];
   const now = new Date(opts.now);
@@ -54,6 +57,24 @@ export function computeMaintenance(opts: {
     items.push({ key: 'core', level: 'warn', title: 'CORE sıralaması canlı alınamadı', detail: 'Depodaki ICORE2026 kopyası kullanıldı. Tekrarlarsa portal.core.edu.au erişimini kontrol edin.' });
   } else if (opts.coreSource === 'live') {
     items.push({ key: 'core', level: 'ok', title: 'CORE sıralaması canlı alındı', detail: 'Konferans dereceleri güncel.' });
+  }
+
+  // Türkiye serileri: gelecek edisyonu listede olmayan ve beklenen son başvuru ayına 4 aydan az kalan seriler
+  if (opts.trSeries) {
+    const today = now.toISOString().slice(0, 10);
+    const due: string[] = [];
+    for (const s of opts.trSeries) {
+      if (s.editions.some((e) => e.eventStart >= today)) continue;
+      const last = [...s.editions].sort((a, b) => b.year - a.year)[0];
+      let year = last ? last.year + 1 : now.getUTCFullYear();
+      // Kayıt yoksa bir sonraki beklenen son başvuru ayı
+      if (!last && Date.UTC(year, s.deadlineMonth, 0) < opts.now) year++;
+      const expected = Date.UTC(year, s.deadlineMonth - 1, 1);
+      if (expected - opts.now < 120 * DAY) due.push(`${s.acronym} ${year} (son başvuru genelde ${MONTHS_TR[s.deadlineMonth - 1]})`);
+    }
+    items.push(due.length
+      ? { key: 'turkiye', level: 'todo', title: `Türkiye konferansları: ${due.length} serinin yeni tarihleri kontrol edilmeli`, detail: `${due.join(', ')}. Resmi sitede çağrı yayımlandıysa yönetim panelinden “Etkinlik ekle” ile aynı kısaltmayla ekleyin veya tarihleri Claude’a iletin.` }
+      : { key: 'turkiye', level: 'ok', title: 'Türkiye konferans serileri güncel', detail: `${opts.trSeries.length} seri izleniyor; yaklaşan beklenen çağrı yok.` });
   }
 
   void now;

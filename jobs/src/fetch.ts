@@ -4,6 +4,7 @@ import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
 import { fetchIeeeJournals } from './sources/ieeejournals.ts';
+import { fetchTurkiye } from './sources/turkiye.ts';
 import { enrichWikiLinks, fetchWikiCfp, isWikiUrl } from './sources/wikicfp.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { buildIndex, loadCore, matchCore } from './core.ts';
@@ -16,8 +17,8 @@ import type { NormalizedEvent } from './types.ts';
 const COMPARE_KEYS = ['title', 'url', 'location', 'submission_deadline', 'abstract_deadline', 'event_start', 'event_end'] as const;
 
 export async function runFetch(log: (msg: string) => void = console.log): Promise<void> {
-  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log), fetchComsoc(log), fetchIeeeJournals(log)]);
-  const names = ['ccf-deadlines', 'WikiCFP', 'IEEE ComSoc', 'IEEE dergileri'];
+  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log), fetchComsoc(log), fetchIeeeJournals(log), Promise.resolve(fetchTurkiye())]);
+  const names = ['ccf-deadlines', 'WikiCFP', 'IEEE ComSoc', 'IEEE dergileri', 'Türkiye serileri'];
   const all: NormalizedEvent[] = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {

@@ -290,6 +290,15 @@ try {
     await page.getByLabel(/Türkiye'de/).check();
     const inTr = +(await page.locator('.list-head p').textContent().catch(() => '0') ?? '0').split(' ')[0];
     check('"Türkiye\'de" filtresi listeyi daraltır', inTr < total, { total, inTr });
+    await page.locator('.tr-series').waitFor({ timeout: 5_000 });
+    check('Türkiye filtresi: konferans serileri kartı (SIU, UBMK, ELECO…)', (await page.locator('.tr-series .tr-row').count()) >= 7 && await page.locator('.tr-series').getByText('SIU', { exact: true }).isVisible());
+    if (kind === 'desktop') {
+      await page.locator('.tr-row', { hasText: 'UBMK' }).getByRole('button', { name: /Seriyi takip et/ }).click();
+      await page.locator('.tr-row', { hasText: 'UBMK' }).getByRole('button', { name: /Seri takipte/ }).waitFor({ timeout: 5_000 });
+      const { data: trf } = await db.from('series_follows').select('series_key').eq('user_id', userId).eq('series_key', 'UBMK');
+      check('Türkiye serisi takip edilir (UBMK)', trf?.length === 1);
+      await shot(page, `${kind}-03g-turkey-series`, false);
+    }
     await page.getByLabel(/Türkiye'de/).uncheck();
 
     // Filtre: sadece takip ettiklerim

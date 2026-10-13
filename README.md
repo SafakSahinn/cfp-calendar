@@ -32,6 +32,10 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - Çağrı sayfasında serinin **önceki yıllarının son tarihlerini** görün. Gelecek yıl hangi ay hazırlanmanız gerektiğini kestirebilirsiniz.
 - **Seriyi takip et** derseniz (ör. ICASSP) gelecek yılın çağrısı yayımlanır yayımlanmaz otomatik takibe alınır.
 
+### 🇹🇷 Türkiye'deki konferanslar
+- Filtrelerde **Türkiye'de** seçince SIU, UBMK, ASYU, ELECO, TIPTEKNO, ISMSIT, IDAP, ICHORA gibi Türkiye'de düzenlenen konferans serileri ayrıca listelenir: geçen yılın tarihleri ve yeni çağrının genelde hangi ay çıktığı.
+- Çağrısı henüz yayımlanmamış bir seriyi takip edin; yayımlanınca haber verilir.
+
 ### 💰 TÜBİTAK desteğini kaçırmayın
 - Her konferans için **2224-A** (yurt dışı) veya **2224-B** (yurt içi) katılım desteğine hangi dönemde başvurmanız gerektiği gösterilir.
 

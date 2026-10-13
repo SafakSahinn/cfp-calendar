@@ -7,6 +7,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { KNOWN_PERIODS } from '../../shared/tubitak.ts';
+import { TR_SERIES } from '../../shared/turkiye.ts';
 import { adminReport } from './adminReport.ts';
 import { computeMaintenance, type MaintenanceItem } from './maintenance.ts';
 import { db } from './db.ts';
@@ -51,6 +52,7 @@ try {
     sjr: sjr ? { year: sjr.year, count: sjr.journals.length } : null,
     knownPeriods: KNOWN_PERIODS,
     coreSource: (runStats.core_source as 'live' | 'snapshot' | undefined) ?? null,
+    trSeries: TR_SERIES,
   });
   // CORE bilgisi sadece veri çekilen çalışmalarda vardır; yoksa önceki değeri koru
   const { data: prev } = await db.from('app_state').select('value').eq('key', 'maintenance').maybeSingle();
