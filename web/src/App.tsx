@@ -15,8 +15,7 @@ import { ProfilePage } from './pages/ProfilePage';
 
 type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail';
 
-function routeFromHash(): Route {
-  const h = window.location.hash;
+function routeFromHash(h: string): Route {
   if (h.startsWith('#/mesajlar')) return 'inbox';
   if (h.startsWith('#/profil')) return 'profile';
   if (h.startsWith('#/gizlilik')) return 'privacy';
@@ -29,11 +28,13 @@ function routeFromHash(): Route {
 export function App() {
   const { t, lang, setLang } = useI18n();
   const { session, ready, profile, unread, toast, signOut, updateProfile, recovery, isAdmin } = useApp();
-  const [route, setRoute] = useState<Route>(routeFromHash);
+  // Adresin tamamı izlenir: aynı sayfa türünde farklı içerik (detay → detay) de yeniden çizilsin
+  const [hash, setHash] = useState(() => window.location.hash);
+  const route = routeFromHash(hash);
 
   useEffect(() => {
     const onHash = () => {
-      setRoute(routeFromHash());
+      setHash(window.location.hash);
       window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', onHash);
@@ -100,7 +101,7 @@ export function App() {
         ) : route === 'admin' ? (
           <AdminPage />
         ) : route === 'detail' ? (
-          <EventDetailPage id={window.location.hash.slice('#/etkinlik/'.length)} />
+          <EventDetailPage key={hash} id={hash.slice('#/etkinlik/'.length)} />
         ) : (
           <EventsPage />
         )}

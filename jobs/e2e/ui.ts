@@ -201,7 +201,8 @@ try {
     }
     const detailUrl = page.url();
     await page.goto(`${SITE}#/etkinlik/00000000-0000-0000-0000-000000000000`);
-    check('detay: olmayan etkinlik → bulunamadı mesajı', await page.getByText('Bu çağrı bulunamadı').isVisible({ timeout: 10_000 }).catch(() => false) || (await page.getByText('Bu çağrı bulunamadı').count()) > 0);
+    const notFound = await page.getByText('Bu çağrı bulunamadı').waitFor({ timeout: 10_000 }).then(() => true).catch(() => false);
+    check('detay: başka bir detay bağlantısına geçince sayfa güncellenir (olmayan etkinlik → bulunamadı)', notFound);
     await page.goto(`${SITE}#/`);
     await page.locator('article.event').first().waitFor();
 
