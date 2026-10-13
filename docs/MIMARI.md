@@ -6,25 +6,72 @@ CFP Calendar'ın nasıl çalıştığı, klasör yapısı, testler ve bilinen s�
 
 ```mermaid
 flowchart LR
-  subgraph GitHub
-    P[GitHub Pages<br/>React arayüz]
-    A[GitHub Actions<br/>12 saatte bir]
+  U(["👤 Kullanıcı<br/>tarayıcı / telefon"])
+
+  subgraph SRC["📥 Veri kaynakları"]
+    S1["ccf-deadlines"]
+    S2["WikiCFP"]
+    S3["IEEE ComSoc · Computer Society<br/>Sensors · JBHI"]
+    S4["CORE · SCImago SJR"]
   end
-  subgraph Supabase
-    AUTH[Auth]
-    DB[(Postgres + RLS)]
-    F[Edge Functions]
+
+  subgraph GH["GitHub"]
+    P["🌐 GitHub Pages<br/>React arayüz"]
+    A["⚙️ GitHub Actions<br/>12 saatte bir"]
   end
-  S[ccf-deadlines · WikiCFP<br/>IEEE ComSoc · IEEE CS<br/>IEEE Sensors · IEEE JBHI] --> A
-  R[CORE · SJR] --> A
-  A -->|etkinlikler, bildirimler,<br/>seriler, konumlar| DB
-  A -->|konum çözümleme| OSM[OpenStreetMap<br/>Nominatim]
-  A -->|takvime ekle / güncelle| G[Google Calendar]
-  A -->|özet + yönetici raporu| SMTP[Gmail SMTP]
-  P --> AUTH
-  P -->|okuma, RPC| DB
-  P -->|İlgileniyorum, takvim, ICS| F
+
+  subgraph SB["Supabase (Frankfurt)"]
+    AUTH["🔐 Auth"]
+    DB[("🗄️ Postgres + RLS")]
+    F["⚡ Edge Functions"]
+  end
+
+  subgraph EXT["Dış servisler"]
+    G["📅 Google Calendar"]
+    OSM["🗺️ OpenStreetMap"]
+    M["✉️ Gmail SMTP"]
+  end
+
+  S1 & S2 & S3 & S4 --> A
+  A -- "çağrılar, bildirimler,<br/>seriler, koordinatlar" --> DB
+  A -- "konum çözümleme" --> OSM
+  A -- "takvime ekle / güncelle" --> G
+  A -- "haftalık özet,<br/>yönetici raporu" --> M
+  U --> P
+  P -- "giriş" --> AUTH
+  P -- "okuma, RPC" --> DB
+  P -- "İlgileniyorum, takvim bağla, ICS" --> F
+  P -- "harita karoları" --> OSM
   F --> G
+  F --> DB
+```
+
+### Bir çağrıyı takip edince ne olur?
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor K as Kullanıcı
+  participant W as Site
+  participant DB as Veritabanı
+  participant J as 12 saatlik iş
+  participant G as Google Takvim
+
+  K->>W: ⭐ Takip et
+  W->>DB: interests kaydı
+  loop her 12 saatte
+    J->>DB: kaynaklardan güncel tarihleri yaz
+    J->>DB: başvurusu açılan takipli çağrılar?
+    alt başvuru açıldı
+      J->>DB: 📝 "Başvuru açıldı" mesajı
+      J->>G: başvuru başlangıcı, özet, son başvuru kayıtları
+    else son tarih değişti
+      J->>DB: 🔄 "Son tarih değişti" mesajı
+      J->>G: kayıtları güncelle
+    end
+  end
+  K->>W: Mesajlar → İlgileniyorum
+  W->>G: konferans günlerini ekle (Edge Function)
 ```
 
 GitHub Pages yalnızca statik dosya sunduğu için üyelik, veritabanı ve gizli anahtarlar Supabase'te tutulur. Tüm yetki kontrolleri veritabanında (Row Level Security + `SECURITY DEFINER` fonksiyonlar) yapılır; takvim erişim anahtarları AES-256-GCM ile şifrelenir. Proje tamamen ücretsiz katmanlarda çalışır.
