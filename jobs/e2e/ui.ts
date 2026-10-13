@@ -230,6 +230,10 @@ try {
 
     // Türkiye filtresi
     await openFilters(page);
+    await page.getByLabel(/Sadece Q1–Q2 dergiler/).check();
+    const q12 = +((await page.locator('.list-head p').textContent()) ?? '0').split(' ')[0];
+    check('"Sadece Q1–Q2 dergiler" filtresi SJR etiketli dergileri gösterir', q12 > 0 && q12 < 200 && (await page.locator('.tag.rank', { hasText: /SJR Q[12]/ }).count()) > 0, q12);
+    await page.getByLabel(/Sadece Q1–Q2 dergiler/).uncheck();
     const total = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
     await page.getByLabel(/Türkiye'de/).check();
     const inTr = +(await page.locator('.list-head p').textContent().catch(() => '0') ?? '0').split(' ')[0];

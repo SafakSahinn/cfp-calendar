@@ -60,31 +60,52 @@ export function parseSjrCsv(csv: string): SjrJournal[] {
   return out;
 }
 
-const STOP = new Set(['the', 'of', 'and', 'on', 'in', 'for', 'a', 'an', '&']);
+// Yalnızca anlamı değiştirmeyen kelimeler atılır; "in/of/on" KORUNUR ("Frontiers in Computer Science" ≠ "Frontiers of Computer Science").
+const STOP = new Set(['the', 'a', 'an']);
 
 export const normTitle = (s: string) =>
-  s.toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w)).join(' ');
+  s.toLowerCase().replace(/&/g, ' and ').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((w) => w && !STOP.has(w)).join(' ');
 
-export type SjrIndex = { byTitle: Map<string, SjrJournal>; titles: string[] };
+export type SjrIndex = Map<string, SjrJournal>;
 
 export function buildSjrIndex(journals: SjrJournal[]): SjrIndex {
-  const byTitle = new Map<string, SjrJournal>();
+  const idx: SjrIndex = new Map();
   for (const j of journals) {
+    // "Electronics (Switzerland)" → "electronics"; aynı adı taşıyan iki dergi varsa ad belirsizdir → hiç eşleştirilmez
     const k = normTitle(j.title);
-    if (k.split(' ').length >= 2 && !byTitle.has(k)) byTitle.set(k, j);
+    if (!k) continue;
+    idx.set(k, idx.has(k) ? { ...j, quartile: 'AMBIGUOUS' as never } : j);
   }
-  // Uzun başlıklar önce: "ieee transactions on industrial informatics", "ieee transactions on industrial electronics"dan önce eşleşmesin diye tam kelime sınırıyla arama
-  return { byTitle, titles: [...byTitle.keys()].sort((a, b) => b.length - a.length) };
+  return idx;
 }
 
-/** Etkinlik başlığı/kısaltması içinde geçen dergi adını bulur (ör. "IEEE Network: Special Issue on …"). */
+/** Özel sayı / bölüm ifadesi: dergi adından sonra gelirse ad içerme ile kabul edilir. */
+const SPECIAL = /^(special|si|call|issue|section|cfp|topical|themed|focus)\b/;
+
+/**
+ * Etkinlik metinlerinden dergiyi bulur. Kabul edilen durumlar (ünlü dergi adlarını içeren taklitleri dışarıda bırakır):
+ *  1) Metin (ör. "Dergi Adı: Özel sayı" içindeki ilk parça) dergi adına BİREBİR eşit.
+ *  2) Metin dergi adıyla BAŞLIYOR ve hemen ardından "Special Issue/Section…" geliyor.
+ */
 export function matchJournal(idx: SjrIndex, ...texts: (string | null | undefined)[]): SjrJournal | null {
+  const accept = (j: SjrJournal | undefined) => (j && (j.quartile as string) !== 'AMBIGUOUS' ? j : null);
   for (const text of texts) {
     if (!text) continue;
-    const t = ` ${normTitle(text)} `;
-    for (const k of idx.titles) {
-      // En az 3 anlamlı kelime (çok genel adlar — "electronics", "sensors" — yanlış eşleşmesin) veya tam eşitlik
-      if ((k.split(' ').length >= 3 && t.includes(` ${k} `)) || t.trim() === k) return idx.byTitle.get(k)!;
+    // "Başlık - Scopus, ERA Indexed" / "Başlık: Özel sayı" → ilk parça da aday
+    for (const part of [text, text.split(/\s[-–|]\s|:/)[0]]) {
+      const t = normTitle(part);
+      const exact = accept(idx.get(t));
+      if (exact) return exact;
+    }
+    const t = normTitle(text);
+    const words = t.split(' ');
+    for (let n = words.length - 1; n >= 2; n--) {
+      const head = words.slice(0, n).join(' ');
+      const rest = words.slice(n).join(' ');
+      if (SPECIAL.test(rest)) {
+        const j = accept(idx.get(head));
+        if (j) return j;
+      }
     }
   }
   return null;
