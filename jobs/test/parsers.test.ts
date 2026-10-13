@@ -81,7 +81,7 @@ test('takvim kaydı içeriği', () => {
   const e: EventRow = {
     id: 'e1', kind: 'conference', acronym: 'DAC', title: 'Design Automation Conference', url: 'https://dac.com',
     location: 'San Francisco', submission_open: null, first_seen_at: '2026-10-10T08:00:00Z',
-    submission_deadline: '2026-11-16T11:59:59.000Z', deadline_tz: 'AoE', event_start: '2027-06-20', event_end: '2027-06-24',
+    abstract_deadline: null, submission_deadline: '2026-11-16T11:59:59.000Z', deadline_tz: 'AoE', event_start: '2027-06-20', event_end: '2027-06-24',
   };
   const open = buildItem(e, 'submission_open', 'tr', 'https://x');
   assert.deepEqual(open.allDay, { start: '2026-10-10', endExclusive: '2026-10-11' });

@@ -2,7 +2,7 @@
 // GET /functions/v1/ics?token=<profiles.ics_token>
 // JWT doğrulaması kapalı deploy edilir (--no-verify-jwt); güvenlik tahmin edilemez token ile sağlanır.
 
-import { buildItem, EVENT_COLUMNS, isApplicable, type EntryType, type EventRow } from '../_shared/calendar.ts';
+import { buildItem, EVENT_COLUMNS, isApplicable, SUBMISSION_ENTRY_TYPES, type EntryType, type EventRow } from '../_shared/calendar.ts';
 import { adminClient, env } from '../_shared/http.ts';
 
 function esc(text: string): string {
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   for (const row of rows ?? []) {
     const e = (row as unknown as { events: EventRow }).events;
     if (!e) continue;
-    for (const type of ['submission_open', 'deadline', 'event_days'] as EntryType[]) {
+    for (const type of [...SUBMISSION_ENTRY_TYPES, 'event_days'] as EntryType[]) {
       if (!isApplicable(e, type)) continue;
       const item = buildItem(e, type, profile.locale, siteUrl);
       lines.push('BEGIN:VEVENT', `UID:${e.id}-${type}@cfp-calendar`, `DTSTAMP:${now}`);

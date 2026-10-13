@@ -2,7 +2,7 @@
 // site içi bildirim oluştur ve takvim bağlıysa kayıtları ekle/güncelle.
 
 import {
-  EVENT_COLUMNS, getAccessToken, openDateOf, syncEntry,
+  EVENT_COLUMNS, getAccessToken, openDateOf, SUBMISSION_ENTRY_TYPES, syncEntry,
   type EventRow, type Locale, type Provider,
 } from '../../supabase/functions/_shared/calendar.ts';
 import { calendarEnv, db, selectAll } from './db.ts';
@@ -126,7 +126,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
         try {
           const existing = entryTypes.get(ev.id) ?? new Set();
           // Başvuru kayıtları: açıkken eklenir; daha önce eklendiyse tarih değişikliğinde güncellenir.
-          for (const type of ['submission_open', 'deadline'] as const) {
+          for (const type of SUBMISSION_ENTRY_TYPES) {
             if (isOpen || existing.has(type)) {
               const r = await syncEntry(db, env, profile.id, ev, type, profile.locale, access);
               if (r === 'created' || r === 'updated') synced++;

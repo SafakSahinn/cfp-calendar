@@ -3,7 +3,7 @@
 //
 // POST { notification_id, response: "interested" | "not_interested" }
 
-import { EVENT_COLUMNS, syncEntry, type EntryType, type EventRow } from '../_shared/calendar.ts';
+import { EVENT_COLUMNS, SUBMISSION_ENTRY_TYPES, syncEntry, type EntryType, type EventRow } from '../_shared/calendar.ts';
 import { adminClient, calendarEnv, corsHeaders, json, requireUser } from '../_shared/http.ts';
 
 Deno.serve(async (req) => {
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
   const results: Record<string, string> = {};
   const types: EntryType[] = ['event_days'];
   if (event.submission_deadline && new Date(event.submission_deadline) > new Date()) {
-    types.unshift('submission_open', 'deadline');
+    types.unshift(...SUBMISSION_ENTRY_TYPES);
   }
   try {
     for (const type of types) {

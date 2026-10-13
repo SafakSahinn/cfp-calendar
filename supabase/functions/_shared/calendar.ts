@@ -5,7 +5,10 @@
 import { decrypt, encrypt } from './crypto.ts';
 
 export type Provider = 'google' | 'microsoft';
-export type EntryType = 'submission_open' | 'deadline' | 'event_days';
+export type EntryType = 'submission_open' | 'abstract' | 'deadline' | 'event_days';
+
+/** Başvuru açılınca eklenen kayıtlar (konferans günleri ayrıca, "İlgileniyorum" ile eklenir). */
+export const SUBMISSION_ENTRY_TYPES: EntryType[] = ['submission_open', 'abstract', 'deadline'];
 export type Locale = 'tr' | 'en';
 
 export interface CalendarEnv {
@@ -26,6 +29,7 @@ export interface EventRow {
   location: string | null;
   submission_open: string | null;
   first_seen_at: string;
+  abstract_deadline: string | null;
   submission_deadline: string | null;
   deadline_tz: string | null;
   event_start: string | null;
@@ -33,7 +37,7 @@ export interface EventRow {
 }
 
 export const EVENT_COLUMNS =
-  'id, kind, acronym, title, url, location, submission_open, first_seen_at, submission_deadline, deadline_tz, event_start, event_end';
+  'id, kind, acronym, title, url, location, submission_open, first_seen_at, abstract_deadline, submission_deadline, deadline_tz, event_start, event_end';
 
 // deno-lint-ignore no-explicit-any
 type Db = { from(table: string): any };
@@ -58,6 +62,11 @@ function addDays(date: string, days: number): string {
 /** Bu kayıt türü için etkinlikte yeterli tarih var mı? */
 export function isApplicable(e: EventRow, type: EntryType): boolean {
   if (type === 'deadline') return !!e.submission_deadline;
+  // Özet son tarihi ayrı bir tarihse (aynıysa son başvuru kaydı yeterli)
+  if (type === 'abstract') {
+    return !!e.abstract_deadline && !!e.submission_deadline &&
+      new Date(e.abstract_deadline).getTime() < new Date(e.submission_deadline).getTime();
+  }
   if (type === 'event_days') return !!e.event_start && e.kind !== 'journal';
   return !!e.submission_deadline; // başvuru açılışı sadece son tarihi olan çağrılar için anlamlı
 }
@@ -65,6 +74,7 @@ export function isApplicable(e: EventRow, type: EntryType): boolean {
 export function entryHash(e: EventRow, type: EntryType): string {
   if (type === 'submission_open') return `open:${openDateOf(e)}`;
   if (type === 'deadline') return `dl:${e.submission_deadline}`;
+  if (type === 'abstract') return `abs:${e.abstract_deadline}`;
   return `days:${e.event_start}:${e.event_end ?? e.event_start}`;
 }
 
@@ -82,8 +92,8 @@ interface CalItem {
 }
 
 const LABELS: Record<Locale, Record<EntryType, string>> = {
-  tr: { submission_open: '📝 Başvuru açıldı', deadline: '⏰ Son başvuru', event_days: '🎤' },
-  en: { submission_open: '📝 Submissions open', deadline: '⏰ Submission deadline', event_days: '🎤' },
+  tr: { submission_open: '📝 Başvuru açıldı', abstract: '✍️ Özet son tarihi', deadline: '⏰ Son başvuru', event_days: '🎤' },
+  en: { submission_open: '📝 Submissions open', abstract: '✍️ Abstract deadline', deadline: '⏰ Submission deadline', event_days: '🎤' },
 };
 
 function displayName(e: EventRow): string {
@@ -98,12 +108,15 @@ export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl:
     displayName(e),
     e.location ? `📍 ${e.location}` : '',
     e.url ? `🔗 ${e.url}` : '',
+    e.abstract_deadline && isApplicable(e, 'abstract')
+      ? `${LABELS[locale].abstract}: ${e.abstract_deadline.replace('T', ' ').slice(0, 16)} UTC${tz}`
+      : '',
     e.submission_deadline
       ? `${LABELS[locale].deadline}: ${e.submission_deadline.replace('T', ' ').slice(0, 16)} UTC${tz}`
       : '',
     '',
     locale === 'tr' ? `CFP Calendar tarafından eklendi — ${siteUrl}` : `Added by CFP Calendar — ${siteUrl}`,
-  ].filter((l, i) => l !== '' || i === 4);
+  ].filter((l, i) => l !== '' || i === 5);
 
   const base = { description: lines.join('\n'), location: e.location };
 
@@ -111,8 +124,8 @@ export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl:
     const d = openDateOf(e);
     return { ...base, summary: `${label}: ${name}`, allDay: { start: d, endExclusive: addDays(d, 1) }, reminders: [] };
   }
-  if (type === 'deadline') {
-    const end = new Date(e.submission_deadline!);
+  if (type === 'deadline' || type === 'abstract') {
+    const end = new Date((type === 'abstract' ? e.abstract_deadline : e.submission_deadline)!);
     const start = new Date(end.getTime() - 30 * 60_000);
     return {
       ...base,

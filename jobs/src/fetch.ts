@@ -4,7 +4,9 @@ import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
 import { fetchWikiCfp } from './sources/wikicfp.ts';
+import { buildIndex, loadCore, matchCore } from './core.ts';
 import { merge } from './merge.ts';
+import { qualityFlags } from './quality.ts';
 import type { NormalizedEvent } from './types.ts';
 
 const COMPARE_KEYS = ['title', 'url', 'location', 'submission_deadline', 'abstract_deadline', 'event_start', 'event_end'] as const;
@@ -24,6 +26,20 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
   if (all.length === 0) throw new Error('Hiçbir kaynaktan veri alınamadı');
 
   const merged = merge(all);
+
+  // CORE derecesi: derecesi olmayan konferanslara (kısaltma + başlık eşleşmesiyle)
+  const core = buildIndex(await loadCore(log));
+  let ranked = 0;
+  for (const e of merged) {
+    if (e.kind === 'journal' || e.ranks.core) continue;
+    const hit = matchCore(core, e.acronym, e.title);
+    if (hit) {
+      e.ranks = { ...e.ranks, core: hit.rank };
+      e.flags = qualityFlags(e); // dereceli konferans "dikkat" işareti almaz
+      ranked++;
+    }
+  }
+  log(`CORE: ${ranked} konferansa derece eşleşti`);
   log(`Birleştirme sonrası: ${merged.length} etkinlik`);
 
   const now = new Date().toISOString();

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { deleteAllEntries, revokeAccess, syncEntry, type CalendarEnv, type EventRow } from '../../supabase/functions/_shared/calendar.ts';
+import { buildItem, deleteAllEntries, isApplicable, revokeAccess, syncEntry, type CalendarEnv, type EventRow } from '../../supabase/functions/_shared/calendar.ts';
 import { decrypt, encrypt } from '../../supabase/functions/_shared/crypto.ts';
 import { FakeDb, mockFetch } from './fakes.ts';
 
@@ -17,7 +17,7 @@ const env: CalendarEnv = {
 const event: EventRow = {
   id: 'ev1', kind: 'conference', acronym: 'DAC', title: 'Design Automation Conference', url: 'https://dac.com',
   location: 'San Francisco', submission_open: null, first_seen_at: '2026-10-10T08:00:00Z',
-  submission_deadline: '2026-11-16T11:59:59.000Z', deadline_tz: 'AoE', event_start: '2027-06-20', event_end: '2027-06-24',
+  abstract_deadline: null, submission_deadline: '2026-11-16T11:59:59.000Z', deadline_tz: 'AoE', event_start: '2027-06-20', event_end: '2027-06-24',
 };
 
 const GOOGLE = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
@@ -188,4 +188,21 @@ test('hesap silme: Google izni geri çekilir', async () => {
   fetchMock = mockFetch([{ status: 200, json: {} }]);
   await revokeAccess(db, env, 'u1');
   assert.equal(fetchMock.calls[0].url, 'https://oauth2.googleapis.com/revoke?token=refresh-1');
+});
+
+test('özet son tarihi: ayrıysa ayrı kayıt, aynıysa eklenmez', async () => {
+  const withAbstract = { ...event, abstract_deadline: '2026-11-09T11:59:59.000Z' };
+  assert.equal(isApplicable(withAbstract, 'abstract'), true);
+  assert.equal(isApplicable({ ...event, abstract_deadline: event.submission_deadline }, 'abstract'), false);
+  assert.equal(isApplicable({ ...event, abstract_deadline: null }, 'abstract'), false);
+  const item = buildItem(withAbstract, 'abstract', 'tr', 'https://x');
+  assert.equal(item.summary, '✍️ Özet son tarihi: DAC');
+  assert.equal(item.timed?.endIso, '2026-11-09T11:59:59.000Z');
+  assert.deepEqual(item.reminders, [10080, 1440]);
+  assert.match(item.description, /Özet son tarihi: 2026-11-09 11:59 UTC/);
+
+  await connect('google');
+  fetchMock = mockFetch([{ json: { id: 'g-abs', status: 'confirmed' } }]);
+  assert.equal(await syncEntry(db, env, 'u1', withAbstract, 'abstract', 'tr'), 'created');
+  assert.equal(db.rows('calendar_entries')[0].synced_hash, 'abs:2026-11-09T11:59:59.000Z');
 });

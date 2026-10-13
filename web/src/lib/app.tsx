@@ -41,6 +41,8 @@ interface AppState {
   /** Supabase'te hangi giriş sağlayıcıları açık (kapalı olanların butonu gizlenir). */
   providers: Record<Provider, boolean>;
   deleteAccount: (deleteCalendarEntries: boolean) => Promise<boolean>;
+  /** null: henüz bilinmiyor. Sadece arayüz kolaylığı; asıl yetki kontrolü veritabanında. */
+  isAdmin: boolean | null;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -55,6 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [recovery, setRecovery] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<Record<Provider, boolean>>({ google: true, microsoft: false });
 
   useEffect(() => {
@@ -158,11 +161,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setFollowed(new Set());
       setTopics(new Set());
       setUnread(0);
+      setIsAdmin(null);
       return;
     }
     loadProfile();
     loadInterests();
     refreshUnread();
+    supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true));
 
     // Yeni bildirimler anlık gelsin
     const channel = supabase
@@ -316,7 +321,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         signIn, signOut, connectCalendar, disconnectCalendar, toggleFollow, toggleTopic,
         updateProfile, refreshUnread, addToCalendar,
         recovery, endRecovery: () => setRecovery(false),
-        providers, deleteAccount,
+        providers, deleteAccount, isAdmin,
       }}
     >
       {children}

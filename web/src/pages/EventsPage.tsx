@@ -8,6 +8,9 @@ import { supabase, type EventRow } from '../lib/supabase';
 
 const PAGE = 40;
 
+/** Türkiye'de düzenlenen etkinlikler: ülke adı veya büyük şehirler (kaynaklarda yer serbest metin). */
+const IN_TURKEY = /t[üu]rk[iı]ye|turkey|turkiye|[iİı]stanbul|ankara|[iİı]zmir|antalya|bursa|konya|eski[sş]ehir|trabzon|kayseri|samsun|adana|mersin|gaziantep|denizli|edirne|mu[gğ]la|bodrum|kapadokya|cappadocia|nev[sş]ehir|sakarya|kocaeli|erzurum|malatya|diyarbak[iı]r|[cç]anakkale/i;
+
 interface Filters {
   q: string;
   field: '' | 'cs' | 'ee';
@@ -17,9 +20,10 @@ interface Filters {
   ranked: boolean;
   followedOnly: boolean;
   showCaution: boolean;
+  turkey: boolean;
 }
 
-const EMPTY: Filters = { q: '', field: '', kind: '', topic: '', ieee: false, ranked: false, followedOnly: false, showCaution: false };
+const EMPTY: Filters = { q: '', field: '', kind: '', topic: '', ieee: false, ranked: false, followedOnly: false, showCaution: false, turkey: false };
 
 function loadFilters(): Filters {
   try {
@@ -76,6 +80,7 @@ export function EventsPage() {
       if (filters.ieee && !e.is_ieee) return false;
       if (filters.ranked && Object.keys(e.ranks).length === 0) return false;
       if (filters.followedOnly && !followed.has(e.id)) return false;
+      if (filters.turkey && !IN_TURKEY.test(e.location ?? '')) return false;
       // Takip edilenler, işaretli olsa da her zaman görünür
       if (!filters.showCaution && e.flags?.length > 0 && !followed.has(e.id)) return false;
       if (q && !`${e.acronym ?? ''} ${e.title} ${e.location ?? ''}`.toLocaleLowerCase(lang).includes(q)) return false;
@@ -115,6 +120,7 @@ export function EventsPage() {
         <label className="check"><input type="checkbox" checked={filters.ieee} onChange={(e) => set('ieee', e.target.checked)} /> {t.onlyIeee}</label>
         <label className="check"><input type="checkbox" checked={filters.ranked} onChange={(e) => set('ranked', e.target.checked)} /> {t.onlyRanked}</label>
         <label className="check"><input type="checkbox" checked={filters.followedOnly} onChange={(e) => set('followedOnly', e.target.checked)} /> {t.onlyFollowed}</label>
+        <label className="check"><input type="checkbox" checked={filters.turkey} onChange={(e) => set('turkey', e.target.checked)} /> 🇹🇷 {t.inTurkey}</label>
         <label className="check" title={t.cautionHelp}><input type="checkbox" checked={filters.showCaution} onChange={(e) => set('showCaution', e.target.checked)} /> {t.showCaution}</label>
       </div>
 

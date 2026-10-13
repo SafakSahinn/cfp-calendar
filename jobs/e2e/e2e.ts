@@ -196,6 +196,10 @@ try {
   check('üye başkası adına geri bildirim gönderemez', !!fbForeign);
   const { error: fbShort } = await user.from('feedback').insert({ user_id: userId, kind: 'other', message: 'x' });
   check('çok kısa mesaj reddedilir', !!fbShort);
+  const { error: fbStatus } = await user.from('feedback').insert({ user_id: userId, kind: 'other', message: 'durumu kendim belirleyeyim', status: 'done' });
+  check('üye geri bildirim durumunu kendisi belirleyemez', !!fbStatus, fbStatus?.message);
+  const { error: fbNotified } = await user.from('feedback').insert({ user_id: userId, kind: 'other', message: 'yöneticiden gizle', notified_at: new Date().toISOString() });
+  check('üye notified_at alanını yazamaz (yöneticiden gizleyemez)', !!fbNotified, fbNotified?.message);
   const { data: myFb } = await user.from('feedback').select('id, status');
   check('üye kendi geri bildirimini görür', (myFb ?? []).length === 1 && myFb![0].status === 'new', myFb);
   // Temizlik: test önerisi yöneticiye e-postayla gitmesin
@@ -222,6 +226,107 @@ try {
   const { data: n3 } = await user.from('notifications').select('event_id, events (flags)').eq('type', 'topic_match');
   check('konu bildirimleri işaretli (dikkat) etkinlik içermez',
     (n3 ?? []).every((n) => ((n as unknown as { events: { flags: string[] } | null }).events?.flags ?? []).length === 0));
+
+  // -------------------------------------------------------------------------
+  section('Yönetici yetkisi: yönetici OLMAYAN kullanıcı');
+  const { data: notAdmin } = await user.rpc('is_admin');
+  check('is_admin() → false', notAdmin === false, notAdmin);
+  const adminRpcs: [string, Record<string, unknown>][] = [
+    ['admin_stats', {}],
+    ['admin_list_users', { p_search: null }],
+    ['admin_list_feedback', { p_status: null }],
+    ['admin_update_feedback', { p_id: crypto.randomUUID(), p_status: 'done', p_note: null }],
+    ['admin_save_event', { p: { title: 'Saldırı', submission_deadline: '2030-01-01T00:00:00Z', fields: [], topics: [] } }],
+    ['admin_delete_event', { p_id: later.id }],
+    ['admin_list_audit', {}],
+  ];
+  for (const [fnName, args] of adminRpcs) {
+    const { data: d, error: e } = await user.rpc(fnName, args);
+    check(`üye ${fnName} çalıştıramaz`, !!e && d == null, e?.message ?? d);
+  }
+  for (const [fnName, args] of adminRpcs) {
+    const { error: e } = await anon.rpc(fnName, args);
+    check(`giriş yapmamış kişi ${fnName} çalıştıramaz`, !!e, e?.message);
+  }
+  for (const internal of ['admin_assert', 'admin_log']) {
+    const { error: e } = await user.rpc(internal, internal === 'admin_log' ? { p_action: 'x', p_target: null, p_detail: {} } : {});
+    check(`iç fonksiyon ${internal} dışarıdan çağrılamaz`, !!e, e?.message);
+  }
+  const { data: admRows } = await user.from('admins').select('*');
+  check('admins tablosu okunamaz', (admRows ?? []).length === 0);
+  const { error: selfPromote } = await user.from('admins').insert({ user_id: userId });
+  check('üye kendini yönetici yapamaz', !!selfPromote);
+  const { data: stillNot } = await user.rpc('is_admin');
+  check('kendini yükseltme denemesinden sonra hâlâ yönetici değil', stillNot === false);
+  const { data: auditRows } = await user.from('admin_audit').select('*');
+  check('işlem kaydı okunamaz', (auditRows ?? []).length === 0);
+  const { data: survived } = await db.from('events').select('id').eq('id', later.id);
+  check('yetkisiz silme denemesi etkinliği silmedi', (survived ?? []).length === 1);
+
+  // -------------------------------------------------------------------------
+  section('Geri bildirim gönderim sınırı');
+  const burst = Array.from({ length: 20 }, (_, i) => ({ user_id: userId, kind: 'other', message: `sınır testi ${i}` }));
+  const { error: burstErr } = await user.from('feedback').insert(burst);
+  check('günde 20 geri bildirim kabul edilir', !burstErr, burstErr?.message);
+  const { error: overErr } = await user.from('feedback').insert({ user_id: userId, kind: 'other', message: '21. bildirim' });
+  check('21. geri bildirim reddedilir', !!overErr && /rate_limit/.test(overErr.message), overErr?.message);
+  await db.from('feedback').delete().eq('user_id', userId);
+
+  // -------------------------------------------------------------------------
+  section('Yönetici yetkisi: yönetici kullanıcı');
+  await db.from('admins').insert({ user_id: userId }); // yalnızca service role atayabilir
+  const { data: isAdm } = await user.rpc('is_admin');
+  check('service role ile atanınca is_admin() → true', isAdm === true);
+  const { data: stats, error: statsErr } = await user.rpc('admin_stats');
+  check('yönetici istatistikleri görür', !statsErr && typeof stats?.users === 'number' && stats.users >= 1, statsErr?.message);
+  const { data: users, error: usersErr } = await user.rpc('admin_list_users', { p_search: 'e2e-' });
+  const me = (users ?? []).find((u: { id: string }) => u.id === userId);
+  check('yönetici üyeleri listeler (arama çalışır)', !usersErr && !!me && me.email === email && me.is_admin === true, usersErr?.message);
+  const allowedCols = ['id', 'email', 'display_name', 'providers', 'created_at', 'last_sign_in_at', 'email_confirmed',
+    'calendar_provider', 'email_notifications', 'followed', 'topics', 'is_admin'];
+  check('üye listesi gizli alan içermez (token, şifre vb.)', !!me && Object.keys(me).every((k) => allowedCols.includes(k)), me && Object.keys(me));
+  check('üye listesinde takip sayısı doğru', me?.followed >= 2, me?.followed);
+
+  const { data: newEventId, error: saveErr } = await user.rpc('admin_save_event', { p: {
+    title: 'E2E Test Kurultayı', acronym: 'E2ETK 2027', kind: 'conference', url: 'https://example.org/e2etk',
+    location: 'Ankara, Türkiye', submission_deadline: '2027-03-01T23:59:59-12:00', abstract_deadline: '2027-02-20T23:59:59-12:00',
+    event_start: '2027-06-01', event_end: '2027-06-03', topics: ['vlsi'], fields: ['ee'], is_ieee: true,
+  } });
+  check('yönetici etkinlik ekler', !saveErr && typeof newEventId === 'string', saveErr?.message);
+  const { data: manual } = await user.from('events').select('source, dedupe_key, title, topics, abstract_deadline').eq('id', newEventId).single();
+  check('elle eklenen etkinlik: source=manual, MANUAL- anahtarı', manual?.source === 'manual' && manual.dedupe_key.startsWith('MANUAL-'), manual);
+  const { error: badUrl } = await user.rpc('admin_save_event', { p: { title: 'Kötü bağlantı', url: 'javascript:alert(1)', submission_deadline: '2027-03-01T00:00:00Z', fields: [], topics: [] } });
+  check('geçersiz (javascript:) bağlantı reddedilir', !!badUrl, badUrl?.message);
+  const { error: badFields } = await user.rpc('admin_save_event', { p: { title: 'Kötü alan', submission_deadline: '2027-03-01T00:00:00Z', fields: ['xx'], topics: [] } });
+  check('geçersiz alan reddedilir', !!badFields);
+  const { error: noDeadline } = await user.rpc('admin_save_event', { p: { title: 'Tarihsiz', fields: [], topics: [] } });
+  check('son tarihsiz etkinlik reddedilir', !!noDeadline);
+  const { error: editForeign } = await user.rpc('admin_save_event', { p: { id: later.id, title: 'Kaynak etkinliğini ezme', submission_deadline: '2027-03-01T00:00:00Z', fields: [], topics: [] } });
+  check('yönetici kaynaktan gelen etkinliği düzenleyemez (sadece manual)', !!editForeign);
+  const { error: delForeign } = await user.rpc('admin_delete_event', { p_id: later.id });
+  check('yönetici kaynaktan gelen etkinliği silemez', !!delForeign);
+
+  const { data: fbId } = await user.from('feedback').insert({ user_id: userId, kind: 'wrong_info', event_id: later.id, message: 'E2E hata bildirimi' }).select('id').single();
+  const { data: fbList } = await user.rpc('admin_list_feedback', { p_status: 'new' });
+  const mine = (fbList ?? []).find((f: { id: string }) => f.id === fbId?.id);
+  check('yönetici geri bildirimi görür (gönderen + etkinlik)', mine?.user_email === email && mine?.event_id === later.id, mine);
+  const { error: updErr } = await user.rpc('admin_update_feedback', { p_id: fbId?.id, p_status: 'done', p_note: 'düzeltildi' });
+  const { data: fbAfter } = await db.from('feedback').select('status, admin_note, handled_by').eq('id', fbId?.id).single();
+  check('yönetici geri bildirimi "yapıldı" yapar', !updErr && fbAfter?.status === 'done' && fbAfter.handled_by === userId, updErr?.message ?? fbAfter);
+  const { error: badStatus } = await user.rpc('admin_update_feedback', { p_id: fbId?.id, p_status: 'hacked', p_note: null });
+  check('geçersiz durum reddedilir', !!badStatus);
+
+  const { error: delErr } = await user.rpc('admin_delete_event', { p_id: newEventId });
+  check('yönetici kendi eklediği etkinliği siler', !delErr, delErr?.message);
+  const { data: audit } = await user.rpc('admin_list_audit');
+  const actions = new Set((audit ?? []).filter((a: { admin_email: string }) => a.admin_email === email).map((a: { action: string }) => a.action));
+  check('tüm yönetici işlemleri kayda geçti', ['list_users', 'create_event', 'update_feedback', 'delete_event'].every((a) => actions.has(a)), [...actions]);
+  await db.from('feedback').delete().eq('user_id', userId);
+  await db.from('admins').delete().eq('user_id', userId);
+  const { data: demoted } = await user.rpc('is_admin');
+  check('yöneticilik kaldırılınca erişim anında kapanır', demoted === false);
+  const { error: afterDemote } = await user.rpc('admin_stats');
+  check('kaldırıldıktan sonra admin_stats reddedilir', !!afterDemote);
 
   // -------------------------------------------------------------------------
   section('Hesap silme');

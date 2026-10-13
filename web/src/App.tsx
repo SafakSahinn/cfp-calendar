@@ -5,13 +5,14 @@ import { NewPasswordForm } from './components/EmailAuth';
 import { Logo } from './components/Logo';
 import { REPO_URL, SITE_NAME } from './lib/site';
 import { LegalPage } from './pages/LegalPage';
+import { AdminPage } from './pages/AdminPage';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
 import { ProfilePage } from './pages/ProfilePage';
 
-type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms';
+type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin';
 
 function routeFromHash(): Route {
   const h = window.location.hash;
@@ -19,12 +20,13 @@ function routeFromHash(): Route {
   if (h.startsWith('#/profil')) return 'profile';
   if (h.startsWith('#/gizlilik')) return 'privacy';
   if (h.startsWith('#/kosullar')) return 'terms';
+  if (h.startsWith('#/yonetim')) return 'admin';
   return 'events';
 }
 
 export function App() {
   const { t, lang, setLang } = useI18n();
-  const { session, ready, profile, unread, toast, signOut, updateProfile, recovery } = useApp();
+  const { session, ready, profile, unread, toast, signOut, updateProfile, recovery, isAdmin } = useApp();
   const [route, setRoute] = useState<Route>(routeFromHash);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export function App() {
     ['events', '#/', t.navEvents],
     ['inbox', '#/mesajlar', t.navInbox],
     ['profile', '#/profil', t.navProfile],
+    ...(isAdmin ? ([['admin', '#/yonetim', t.navAdmin]] as [Route, string, string][]) : []),
   ];
 
   return (
@@ -92,6 +95,8 @@ export function App() {
           <InboxPage />
         ) : route === 'profile' ? (
           <ProfilePage />
+        ) : route === 'admin' ? (
+          <AdminPage />
         ) : (
           <EventsPage />
         )}

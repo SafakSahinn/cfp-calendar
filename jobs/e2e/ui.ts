@@ -150,6 +150,13 @@ try {
       await page.locator('dialog.dialog').getByRole('button', { name: 'Vazgeç' }).click();
     }
 
+    // Türkiye filtresi
+    const total = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
+    await page.getByLabel(/Türkiye'de/).check();
+    const inTr = +(await page.locator('.list-head p').textContent().catch(() => '0') ?? '0').split(' ')[0];
+    check('"Türkiye\'de" filtresi listeyi daraltır', inTr < total, { total, inTr });
+    await page.getByLabel(/Türkiye'de/).uncheck();
+
     // Filtre: sadece takip ettiklerim
     await page.getByLabel('Takip ettiklerim').check();
     const followedCount = await page.locator('article.event').count();
@@ -191,6 +198,46 @@ try {
       await page.waitForTimeout(1000);
       const { data: p } = await db.from('profiles').select('display_name').eq('id', userId).single();
       check('profil: ad güncellendi', p?.display_name === 'Deneme Kullanıcısı 2', p);
+    }
+
+    // Yönetici paneli (masaüstü): önce yönetici olmadan, sonra yönetici olarak
+    if (kind === 'desktop') {
+      check('yönetici olmayan için "Yönetim" menüsü yok', (await page.getByRole('link', { name: 'Yönetim' }).count()) === 0);
+      await page.goto(`${SITE}#/yonetim`);
+      await page.getByText('Bu sayfa yalnızca yöneticilere açıktır.').waitFor({ timeout: 10_000 });
+      check('yönetici olmayan panel yerine uyarı görür', true);
+
+      await db.from('admins').insert({ user_id: userId });
+      await page.goto(`${SITE}#/`);
+      await page.reload();
+      await page.getByRole('link', { name: 'Yönetim' }).click();
+      await page.locator('.stat-grid').waitFor({ timeout: 15_000 });
+      check('yönetici: özet kutuları', (await page.locator('.stat').count()) >= 6);
+      await shot(page, `${kind}-08-admin-overview`, false);
+
+      await page.getByRole('tab', { name: 'Üyeler' }).click();
+      await page.locator('table.table tbody tr').first().waitFor({ timeout: 10_000 });
+      check('yönetici: üye tablosunda test kullanıcısı', (await page.getByText(email).count()) > 0);
+      await shot(page, `${kind}-09-admin-users`, false);
+
+      await page.getByRole('tab', { name: 'Etkinlik ekle' }).click();
+      await page.getByPlaceholder(/Sinyal İşleme/).fill('UI Test Kurultayı');
+      await page.getByPlaceholder('SIU 2027').fill('UITK 2027');
+      await page.locator('input[type=date]').first().fill('2027-03-01');
+      await page.locator('.admin-form .chip', { hasText: 'VLSI / Devreler' }).click();
+      await page.getByRole('button', { name: 'Ekle' }).click();
+      await page.getByText('UITK 2027').waitFor({ timeout: 10_000 });
+      check('yönetici: etkinlik ekleme formu çalışır', true);
+      await shot(page, `${kind}-10-admin-events`, true);
+      page.once('dialog', (d) => d.accept());
+      await page.locator('.card.row', { hasText: 'UITK 2027' }).getByRole('button', { name: 'Sil' }).click();
+      await page.getByText('Silindi.').waitFor({ timeout: 10_000 });
+      check('yönetici: etkinlik silme çalışır', (await db.from('events').select('id').eq('title', 'UI Test Kurultayı')).data?.length === 0);
+
+      await page.getByRole('tab', { name: 'İşlem kaydı' }).click();
+      await page.getByText('Etkinlik ekledi').first().waitFor({ timeout: 10_000 });
+      check('yönetici: işlem kaydı görünür', true);
+      await db.from('admins').delete().eq('user_id', userId);
     }
 
     // Yasal sayfalar (oturumdan bağımsız)
