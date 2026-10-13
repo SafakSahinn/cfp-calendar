@@ -292,6 +292,7 @@ try {
       check('grup oluşturulunca grup sayfası açılır', page.url().includes('#/grup/'));
       const groupUrl = page.url();
       await page.getByRole('tab', { name: 'Ayarlar' }).click();
+      await page.waitForFunction(() => (document.querySelector('input.mono') as HTMLInputElement | null)?.value.includes('#/katil/'), null, { timeout: 10_000 }).catch(() => {});
       const invite = await page.locator('input.mono').first().inputValue();
       check('grup sahibi davet bağlantısını görür', /#\/katil\/[0-9a-f]{16}$/.test(invite), invite);
       check('grup takvimi abonelik adresi var', (await page.locator('input.mono').nth(1).inputValue()).includes('&group='));
