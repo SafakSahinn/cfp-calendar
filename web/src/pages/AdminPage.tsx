@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { fieldsOf, TOPICS } from '../../../shared/topics';
 import { useApp } from '../lib/app';
 import { formatDate, formatDeadline, timeAgo } from '../lib/format';
+import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
 type Tab = 'overview' | 'feedback' | 'users' | 'events' | 'audit';
@@ -20,7 +21,8 @@ interface FeedbackRow {
   event_id: string | null; event_acronym: string | null; event_title: string | null; event_url: string | null;
 }
 interface UserRow {
-  id: string; email: string; display_name: string | null; providers: string[]; created_at: string;
+  id: string; email: string; display_name: string | null; academic_title: string | null; institution: string | null;
+  department: string | null; providers: string[]; created_at: string;
   last_sign_in_at: string | null; email_confirmed: boolean; calendar_provider: string | null;
   email_notifications: boolean; followed: number; topics: number; is_admin: boolean;
 }
@@ -183,11 +185,12 @@ function Users() {
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const { data, error } = useRpc<UserRow[]>('admin_list_users', { p_search: query || null });
+  const { t } = useI18n();
 
   return (
     <div>
       <form className="row" onSubmit={(e) => { e.preventDefault(); setQuery(search.trim()); }}>
-        <input className="grow" type="search" placeholder="E-posta veya ad ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="grow" type="search" placeholder="E-posta, ad veya kurum ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <button type="submit" className="small">Ara</button>
         <span className="muted small">{data?.length ?? 0} üye</span>
       </form>
@@ -196,7 +199,7 @@ function Users() {
         <table className="table">
           <thead>
             <tr>
-              <th>Üye</th><th>Giriş yöntemi</th><th>Kayıt</th><th>Son giriş</th><th>Takvim</th><th>Takip</th><th>Konu</th><th>E-posta bild.</th>
+              <th>Üye</th><th>Unvan / kurum</th><th>Giriş yöntemi</th><th>Kayıt</th><th>Son giriş</th><th>Takvim</th><th>Takip</th><th>Konu</th><th>E-posta bild.</th>
             </tr>
           </thead>
           <tbody>
@@ -206,6 +209,10 @@ function Users() {
                   <strong>{u.display_name ?? '—'}</strong>
                   {u.is_admin && <span className="tag rank">yönetici</span>}
                   <div className="muted small">{u.email}{!u.email_confirmed && ' · onaysız'}</div>
+                </td>
+                <td>
+                  {u.academic_title ? t.titles[u.academic_title as keyof typeof t.titles] : '—'}
+                  {u.institution && <div className="muted small">{u.institution}{u.department && ` · ${u.department}`}</div>}
                 </td>
                 <td>{u.providers.map((p) => PROVIDER_LABEL[p] ?? p).join(', ')}</td>
                 <td>{formatDate(u.created_at.slice(0, 10), 'tr')}</td>

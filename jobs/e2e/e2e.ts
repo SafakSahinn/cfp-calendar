@@ -67,6 +67,13 @@ try {
 
   const { error: providerErr } = await user.from('profiles').update({ calendar_provider: 'google' }).eq('id', userId);
   check('üye calendar_provider alanını değiştiremez', !!providerErr, providerErr?.message);
+  const { error: profErr } = await user.from('profiles')
+    .update({ academic_title: 'assoc_prof', institution: 'Test Üniversitesi', department: 'Elektrik-Elektronik Müh.' }).eq('id', userId);
+  check('üye unvan / kurum / bölüm girebilir', !profErr, profErr?.message);
+  const { error: badTitle } = await user.from('profiles').update({ academic_title: 'kral' }).eq('id', userId);
+  check('geçersiz unvan reddedilir', !!badTitle);
+  const { error: longInst } = await user.from('profiles').update({ institution: 'x'.repeat(151) }).eq('id', userId);
+  check('çok uzun kurum adı reddedilir', !!longInst);
   const { error: localeErr } = await user.from('profiles').update({ locale: 'en' }).eq('id', userId);
   check('üye dilini değiştirebilir', !localeErr, localeErr?.message);
   await user.from('profiles').update({ locale: 'tr' }).eq('id', userId);
@@ -282,7 +289,8 @@ try {
   const { data: users, error: usersErr } = await user.rpc('admin_list_users', { p_search: 'e2e-' });
   const me = (users ?? []).find((u: { id: string }) => u.id === userId);
   check('yönetici üyeleri listeler (arama çalışır)', !usersErr && !!me && me.email === email && me.is_admin === true, usersErr?.message);
-  const allowedCols = ['id', 'email', 'display_name', 'providers', 'created_at', 'last_sign_in_at', 'email_confirmed',
+  check('yönetici üye listesinde unvan ve kurum görünür', me?.academic_title === 'assoc_prof' && me?.institution === 'Test Üniversitesi', me && { t: me.academic_title, i: me.institution });
+  const allowedCols = ['id', 'email', 'display_name', 'academic_title', 'institution', 'department', 'providers', 'created_at', 'last_sign_in_at', 'email_confirmed',
     'calendar_provider', 'email_notifications', 'followed', 'topics', 'is_admin'];
   check('üye listesi gizli alan içermez (token, şifre vb.)', !!me && Object.keys(me).every((k) => allowedCols.includes(k)), me && Object.keys(me));
   check('üye listesinde takip sayısı doğru', me?.followed >= 2, me?.followed);

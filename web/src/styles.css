@@ -299,3 +299,68 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 .form-grid .span2 { grid-column: span 2; }
 .form-grid select { width: 100%; }
 @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .form-grid .span2 { grid-column: auto; } }
+
+/* --- görünüm geçişi, sıralama --- */
+.list-head .row { gap: 0.4rem; flex-wrap: nowrap; }
+.small-select { padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+.seg { display: inline-flex; padding: 3px; gap: 3px; border-radius: 9px; background: var(--surface-2); }
+.seg button { border: 0; background: transparent; padding: 0.25rem 0.6rem; font-size: 0.85rem; color: var(--muted); }
+.seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.title-link { color: inherit; }
+.title-link:hover { color: var(--accent); }
+
+/* --- aylık takvim --- */
+.calendar { padding: 0.9rem; }
+.cal-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.cal-head h3 { margin: 0 0.25rem; min-width: 9.5rem; text-align: center; text-transform: capitalize; }
+.cal-count { margin-left: auto; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.cal-wd { padding: 0.35rem; font-size: 0.72rem; text-transform: uppercase; color: var(--muted); text-align: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.cal-cell { min-height: 6.2rem; padding: 0.3rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-cell.out { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.cal-cell.out .cal-day { opacity: 0.45; }
+.cal-cell.today .cal-day { background: var(--accent); color: var(--accent-text); border-radius: 999px; padding: 0 0.4rem; }
+.cal-cell.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cal-day { font-size: 0.78rem; font-weight: 600; align-self: flex-start; margin-bottom: 2px; }
+.cal-item { display: block; font-size: 0.72rem; line-height: 1.35; padding: 1px 5px; border-radius: 4px; background: var(--accent-soft); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-item:hover { text-decoration: none; background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.cal-item.followed { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+.cal-more { border: 0; background: transparent; padding: 0 5px; font-size: 0.7rem; color: var(--accent); justify-content: flex-start; }
+.cal-selected { margin-top: 0.75rem; padding: 0.75rem; border-radius: 8px; background: var(--surface-2); }
+.cal-selected-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.4rem; }
+.cal-selected-list .cal-item { white-space: normal; font-size: 0.8rem; }
+.cal-agenda { display: none; }
+.cal-legend { margin: 0.6rem 0 0; }
+@media (max-width: 720px) {
+  .cal-grid, .cal-selected { display: none; }
+  .cal-agenda { display: flex; flex-direction: column; gap: 0.5rem; }
+  .agenda-day { display: flex; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+  .agenda-day.today .agenda-date strong { color: var(--accent); }
+  .agenda-date { display: flex; flex-direction: column; align-items: center; width: 2.6rem; flex: 0 0 auto; }
+  .agenda-date strong { font-size: 1.25rem; line-height: 1.1; }
+  .agenda-items { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
+  .agenda-items .cal-item { font-size: 0.82rem; padding: 3px 8px; white-space: normal; }
+  .cal-count { margin-left: 0; width: 100%; }
+}
+
+/* --- etkinlik detay --- */
+.detail { display: flex; flex-direction: column; gap: 0.9rem; }
+.detail-head h1 { font-size: clamp(1.25rem, 3vw, 1.6rem); margin: 0.4rem 0; }
+.detail-head p { margin: 0.2rem 0; }
+.detail-countdown { font-size: 1rem; }
+.actions.start { justify-content: flex-start; margin-top: 0.75rem; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.9rem; }
+.timeline { margin: 0; }
+.timeline > div, .facts-dl > div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--border); }
+.timeline > div:last-child, .facts-dl > div:last-child { border-bottom: 0; }
+.timeline dt, .facts-dl dt { color: var(--muted); font-size: 0.88rem; }
+.timeline dd, .facts-dl dd { margin: 0; text-align: right; }
+.timeline .strong dd { font-weight: 700; color: var(--accent); }
+.facts-dl { margin: 0 0 0.5rem; }
+.facts-dl dd.chips { justify-content: flex-end; }
+
+/* --- profil formu --- */
+.profile-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.profile-form select { width: 100%; }
+.profile-form .span2 { grid-column: span 2; }
+@media (max-width: 640px) { .profile-form { grid-template-columns: 1fr; } .profile-form .span2 { grid-column: auto; } }

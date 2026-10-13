@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TOPIC_BY_ID } from '../../../shared/topics';
 import { useApp } from '../lib/app';
+import { eventHref } from '../lib/events';
 import { daysUntil, formatDeadline, formatRange, timeLeft } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import type { EventRow } from '../lib/supabase';
@@ -43,7 +44,9 @@ export function EventCard({ event, onReport }: { event: EventRow; onReport: (e: 
             </span>
           ))}
         </div>
-        <h3 className="event-title">{event.title}</h3>
+        <h3 className="event-title">
+          <a href={eventHref(event.id)} className="title-link">{event.title}</a>
+        </h3>
         <div className="event-meta">
           {event.location && <span>📍 {event.location}</span>}
           {event.event_start && (

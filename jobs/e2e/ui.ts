@@ -33,6 +33,7 @@ async function newPage(kind: 'desktop' | 'mobile') {
     ...(kind === 'mobile' ? devices['iPhone 13'] : { viewport: { width: 1280, height: 900 } }),
     locale: 'tr-TR',
     colorScheme: 'light',
+    permissions: ['clipboard-read', 'clipboard-write'],
   });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => pageErrors.push(`${kind}: ${e.message}`));
@@ -150,6 +151,60 @@ try {
       await page.locator('dialog.dialog').getByRole('button', { name: 'Vazgeç' }).click();
     }
 
+    // Sıralama ve yeni filtreler
+    const countOf = async () => +((await page.locator('.list-head p').textContent()) ?? '0').split(' ')[0];
+    const all = await countOf();
+    await page.getByLabel('Her zaman').selectOption('7');
+    const week = await countOf();
+    check('"7 gün içinde" filtresi listeyi daraltır', week < all, { all, week });
+    await page.getByLabel('Her zaman').selectOption('');
+    await page.getByLabel('Yüz yüze / çevrim içi').selectOption('online');
+    const online = await countOf();
+    check('"Çevrim içi" filtresi listeyi daraltır', online < all && online > 0, { all, online });
+    await page.getByLabel('Yüz yüze / çevrim içi').selectOption('');
+    await page.getByLabel('Sıralama').selectOption('newest');
+    check('"Yeni eklenenler" sıralaması seçilebilir', (await page.locator('article.event').count()) > 0);
+    await page.getByLabel('Sıralama').selectOption('deadline');
+
+    // Aylık takvim görünümü
+    await page.getByRole('tab', { name: /Takvim/ }).click();
+    await page.locator('.calendar').waitFor();
+    if (kind === 'desktop') {
+      check('takvim: masaüstünde 7 sütunlu ızgara', await page.locator('.cal-grid').isVisible() && (await page.locator('.cal-wd').count()) === 7);
+      check('takvim: bu ayda son tarihler görünür', (await page.locator('.cal-grid .cal-item').count()) > 0);
+      await page.locator('.cal-head button[aria-label="Sonraki ay"]').click();
+      check('takvim: sonraki aya geçilir', (await page.locator('.cal-grid .cal-item').count()) >= 0);
+      await page.getByRole('button', { name: 'Bugün' }).click();
+    } else {
+      check('takvim: telefonda gün gün liste (ızgara gizli)', !(await page.locator('.cal-grid').isVisible()) && await page.locator('.cal-agenda').isVisible());
+      check('takvim: listede son tarihler var', (await page.locator('.cal-agenda .cal-item').count()) > 0);
+    }
+    await shot(page, `${kind}-03b-calendar`, false);
+    await page.locator('.cal-item:visible').first().click();
+    await page.getByRole('heading', { name: 'Önemli tarihler' }).waitFor({ timeout: 10_000 });
+    check('takvimden tıklayınca detay sayfası açılır', page.url().includes('#/etkinlik/'));
+    await page.goto(`${SITE}#/`);
+    await page.getByRole('tab', { name: /Liste/ }).click();
+    await page.locator('article.event').first().waitFor();
+
+    // Etkinlik detay sayfası
+    await page.locator('article.event .title-link').first().click();
+    await page.getByRole('heading', { name: 'Önemli tarihler' }).waitFor({ timeout: 10_000 });
+    check('detay: son başvuru çizelgede', (await page.locator('.timeline .strong').count()) === 1);
+    check('detay: takip / takvim / paylaş butonları', await page.getByRole('button', { name: /Paylaş/ }).isVisible() && await page.getByRole('button', { name: /Takip/ }).first().isVisible());
+    await shot(page, `${kind}-03c-detail`, kind === 'desktop');
+    if (kind === 'desktop') {
+      await page.getByRole('button', { name: /Paylaş/ }).click();
+      await page.getByText('Bağlantı kopyalandı').waitFor({ timeout: 5_000 });
+      const copied = await page.evaluate(() => navigator.clipboard.readText());
+      check('detay: paylaş bağlantıyı kopyalar', copied === page.url(), { copied, url: page.url() });
+    }
+    const detailUrl = page.url();
+    await page.goto(`${SITE}#/etkinlik/00000000-0000-0000-0000-000000000000`);
+    check('detay: olmayan etkinlik → bulunamadı mesajı', await page.getByText('Bu çağrı bulunamadı').isVisible({ timeout: 10_000 }).catch(() => false) || (await page.getByText('Bu çağrı bulunamadı').count()) > 0);
+    await page.goto(`${SITE}#/`);
+    await page.locator('article.event').first().waitFor();
+
     // Türkiye filtresi
     const total = +(await page.locator('.list-head p').textContent() ?? '0').split(' ')[0];
     await page.getByLabel(/Türkiye'de/).check();
@@ -194,10 +249,17 @@ try {
 
     if (kind === 'desktop') {
       await page.getByLabel('Ad Soyad').fill('Deneme Kullanıcısı 2');
+      await page.getByLabel('Unvan / meslek').selectOption('research_assistant');
+      await page.getByLabel(/Kurum/).fill('Test Teknik Üniversitesi');
+      await page.getByLabel('Bölüm').fill('Bilgisayar Mühendisliği');
       await page.getByRole('button', { name: 'Kaydet' }).click();
-      await page.waitForTimeout(1000);
-      const { data: p } = await db.from('profiles').select('display_name').eq('id', userId).single();
-      check('profil: ad güncellendi', p?.display_name === 'Deneme Kullanıcısı 2', p);
+      await page.waitForTimeout(1500);
+      const { data: p } = await db.from('profiles').select('display_name, academic_title, institution, department').eq('id', userId).single();
+      check('profil: ad, unvan, kurum, bölüm kaydedildi',
+        p?.display_name === 'Deneme Kullanıcısı 2' && p.academic_title === 'research_assistant' && p.institution === 'Test Teknik Üniversitesi' && p.department === 'Bilgisayar Mühendisliği', p);
+      await page.reload();
+      await page.getByText('Arş. Gör. · Test Teknik Üniversitesi').waitFor({ timeout: 10_000 });
+      check('profil: başlıkta unvan ve kurum görünür', true);
     }
 
     // Yönetici paneli (masaüstü): önce yönetici olmadan, sonra yönetici olarak
@@ -246,6 +308,13 @@ try {
     check('Google "Limited Use" beyanı', await page.getByText('Limited Use requirements').isVisible());
     await shot(page, `${kind}-06-privacy`, false);
     if (kind === 'desktop') {
+      const man = await page.request.get(`${SITE}manifest.webmanifest`);
+      const manJson = await man.json().catch(() => ({}));
+      check('PWA: manifest yayında (ad + 512 simge)', man.ok() && manJson.name === 'CFP Calendar' && manJson.icons?.some((i: { sizes: string }) => i.sizes === '512x512'));
+      const sw = await page.request.get(`${SITE}sw.js`);
+      check('PWA: service worker yayında', sw.ok() && (await sw.text()).includes('self.addEventListener'));
+      const swReady = await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration()));
+      check('PWA: service worker kaydedildi', swReady);
       for (const f of ['privacy.html', 'terms.html']) {
         const res = await page.request.get(`${SITE}${f}`);
         const html = await res.text();
@@ -254,6 +323,23 @@ try {
     }
     await page.goto(`${SITE}#/kosullar`);
     check('kullanım koşulları sayfası', await page.getByRole('heading', { name: 'Kullanım Koşulları' }).isVisible());
+
+    // Paylaşılan bağlantı: oturum kapalıyken açılır → giriş → aynı etkinliğe dönülür
+    if (kind === 'desktop') {
+      const shared = await page.evaluate(() => location.origin + location.pathname);
+      const { data: anyEvent } = await db.from('events').select('id').gt('submission_deadline', new Date().toISOString()).limit(1).single();
+      const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'tr-TR' });
+      const p2 = await ctx2.newPage();
+      await p2.goto(`${shared}#/etkinlik/${anyEvent!.id}`);
+      await p2.getByRole('heading', { name: 'Son başvuru tarihlerini kaçırmayın' }).waitFor();
+      check('paylaşılan bağlantı: oturumsuz → giriş sayfası', true);
+      await p2.locator('form.email-auth input[type=email]').fill(email);
+      await p2.locator('form.email-auth input[autocomplete=current-password]').fill(password);
+      await p2.locator('form.email-auth button[type=submit]').click();
+      await p2.getByRole('heading', { name: 'Önemli tarihler' }).waitFor({ timeout: 15_000 });
+      check('paylaşılan bağlantı: girişten sonra aynı etkinlik açılır', p2.url().endsWith(anyEvent!.id));
+      await ctx2.close();
+    }
 
     // Hesap silme (sadece masaüstünde, en sonda)
     if (kind === 'mobile') {

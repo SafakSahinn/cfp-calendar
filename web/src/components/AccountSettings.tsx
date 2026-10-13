@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
-import { supabase } from '../lib/supabase';
+import { ACADEMIC_TITLES, supabase, type AcademicTitle } from '../lib/supabase';
 import { authError, NewPasswordFields, validateNewPassword } from './EmailAuth';
 import { GoogleIcon, MicrosoftIcon } from '../pages/LandingPage';
 
@@ -10,6 +10,9 @@ export function AccountCard() {
   const { t } = useI18n();
   const { session, profile, updateProfile, showToast } = useApp();
   const [name, setName] = useState(profile?.display_name ?? '');
+  const [title, setTitle] = useState<AcademicTitle | ''>(profile?.academic_title ?? '');
+  const [institution, setInstitution] = useState(profile?.institution ?? '');
+  const [department, setDepartment] = useState(profile?.department ?? '');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [pwError, setPwError] = useState<string | null>(null);
@@ -20,7 +23,12 @@ export function AccountCard() {
 
   const saveName = async (e: FormEvent) => {
     e.preventDefault();
-    await updateProfile({ display_name: name.trim() || null });
+    await updateProfile({
+      display_name: name.trim() || null,
+      academic_title: title || null,
+      institution: institution.trim() || null,
+      department: department.trim() || null,
+    });
     showToast(t.saved);
   };
 
@@ -41,12 +49,38 @@ export function AccountCard() {
   return (
     <div className="card">
       <h3>{t.accountTitle}</h3>
-      <form className="row" onSubmit={saveName}>
-        <label className="grow inline-field">
+      <form className="profile-form" onSubmit={saveName}>
+        <label className="inline-field">
           <span className="small muted">{t.displayName}</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+          <input value={name} maxLength={120} onChange={(e) => setName(e.target.value)} autoComplete="name" />
         </label>
-        <button type="submit" className="small" disabled={name === (profile?.display_name ?? '')}>{t.save}</button>
+        <label className="inline-field">
+          <span className="small muted">{t.academicTitle}</span>
+          <select value={title} onChange={(e) => setTitle(e.target.value as AcademicTitle | '')}>
+            <option value="">—</option>
+            {ACADEMIC_TITLES.map((k) => <option key={k} value={k}>{t.titles[k]}</option>)}
+          </select>
+        </label>
+        <label className="inline-field">
+          <span className="small muted">{t.institution}</span>
+          <input value={institution} maxLength={150} onChange={(e) => setInstitution(e.target.value)} autoComplete="organization" placeholder={t.institutionPlaceholder} />
+        </label>
+        <label className="inline-field">
+          <span className="small muted">{t.department}</span>
+          <input value={department} maxLength={150} onChange={(e) => setDepartment(e.target.value)} placeholder={t.departmentPlaceholder} />
+        </label>
+        <div className="row end span2">
+          <button
+            type="submit"
+            className="small primary"
+            disabled={
+              name === (profile?.display_name ?? '') && title === (profile?.academic_title ?? '') &&
+              institution === (profile?.institution ?? '') && department === (profile?.department ?? '')
+            }
+          >
+            {t.save}
+          </button>
+        </div>
       </form>
 
       <h4>{t.signInMethods}</h4>

@@ -32,7 +32,7 @@ interface AppState {
   disconnectCalendar: () => Promise<void>;
   toggleFollow: (eventId: string) => Promise<void>;
   toggleTopic: (topic: string) => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'email_notifications' | 'display_name'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'email_notifications' | 'display_name' | 'academic_title' | 'institution' | 'department'>>) => Promise<void>;
   refreshUnread: () => Promise<void>;
   addToCalendar: (eventId: string) => Promise<boolean>;
   /** Şifre sıfırlama bağlantısıyla gelindi: yeni şifre formu gösterilmeli. */
@@ -168,6 +168,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadInterests();
     refreshUnread();
     supabase.rpc('is_admin').then(({ data }) => setIsAdmin(data === true));
+    try {
+      const back = sessionStorage.getItem('cfp.returnTo');
+      if (back) {
+        sessionStorage.removeItem('cfp.returnTo');
+        window.location.hash = back;
+      }
+    } catch {
+      // yok say
+    }
 
     // Yeni bildirimler anlık gelsin
     const channel = supabase
@@ -188,6 +197,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [profile?.locale]);
 
   const signIn = async (p: Provider) => {
+    // OAuth dönüşü hash'i taşımaz: paylaşılan etkinlik bağlantısıyla gelindiyse girişten sonra oraya dön
+    try {
+      if (window.location.hash.startsWith('#/etkinlik/')) sessionStorage.setItem('cfp.returnTo', window.location.hash);
+    } catch {
+      // yok say
+    }
     await supabase.auth.signInWithOAuth({
       provider: authProvider(p),
       options: { redirectTo: siteRoot, scopes: SCOPES[p].login },

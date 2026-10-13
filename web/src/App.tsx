@@ -6,13 +6,14 @@ import { Logo } from './components/Logo';
 import { REPO_URL, SITE_NAME } from './lib/site';
 import { LegalPage } from './pages/LegalPage';
 import { AdminPage } from './pages/AdminPage';
+import { EventDetailPage } from './pages/EventDetailPage';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
 import { ProfilePage } from './pages/ProfilePage';
 
-type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin';
+type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail';
 
 function routeFromHash(): Route {
   const h = window.location.hash;
@@ -21,6 +22,7 @@ function routeFromHash(): Route {
   if (h.startsWith('#/gizlilik')) return 'privacy';
   if (h.startsWith('#/kosullar')) return 'terms';
   if (h.startsWith('#/yonetim')) return 'admin';
+  if (h.startsWith('#/etkinlik/')) return 'detail';
   return 'events';
 }
 
@@ -61,7 +63,7 @@ export function App() {
         {session && (
           <nav className="nav">
             {nav.map(([r, href, label]) => (
-              <a key={r} href={href} className={route === r ? 'active' : ''}>
+              <a key={r} href={href} className={route === r || (r === 'events' && route === 'detail') ? 'active' : ''}>
                 {label}
                 {r === 'inbox' && unread > 0 && <span className="badge">{unread}</span>}
               </a>
@@ -97,6 +99,8 @@ export function App() {
           <ProfilePage />
         ) : route === 'admin' ? (
           <AdminPage />
+        ) : route === 'detail' ? (
+          <EventDetailPage id={window.location.hash.slice('#/etkinlik/'.length)} />
         ) : (
           <EventsPage />
         )}

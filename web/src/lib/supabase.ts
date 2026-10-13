@@ -13,6 +13,12 @@ export const supabase = createClient(url || 'https://placeholder.supabase.co', a
 export const siteRoot = `${window.location.origin}${import.meta.env.BASE_URL}`;
 
 export type Provider = 'google' | 'microsoft';
+
+export const ACADEMIC_TITLES = [
+  'prof', 'assoc_prof', 'asst_prof', 'lecturer', 'research_assistant', 'postdoc',
+  'phd_student', 'msc_student', 'undergrad', 'engineer', 'researcher', 'other',
+] as const;
+export type AcademicTitle = (typeof ACADEMIC_TITLES)[number];
 export const authProvider = (p: Provider) => (p === 'microsoft' ? 'azure' : 'google') as 'azure' | 'google';
 
 export interface EventRow {
@@ -33,6 +39,7 @@ export interface EventRow {
   submission_deadline: string | null;
   deadlines: { deadline: string; abstract?: string; comment?: string }[];
   deadline_tz: string | null;
+  notification_date: string | null;
   event_start: string | null;
   event_end: string | null;
   first_seen_at: string;
@@ -43,6 +50,9 @@ export interface Profile {
   id: string;
   email: string | null;
   display_name: string | null;
+  academic_title: AcademicTitle | null;
+  institution: string | null;
+  department: string | null;
   avatar_url: string | null;
   locale: 'tr' | 'en';
   calendar_provider: Provider | null;

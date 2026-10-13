@@ -45,6 +45,14 @@ export function ProfilePage() {
         {profile.avatar_url && <img src={profile.avatar_url} alt="" className="avatar" referrerPolicy="no-referrer" />}
         <div>
           <h2>{name}</h2>
+          {(profile.academic_title || profile.institution) && (
+            <p>
+              {profile.academic_title && t.titles[profile.academic_title]}
+              {profile.academic_title && profile.institution && ' · '}
+              {profile.institution}
+              {profile.department && ` — ${profile.department}`}
+            </p>
+          )}
           <p className="muted">{profile.email}</p>
         </div>
       </div>
