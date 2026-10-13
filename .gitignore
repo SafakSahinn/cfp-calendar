@@ -8,3 +8,4 @@ supabase/.branches/
 *.log
 supabase/templates/dist/
 jobs/screenshots/
+*.tsbuildinfo

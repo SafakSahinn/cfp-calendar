@@ -103,3 +103,17 @@ test('WikiCFP: resmi site bağlantısı ayrıştırılır, güvensiz bağlantı 
   assert.equal(parseOfficialLink('Link: <a href="http://www.wikicfp.com/cfp/x">x</a>'), null);
   assert.equal(parseOfficialLink('<p>no link here</p>'), null);
 });
+
+test('seri anahtarı: kısaltmalı konferanslar seri olur, dergiler ve kısaltmasızlar olmaz', async () => {
+  const { seriesKeyOf, makeDedupeKey } = await import('../src/types.ts');
+  const conf = (acronym: string | null, title: string, year: number | null, kind: 'conference' | 'journal' = 'conference') =>
+    seriesKeyOf({ kind, acronym, dedupe_key: makeDedupeKey(acronym, title, year) });
+  assert.equal(conf('ICASSP', 'Int. Conf. on Acoustics', 2027), 'ICASSP');
+  assert.equal(conf('IEEE ICC 2026', 'International Conference on Communications', 2026), 'ICC');
+  assert.equal(conf('ISCAS', 'x', null), 'ISCAS');
+  assert.equal(conf('TNNLS', 'IEEE Trans. Neural Networks', 2026, 'journal'), null);
+  assert.equal(conf(null, 'Some Workshop on Things', 2026), null);
+  assert.equal(conf('2026', 'x', 2026), null); // sadece yıl → anlamsız
+  // Aynı serinin iki yılı aynı anahtara düşer
+  assert.equal(conf('NeurIPS', 'a', 2026), conf('NeurIPS 2027', 'b', 2027));
+});

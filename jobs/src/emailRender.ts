@@ -1,7 +1,7 @@
 // Özet e-postası şablonu (saf fonksiyon; veritabanı veya SMTP gerektirmez, test edilebilir).
 
 type Locale = 'tr' | 'en';
-type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation';
+type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new';
 
 export interface DigestEvent {
   acronym: string | null;
@@ -31,8 +31,9 @@ const T = {
       dates_changed: 'Son tarih değişti',
       deadline_reminder: 'Son başvuruya 1 haftadan az kaldı',
       group_recommendation: 'Grubunuzdan öneri',
+      series_new: 'Takip ettiğiniz serinin yeni çağrısı',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁' },
     hello: (n: string | null) => (n ? `Merhaba ${n},` : 'Merhaba,'),
     intro: (n: number) => (n === 1 ? 'Takip ettiğiniz çağrılarla ilgili yeni bir bildiriminiz var:' : `Takip ettiğiniz çağrılarla ilgili ${n} yeni bildiriminiz var:`),
     deadline: 'Son başvuru',
@@ -55,8 +56,9 @@ const T = {
       dates_changed: 'Deadline changed',
       deadline_reminder: 'Less than a week to the deadline',
       group_recommendation: 'Recommended by your group',
+      series_new: 'New edition of a series you follow',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁' },
     hello: (n: string | null) => (n ? `Hi ${n},` : 'Hi,'),
     intro: (n: number) => (n === 1 ? 'You have a new notification about calls you follow:' : `You have ${n} new notifications about calls you follow:`),
     deadline: 'Deadline',

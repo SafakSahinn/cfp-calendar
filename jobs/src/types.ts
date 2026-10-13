@@ -97,3 +97,10 @@ export function tagTopics(text: string, extra: string[] = []): { topics: string[
   const topics = [...new Set([...extra, ...classify(text)])];
   return { topics, fields: fieldsOf(topics) };
 }
+
+/** Konferans serisi anahtarı ("ICASSP-2027" → "ICASSP"); dergiler ve kısaltması olmayanlar seri sayılmaz. */
+export function seriesKeyOf(e: Pick<NormalizedEvent, 'kind' | 'acronym' | 'dedupe_key'>): string | null {
+  if (e.kind === 'journal' || !e.acronym) return null;
+  const key = e.dedupe_key.replace(/-(\d{4}|NA)$/, '');
+  return /^[A-Z0-9]{2,40}$/.test(key) && /[A-Z]/.test(key) ? key : null;
+}

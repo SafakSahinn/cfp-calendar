@@ -71,7 +71,7 @@ export async function fetchCcf(): Promise<NormalizedEvent[]> {
     if (!tagged.fields.includes('cs')) tagged.fields.unshift('cs');
 
     for (const conf of entry.confs ?? []) {
-      if (conf.year < thisYear - 1) continue;
+      if (conf.year < thisYear - 4) continue; // geçmiş yıllar: "serinin önceki son tarihleri" için
 
       const rounds: DeadlineRound[] = [];
       for (const tl of conf.timeline ?? []) {

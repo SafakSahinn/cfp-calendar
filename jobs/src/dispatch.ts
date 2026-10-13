@@ -9,7 +9,7 @@ import { calendarEnv, db, selectAll } from './db.ts';
 import { isCaution } from './quality.ts';
 import { runStats } from './runStats.ts';
 
-type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[] };
+type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[]; series_key: string | null };
 
 interface Profile {
   id: string;
@@ -40,7 +40,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   const events = await selectAll<Event>((from, to) =>
     db
       .from('events')
-      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee, flags`)
+      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee, flags, series_key`)
       .or(`submission_deadline.gt.${new Date(now - DAY).toISOString()},event_end.gte.${today}`)
       .range(from, to),
   );
@@ -53,6 +53,16 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   const interests = await selectAll<{ user_id: string; event_id: string | null; topic: string | null }>((from, to) =>
     db.from('interests').select('user_id, event_id, topic').range(from, to),
   );
+
+  const seriesFollows = await selectAll<{ user_id: string; series_key: string }>((from, to) =>
+    db.from('series_follows').select('user_id, series_key').range(from, to),
+  );
+  // Seri → henüz son tarihi geçmemiş edisyonlar
+  const bySeries = new Map<string, Event[]>();
+  for (const ev of events) {
+    if (!ev.series_key || !ev.submission_deadline || new Date(ev.submission_deadline).getTime() <= now) continue;
+    bySeries.set(ev.series_key, [...(bySeries.get(ev.series_key) ?? []), ev]);
+  }
 
   let notified = 0;
   let synced = 0;
@@ -93,6 +103,26 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
       } catch (e) {
         log(`  ${profile.id}: takvim erişimi alınamadı: ${e}`);
       }
+    }
+
+    // --- 0) Takip edilen seriler: yeni edisyon yayımlanınca otomatik takip + bildirim ----------
+    const autoFollow: string[] = [];
+    for (const s of seriesFollows) {
+      if (s.user_id !== profile.id) continue;
+      for (const ev of bySeries.get(s.series_key) ?? []) {
+        if (seenKeys.has(`series:${ev.id}`)) continue; // daha önce bildirildi (kullanıcı sonradan bırakmış olabilir)
+        notify(ev.id, 'series_new', `series:${ev.id}`, { series: s.series_key, deadline: ev.submission_deadline });
+        if (!followed.has(ev.id)) {
+          followed.add(ev.id);
+          autoFollow.push(ev.id);
+        }
+      }
+    }
+    if (autoFollow.length > 0) {
+      const { error } = await db
+        .from('interests')
+        .upsert(autoFollow.map((event_id) => ({ user_id: profile.id, event_id })), { onConflict: 'user_id,event_id', ignoreDuplicates: true });
+      if (error) log(`  ${profile.id}: seri takibi yazılamadı: ${error.message}`);
     }
 
     // --- 1) Takip edilen etkinlikler -------------------------------------------------

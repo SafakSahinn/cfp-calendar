@@ -170,6 +170,47 @@ try {
   await db.from('groups').delete().eq('id', otherGid);
 
   // -------------------------------------------------------------------------
+  section('Grupta kim başvuruyor (açık rıza ile)');
+  const { data: ownerSees } = await owner.client.rpc('event_group_participants', { p_event: ev3 });
+  check('grup sahibi (danışman) paylaşılan başvuruyu çağrı sayfasında görür', ownerSees?.length === 1 && ownerSees[0].user_id === member.id, ownerSees);
+  const { error: outJoin } = await outsider.client.rpc('join_group', { p_code: code });
+  check('üçüncü kişi gruba katılır', !outJoin, outJoin?.message);
+  const { data: mateBefore } = await outsider.client.rpc('event_group_participants', { p_event: ev3 });
+  check('izin yokken grup arkadaşı başvuruyu GÖRMEZ', (mateBefore ?? []).length === 0, mateBefore);
+  const { data: countBefore } = await outsider.client.rpc('group_participation', { p_group: gid });
+  check('izin yokken grup sayacında görünmez', (countBefore ?? []).length === 0, countBefore);
+  await member.client.from('submissions').update({ share_with_members: true }).eq('id', subIns!.id);
+  const { data: mateAfter } = await outsider.client.rpc('event_group_participants', { p_event: ev3 });
+  check('izin verilince grup arkadaşı ad + durumu görür', mateAfter?.length === 1 && mateAfter[0].display_name === 'Test uye' && mateAfter[0].status === 'accepted', mateAfter);
+  check('grup arkadaşı başlık/not GÖRMEZ', !JSON.stringify(mateAfter).includes('Gizli Makale') && !JSON.stringify(mateAfter).includes('ÖZEL NOT'));
+  const { data: countAfter } = await outsider.client.rpc('group_participation', { p_group: gid });
+  check('grup sayacı: çağrıda 1 kişi', countAfter?.length === 1 && countAfter[0].event_id === ev3 && countAfter[0].participants === 1, countAfter);
+  const { data: selfSees } = await member.client.rpc('event_group_participants', { p_event: ev3 });
+  check('kişi kendini listede görmez', (selfSees ?? []).length === 0);
+  const { data: unsharedSees } = await outsider.client.rpc('event_group_participants', { p_event: ev2 });
+  check('gruba paylaşılmamış başvuru görünmez', (unsharedSees ?? []).length === 0);
+  await outsider.client.rpc('leave_group', { p_group: gid });
+  const { data: leftSees } = await outsider.client.rpc('event_group_participants', { p_event: ev3 });
+  check('gruptan ayrılan artık görmez', (leftSees ?? []).length === 0);
+  const { error: leftCount } = await outsider.client.rpc('group_participation', { p_group: gid });
+  check('üye olmayan grup sayacını açamaz', !!leftCount);
+  const { error: anonPart } = await anon.rpc('event_group_participants', { p_event: ev3 });
+  check('giriş yapmamış kişi göremez', !!anonPart);
+
+  // -------------------------------------------------------------------------
+  section('Seri takibi');
+  const { error: sErr } = await member.client.from('series_follows').insert({ series_key: 'ICASSP', label: 'ICASSP' });
+  check('üye seriyi takip eder', !sErr, sErr?.message);
+  const { error: sBad } = await member.client.from('series_follows').insert({ series_key: 'bad key;--' });
+  check('geçersiz seri anahtarı reddedilir', !!sBad);
+  const { error: sForeign } = await outsider.client.from('series_follows').insert({ user_id: member.id, series_key: 'NEURIPS' });
+  check('başkası adına seri takibi eklenemez', !!sForeign);
+  const { data: sOut } = await outsider.client.from('series_follows').select('series_key');
+  check('başkasının seri takibi görünmez', (sOut ?? []).length === 0);
+  const { error: sAnon } = await anon.from('series_follows').insert({ series_key: 'AAAI' });
+  check('giriş yapmamış kişi seri takip edemez', !!sAnon);
+
+  // -------------------------------------------------------------------------
   section('Üyelik yönetimi');
   const { error: memberKick } = await member.client.rpc('remove_group_member', { p_group: gid, p_user: owner.id });
   check('üye sahibi çıkaramaz', !!memberKick);
