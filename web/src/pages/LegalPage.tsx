@@ -68,6 +68,7 @@ export function PrivacyTr() {
         <li><strong>GitHub</strong> — sitenin barındırılması ve zamanlanmış işler (ABD).</li>
         <li><strong>Google / Microsoft</strong> — giriş ve (bağlarsanız) takvim hizmeti.</li>
         <li><strong>Gmail (Google)</strong> — hesap onay ve şifre sıfırlama e-postalarının gönderimi.</li>
+        <li><strong>OpenStreetMap</strong> — yalnızca “Harita” görünümünü açtığınızda harita görselleri OSM sunucularından yüklenir; bu sırada IP adresiniz OSM Vakfı’na iletilir. Konum aramaları sunucu tarafında yapılır, sizinle ilişkilendirilmez.</li>
       </ul>
 
       <h2>5. Saklama süresi</h2>
@@ -134,6 +135,7 @@ export function PrivacyEn() {
         <li><strong>GitHub</strong> — website hosting and scheduled jobs (USA).</li>
         <li><strong>Google / Microsoft</strong> — sign-in and, if connected, calendar.</li>
         <li><strong>Gmail (Google)</strong> — sending account confirmation and password reset emails.</li>
+        <li><strong>OpenStreetMap</strong> — only when you open the “Map” view, map tiles are loaded from OSM servers, which receive your IP address. Place lookups run on our server and are not linked to you.</li>
       </ul>
 
       <h2>5. Retention</h2>

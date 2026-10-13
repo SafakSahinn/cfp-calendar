@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { TOPICS } from '../../../shared/topics';
 import { CalendarView } from '../components/CalendarView';
+import { lazy, Suspense } from 'react';
+
+const MapView = lazy(() => import('../components/MapView'));
 import { EventCard } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { useApp } from '../lib/app';
@@ -57,7 +60,7 @@ export function EventsPage() {
   const { followed } = useApp();
   const events = useOpenEvents();
   const [filters, setFilters] = useState<Filters>(() => loadStored('cfp.filters', EMPTY));
-  const [view, setView] = useState<'list' | 'calendar'>(() => loadStored('cfp.view', { v: 'list' as 'list' | 'calendar' }).v);
+  const [view, setView] = useState<'list' | 'calendar' | 'map'>(() => loadStored('cfp.view', { v: 'list' as 'list' | 'calendar' | 'map' }).v);
   const [limit, setLimit] = useState(PAGE);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialog, setDialog] = useState<{ event: EventRow | null } | null>(null);
@@ -164,6 +167,7 @@ export function EventsPage() {
           <div className="seg" role="tablist" aria-label={t.view}>
             <button role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}>☰ {t.viewList}</button>
             <button role="tab" aria-selected={view === 'calendar'} className={view === 'calendar' ? 'on' : ''} onClick={() => setView('calendar')}>📅 {t.viewCalendar}</button>
+            <button role="tab" aria-selected={view === 'map'} className={view === 'map' ? 'on' : ''} onClick={() => setView('map')}>🗺️ {t.viewMap}</button>
           </div>
           <button className="small" onClick={() => setDialog({ event: null })}>➕ <span className="hide-sm">{t.suggest}</span></button>
         </div>
@@ -171,6 +175,10 @@ export function EventsPage() {
 
       {!events ? null : view === 'calendar' ? (
         <CalendarView events={visible} />
+      ) : view === 'map' ? (
+        <Suspense fallback={<p className="muted center">{t.loading}</p>}>
+          <MapView events={visible} />
+        </Suspense>
       ) : visible.length === 0 ? (
         <p className="muted center">{t.noEvents}</p>
       ) : (

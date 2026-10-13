@@ -262,6 +262,24 @@ try {
     await page.goto(`${SITE}#/`);
     await page.locator('article.event').first().waitFor();
 
+    // Harita görünümü
+    await page.getByRole('tab', { name: /Harita/ }).click();
+    await page.locator('.leaflet-container').waitFor({ timeout: 15_000 });
+    const pins = await page.locator('.map-pin, .marker-cluster').first().waitFor({ timeout: 15_000 }).then(() => true).catch(() => false);
+    check('harita: işaretler görünür', pins);
+    check('harita: OpenStreetMap atfı var', await page.getByRole('link', { name: 'OpenStreetMap' }).isVisible());
+    await shot(page, `${kind}-03f-map`, false);
+    if (kind === 'desktop') {
+      const single = page.locator('.map-pin').first();
+      if (await single.count()) {
+        await single.click();
+        const popup = await page.locator('.map-popup a').first().waitFor({ timeout: 5_000 }).then(() => true).catch(() => false);
+        check('harita: işarete tıklayınca çağrı listesi açılır', popup);
+      }
+    }
+    await page.getByRole('tab', { name: /Liste/ }).click();
+    await page.locator('article.event').first().waitFor();
+
     // Türkiye filtresi
     await openFilters(page);
     await page.getByLabel(/Sadece Q1–Q2 dergiler/).check();

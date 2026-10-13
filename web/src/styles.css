@@ -485,3 +485,17 @@ ul.plain li { line-height: 1.4; }
 .similar a:hover span { text-decoration: underline; }
 .applying { color: var(--accent); font-weight: 600; }
 .theme-toggle { min-width: 2.2rem; }
+
+/* Harita */
+.map-wrap { display: grid; gap: 0.5rem; }
+.map { height: min(70vh, 640px); border-radius: var(--radius); border: 1px solid var(--border); z-index: 0; }
+.map-pin { background: var(--accent); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); display: grid; place-items: center; }
+.map-pin span { color: #fff; font-size: 0.7rem; font-weight: 700; line-height: 1; }
+.map-popup p { margin: 0 0 0.35rem; font-weight: 600; }
+.map-popup ul { margin: 0; padding-left: 1rem; max-height: 240px; overflow: auto; }
+.map-popup li { margin-bottom: 0.35rem; }
+.leaflet-container { font: inherit; background: var(--surface-2); }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
+}

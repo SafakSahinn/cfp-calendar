@@ -1,13 +1,14 @@
 // Veritabanına yazmadan kaynakları dener: `npm run dry-run`
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
+import { fetchIeeeJournals } from './sources/ieeejournals.ts';
 import { fetchWikiCfp } from './sources/wikicfp.ts';
 import { merge } from './merge.ts';
 
 const fast = process.argv.includes('--ccf-only');
 const ccf = await fetchCcf();
 const wiki = fast ? [] : await fetchWikiCfp();
-const comsoc = fast ? [] : await fetchComsoc();
+const comsoc = fast ? [] : [...(await fetchComsoc()), ...(await fetchIeeeJournals())];
 console.log(`comsoc: ${comsoc.length}`);
 const merged = merge([...ccf, ...wiki, ...comsoc]);
 const now = Date.now();

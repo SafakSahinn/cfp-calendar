@@ -3,6 +3,7 @@
 import { chunks, db } from './db.ts';
 import { fetchCcf } from './sources/ccf.ts';
 import { fetchComsoc } from './sources/comsoc.ts';
+import { fetchIeeeJournals } from './sources/ieeejournals.ts';
 import { enrichWikiLinks, fetchWikiCfp, isWikiUrl } from './sources/wikicfp.ts';
 import { existsSync, readFileSync } from 'node:fs';
 import { buildIndex, loadCore, matchCore } from './core.ts';
@@ -15,8 +16,8 @@ import type { NormalizedEvent } from './types.ts';
 const COMPARE_KEYS = ['title', 'url', 'location', 'submission_deadline', 'abstract_deadline', 'event_start', 'event_end'] as const;
 
 export async function runFetch(log: (msg: string) => void = console.log): Promise<void> {
-  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log), fetchComsoc(log)]);
-  const names = ['ccf-deadlines', 'WikiCFP', 'IEEE ComSoc'];
+  const results = await Promise.allSettled([fetchCcf(), fetchWikiCfp(log), fetchComsoc(log), fetchIeeeJournals(log)]);
+  const names = ['ccf-deadlines', 'WikiCFP', 'IEEE ComSoc', 'IEEE dergileri'];
   const all: NormalizedEvent[] = [];
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {
@@ -70,6 +71,7 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
 
   const now = new Date().toISOString();
   let changed = 0;
+  const moved: string[] = [];
   for (const batch of chunks(merged, 300)) {
     const { data: existing, error } = await db
       .from('events')
@@ -92,6 +94,7 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
           return a !== b && !(a && b && new Date(a as string).getTime() === new Date(b as string).getTime());
         });
       if (differs) changed++;
+      if (prev && (prev.location ?? null) !== (e.location ?? null)) moved.push(e.dedupe_key);
       return { ...e, last_seen_at: now, ...(differs ? { updated_at: now } : {}) };
     });
 
@@ -102,6 +105,8 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
       if (upErr) throw new Error(upErr.message);
     }
   }
+  // Yeri değişen etkinliklerin eski koordinatı silinir; konum adımı yeniden çözümler
+  for (const keys of chunks(moved, 200)) await db.from('events').update({ lat: null, lng: null }).in('dedupe_key', keys);
   log(`Veritabanı: ${changed} yeni/değişen etkinlik`);
   runStats.official_links = await enrichWikiLinks(db, log);
   runStats.events_changed = changed;

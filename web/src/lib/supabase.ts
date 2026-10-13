@@ -48,6 +48,9 @@ export interface EventRow {
   dedupe_key: string;
   /** Konferans serisi (ör. "ICASSP"); dergilerde null */
   series_key: string | null;
+  /** Etkinlik yerinin koordinatı (harita); dergi/çevrim içi/çözümlenemeyen → null */
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface Profile {
