@@ -8,6 +8,7 @@
 
 import nodemailer, { type Transporter } from 'nodemailer';
 import { db } from './db.ts';
+import { runStats } from './runStats.ts';
 import { buildWeekly, EV_COLS, type Ev } from './weekly.ts';
 import { BRAND, renderDigest, renderWeekly, type DigestEvent, type DigestItem } from './emailRender.ts';
 
@@ -133,6 +134,7 @@ async function sendInstant(ctx: Ctx) {
     await db.from('notifications').update({ emailed_at: new Date().toISOString() }).in('id', items.map((i) => i.id));
   }
   ctx.log(`E-posta (anında): ${sent} özet gönderildi (${byUser.size} kullanıcının yeni bildirimi vardı)`);
+  runStats.emails_instant = sent;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +208,7 @@ async function sendWeekly(ctx: Ctx) {
     await db.from('profiles').update({ last_weekly_email_at: new Date().toISOString() }).eq('id', p.id);
   }
   ctx.log(`E-posta (haftalık): ${sent} özet gönderildi (${due.length} kullanıcı sıradaydı)`);
+  runStats.emails_weekly = sent;
 }
 
 // ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import { fetchWikiCfp } from './sources/wikicfp.ts';
 import { buildIndex, loadCore, matchCore } from './core.ts';
 import { merge } from './merge.ts';
 import { qualityFlags } from './quality.ts';
+import { runStats } from './runStats.ts';
 import type { NormalizedEvent } from './types.ts';
 
 const COMPARE_KEYS = ['title', 'url', 'location', 'submission_deadline', 'abstract_deadline', 'event_start', 'event_end'] as const;
@@ -18,9 +19,11 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
   results.forEach((r, i) => {
     if (r.status === 'fulfilled') {
       log(`${names[i]}: ${r.value.length} kayıt`);
+      runStats.sources = { ...(runStats.sources as object), [names[i]]: r.value.length };
       all.push(...r.value);
     } else {
       log(`${names[i]} HATA: ${r.reason}`);
+      runStats.sources = { ...(runStats.sources as object), [names[i]]: 'HATA' };
     }
   });
   if (all.length === 0) throw new Error('Hiçbir kaynaktan veri alınamadı');
@@ -40,6 +43,8 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
     }
   }
   log(`CORE: ${ranked} konferansa derece eşleşti`);
+  runStats.core_ranked = ranked;
+  runStats.events_total = merged.length;
   log(`Birleştirme sonrası: ${merged.length} etkinlik`);
 
   const now = new Date().toISOString();
@@ -75,4 +80,5 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
     }
   }
   log(`Veritabanı: ${changed} yeni/değişen etkinlik`);
+  runStats.events_changed = changed;
 }

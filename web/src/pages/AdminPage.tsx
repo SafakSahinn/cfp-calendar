@@ -14,6 +14,7 @@ type Tab = 'overview' | 'feedback' | 'users' | 'events' | 'announcements' | 'aud
 interface Stats {
   users: number; users_new_7d: number; users_active_7d: number; calendar_connected: number; email_on: number;
   follows: number; feedback_new: number; events_open: number; events_manual: number; last_sync: string | null;
+  groups: number; group_members: number; submissions: number; last_sync_failed: boolean | null;
 }
 interface FeedbackRow {
   id: string; kind: 'suggest_event' | 'wrong_info' | 'other'; status: 'new' | 'done' | 'rejected'; message: string;
@@ -87,29 +88,69 @@ export function AdminPage() {
   );
 }
 
+interface SyncRun { started_at: string; finished_at: string | null; trigger: string | null; ok: boolean | null; stats: Record<string, unknown>; error: string | null }
+
 function Overview() {
   const { data, error } = useRpc<Stats>('admin_stats');
+  const { data: runs } = useRpc<SyncRun[]>('admin_sync_runs');
   if (error) return <div className="notice">{error}</div>;
   if (!data) return <p className="muted">Yükleniyor…</p>;
   const tiles: [string, number | string, string?][] = [
     ['Üye', data.users, `+${data.users_new_7d} son 7 gün`],
     ['Aktif (7 gün)', data.users_active_7d],
+    ['Grup', data.groups, `${data.group_members} üyelik`],
+    ['Başvuru kaydı', data.submissions],
     ['Takvim bağlı', data.calendar_connected],
-    ['E-posta bildirimi açık', data.email_on],
     ['Takip edilen çağrı', data.follows],
     ['Yeni geri bildirim', data.feedback_new],
     ['Açık çağrı', data.events_open, `${data.events_manual} elle eklenen`],
-    ['Son veri güncellemesi', data.last_sync ? timeAgo(data.last_sync, 'tr') : '—'],
   ];
+  const fmt = (iso: string) => new Date(iso).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   return (
-    <div className="stat-grid">
-      {tiles.map(([label, value, sub]) => (
-        <div key={label} className="card stat">
-          <span className="muted small">{label}</span>
-          <strong>{value}</strong>
-          {sub && <span className="muted small">{sub}</span>}
+    <div className="page-stack">
+      {data.last_sync_failed && (
+        <div className="notice">⚠️ Son veri güncellemesi başarısız oldu. Ayrıntılar aşağıda ve GitHub → Actions → “Veri çek ve dağıt”.</div>
+      )}
+      <div className="stat-grid">
+        {tiles.map(([label, value, sub]) => (
+          <div key={label} className="card stat">
+            <span className="muted small">{label}</span>
+            <strong>{value}</strong>
+            {sub && <span className="muted small">{sub}</span>}
+          </div>
+        ))}
+      </div>
+      <div>
+        <h3>Sistem durumu — veri güncellemeleri</h3>
+        <p className="muted small">
+          Veriler 12 saatte bir otomatik güncellenir (GitHub bazen birkaç saat geciktirebilir).
+          {data.last_sync && <> Son başarılı güncelleme: <strong>{timeAgo(data.last_sync, 'tr')}</strong>.</>}
+        </p>
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>Başlangıç</th><th>Durum</th><th>Süre</th><th>Kaynaklar</th><th>Değişen</th><th>Bildirim</th><th>Takvim</th></tr></thead>
+            <tbody>
+              {(runs ?? []).map((r) => {
+                const s = r.stats ?? {};
+                const sources = Object.entries((s.sources ?? {}) as Record<string, unknown>).map(([k, v]) => `${k}: ${v}`).join(' · ');
+                const secs = r.finished_at ? Math.round((new Date(r.finished_at).getTime() - new Date(r.started_at).getTime()) / 1000) : null;
+                return (
+                  <tr key={r.started_at}>
+                    <td>{fmt(r.started_at)}<div className="muted small">{r.trigger === 'schedule' ? 'otomatik' : 'elle'}</div></td>
+                    <td>{r.ok === null ? '⏳ sürüyor' : r.ok ? '✅' : <span title={r.error ?? ''}>❌ {r.error?.slice(0, 80)}</span>}</td>
+                    <td>{secs !== null ? `${Math.floor(secs / 60)} dk ${secs % 60} sn` : '—'}</td>
+                    <td className="small">{sources || '—'}</td>
+                    <td>{String(s.events_changed ?? '—')}</td>
+                    <td>{String(s.notifications ?? '—')}</td>
+                    <td>{String(s.calendar_entries ?? '—')}</td>
+                  </tr>
+                );
+              })}
+              {runs?.length === 0 && <tr><td colSpan={7} className="muted">Henüz kayıt yok (ilk güncellemeden sonra görünür).</td></tr>}
+            </tbody>
+          </table>
         </div>
-      ))}
+      </div>
     </div>
   );
 }

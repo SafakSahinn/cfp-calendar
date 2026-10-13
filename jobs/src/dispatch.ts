@@ -7,6 +7,7 @@ import {
 } from '../../supabase/functions/_shared/calendar.ts';
 import { calendarEnv, db, selectAll } from './db.ts';
 import { isCaution } from './quality.ts';
+import { runStats } from './runStats.ts';
 
 type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[] };
 
@@ -179,4 +180,5 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   }
 
   log(`Dağıtım bitti: ${profiles.length} kullanıcı, ${notified} bildirim, ${synced} takvim kaydı`);
+  Object.assign(runStats, { notifications: notified, calendar_entries: synced });
 }
