@@ -8,6 +8,8 @@ import { formatDate, formatDeadline } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 import { StatusTag, type Status } from './Submissions';
+import { PeerAvatar } from './Avatar';
+import { usePeerAvatars } from '../lib/avatar';
 
 const isCaution = (e: EventRow) => Object.keys(e.ranks).length === 0 && hasCautionFlag(e.flags);
 
@@ -89,12 +91,19 @@ export function GroupParticipants({ eventId }: { eventId: string }) {
   }, [rows]);
 
   if (people.length === 0) return null;
+  return <ParticipantList people={people} />;
+}
+
+function ParticipantList({ people }: { people: (Participant & { groups: string[] })[] }) {
+  const { t } = useI18n();
+  const photos = usePeerAvatars(people.map((p) => p.user_id));
   return (
     <section className="card participants">
       <h3>👥 {t.groupApplying(people.length)}</h3>
       <ul className="plain">
         {people.map((p) => (
           <li key={p.user_id} className="row">
+            <PeerAvatar src={photos.get(p.user_id)} name={p.display_name} size={28} />
             <span className="grow">
               {p.academic_title && t.titles[p.academic_title as keyof typeof t.titles] ? `${t.titles[p.academic_title as keyof typeof t.titles]} ` : ''}
               {p.display_name ?? '—'} <span className="muted small">· {p.groups.join(', ')}</span>

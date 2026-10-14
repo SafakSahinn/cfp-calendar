@@ -392,17 +392,15 @@ try {
       const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
       await page.locator('.avatar-editor input[type=file]').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: png });
       await page.getByText('Profil fotoğrafı güncellendi').waitFor({ timeout: 15_000 });
-      const { data: avp } = await db.from('profiles').select('avatar_path').eq('id', userId).single();
+      const { data: avp } = await db.from('profiles').select('avatar_path, avatar_status').eq('id', userId).single();
       const { data: avFile } = avp?.avatar_path ? await db.storage.from('avatars').download(avp.avatar_path) : { data: null };
-      check('profil: fotoğraf küçültülüp kapalı depoya yüklenir (WebP, <100 KB)', avp?.avatar_path === `${userId}/avatar.webp` && !!avFile && avFile.size < 100 * 1024, { path: avp?.avatar_path, size: avFile?.size });
+      check('profil: fotoğraf küçültülüp kapalı depoya yüklenir (WebP, <100 KB, onay bekliyor)',
+        new RegExp(`^${userId}/avatar-[0-9a-f]{16}\\.webp$`).test(avp?.avatar_path ?? '') && avp?.avatar_status === 'pending' && !!avFile && avFile.size < 100 * 1024,
+        { path: avp?.avatar_path, status: avp?.avatar_status, size: avFile?.size });
+      check('profil: "Onay bekliyor" rozeti', await page.locator('.avatar-pending').isVisible());
       await page.locator('.nav img.avatar').waitFor({ timeout: 10_000 });
-      check('profil: fotoğraf üst menüde görünür', await page.locator('.nav img.avatar').isVisible());
+      check('profil: fotoğraf (onay beklerken) sahibine üst menüde görünür', await page.locator('.nav img.avatar').isVisible());
       await shot(page, `${kind}-05c-avatar`, false);
-      await page.getByRole('button', { name: 'Kaldır' }).click();
-      await page.locator('.avatar-editor .avatar-initials').waitFor({ timeout: 10_000 });
-      const { data: avAfter } = await db.from('profiles').select('avatar_path').eq('id', userId).single();
-      const { data: avList } = await db.storage.from('avatars').list(userId);
-      check('profil: fotoğraf kaldırılınca depodan da silinir', avAfter?.avatar_path === null && (avList ?? []).length === 0, avList);
     }
     check('profil: anlık bildirim kartı', await page.getByRole('heading', { name: /Anlık bildirimler/ }).isVisible());
     // Başsız Chrome bildirim iznini her zaman "denied" bildirir; gerçek abonelik CI'da denenemez (telefonda elle denenir).
@@ -508,6 +506,26 @@ try {
       await page.locator('.chart svg .bar').last().hover();
       check('yönetici: grafik üzerine gelince değer gösterilir', await page.locator('.chart-tip').isVisible());
       await shot(page, `${kind}-08b-admin-stats`, true);
+
+      // Onaylar: profil testinde yüklenen fotoğraf burada bekliyor
+      await page.getByRole('tab', { name: /Onaylar/ }).click();
+      await page.locator('.avatar-review', { hasText: 'Deneme Kullanıcısı' }).waitFor({ timeout: 15_000 });
+      check('yönetici: onay bekleyen fotoğraf (görselle) listelenir', await page.locator('.avatar-review img').first().isVisible());
+      await shot(page, `${kind}-08c-admin-approvals`, false);
+      await page.locator('.avatar-review', { hasText: 'Deneme Kullanıcısı' }).getByRole('button', { name: /Onayla/ }).click();
+      await page.getByText('Fotoğraf onaylandı').waitFor({ timeout: 10_000 });
+      const { data: apr } = await db.from('profiles').select('avatar_status, avatar_path, avatar_approved_path').eq('id', userId).single();
+      check('yönetici: fotoğraf onaylanır', apr?.avatar_status === 'approved' && apr.avatar_approved_path === apr.avatar_path, apr);
+      await page.goto(`${SITE}#/profil`);
+      await page.locator('.avatar-approved').waitFor({ timeout: 10_000 });
+      check('profil: "Onaylandı" rozeti', true);
+      await page.getByRole('button', { name: 'Kaldır' }).click();
+      await page.locator('.avatar-editor .avatar-initials').waitFor({ timeout: 10_000 });
+      const { data: avAfter } = await db.from('profiles').select('avatar_path, avatar_approved_path').eq('id', userId).single();
+      const { data: avList } = await db.storage.from('avatars').list(userId);
+      check('profil: fotoğraf kaldırılınca depodan da silinir', avAfter?.avatar_path === null && avAfter.avatar_approved_path === null && (avList ?? []).length === 0, avList);
+      await page.goto(`${SITE}#/yonetim`);
+      await page.locator('.stat-grid').waitFor({ timeout: 15_000 });
 
       await page.getByRole('tab', { name: 'Üyeler' }).click();
       await page.locator('table.table tbody tr').first().waitFor({ timeout: 10_000 });

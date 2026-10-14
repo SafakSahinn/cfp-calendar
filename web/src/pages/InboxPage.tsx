@@ -62,6 +62,7 @@ export function InboxPage() {
     saved_search: t.nSavedSearch,
     submission_task: t.nTask,
     coauthor_update: t.nCoauthorUpdate,
+    avatar_reviewed: t.nAvatarReviewed,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
@@ -75,6 +76,7 @@ export function InboxPage() {
     saved_search: '🔎',
     submission_task: '📌',
     coauthor_update: '✏️',
+    avatar_reviewed: '📷',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;
@@ -103,6 +105,7 @@ export function InboxPage() {
                 </div>
               )}
               {(n.type === 'submission_task' || n.type === 'coauthor_update') && n.payload.paper && <p className="message-body small muted">📄 {n.payload.paper}{n.type === 'coauthor_update' && n.payload.by ? ` · ${t.updatedBy(n.payload.by)}` : ''}</p>}
+              {n.type === 'avatar_reviewed' && <p className="message-body small">{n.payload.approved ? t.avatarApprovedMsg : t.avatarRejectedMsg} <a href="#/profil">{t.navProfile} →</a></p>}
               {n.type === 'saved_search' && n.payload.search && <p className="message-body small muted">🔎 {t.savedSearchLine(n.payload.search)}</p>}
               {n.type === 'group_comment' && (
                 <p className="message-body small">

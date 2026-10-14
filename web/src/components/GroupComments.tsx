@@ -5,6 +5,8 @@ import { useApp } from '../lib/app';
 import { timeAgo } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { supabase } from '../lib/supabase';
+import { usePeerAvatars } from '../lib/avatar';
+import { PeerAvatar } from './Avatar';
 
 export interface GroupComment {
   id: string;
@@ -24,6 +26,7 @@ export function CommentThread({ groupId, eventId, comments, me, isOwner, reload 
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const photos = usePeerAvatars(open ? comments.map((c) => c.user_id) : []);
 
   const send = async (e: FormEvent) => {
     e.preventDefault();
@@ -52,6 +55,7 @@ export function CommentThread({ groupId, eventId, comments, me, isOwner, reload 
           {comments.map((c) => (
             <div key={c.id} className="comment">
               <div className="row">
+                <PeerAvatar src={photos.get(c.user_id)} name={c.display_name} size={24} />
                 <strong className="small">
                   {c.academic_title && t.titles[c.academic_title as keyof typeof t.titles] ? `${t.titles[c.academic_title as keyof typeof t.titles]} ` : ''}
                   {c.display_name ?? '—'}

@@ -298,41 +298,79 @@ try {
   check('en fazla 10 kayıtlı arama', !!ssLimit && /too_many_searches/.test(ssLimit.message), ssLimit?.message);
 
   // -------------------------------------------------------------------------
-  section('Profil fotoğrafı (kapalı depo)');
+  section('Profil fotoğrafı: yükleme, onay ve grup görünürlüğü');
   // 1×1 PNG
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
-  const avatarPath = `${member.id}/avatar.png`;
+  const hex = () => crypto.randomUUID().replace(/-/g, '').slice(0, 16);
   const up = (c: typeof member.client, path: string, body: Buffer | string, contentType = 'image/png') =>
-    c.storage.from('avatars').upload(path, body, { upsert: true, contentType });
-  const { error: avOk } = await up(member.client, avatarPath, png);
-  check('üye kendi klasörüne fotoğraf yükler', !avOk, avOk?.message);
-  const { error: avForeign } = await up(member.client, `${owner.id}/avatar.png`, png);
-  check('başkasının klasörüne yükleyemez', !!avForeign);
-  const { error: avName } = await up(member.client, `${member.id}/baska.png`, png);
-  check('yalnızca avatar.(webp|jpg|png) adına izin var', !!avName);
-  const { error: avBig } = await up(member.client, avatarPath, Buffer.alloc(150 * 1024, 1));
-  check('100 KB üstü reddedilir', !!avBig);
-  const { error: avType } = await up(member.client, `${member.id}/avatar.webp`, 'merhaba', 'text/plain');
-  check('resim olmayan tür reddedilir', !!avType);
-  const { data: avOwn } = await member.client.storage.from('avatars').download(avatarPath);
-  check('sahip fotoğrafını indirir', !!avOwn && avOwn.size === png.length);
-  const { data: avOut } = await outsider.client.storage.from('avatars').download(avatarPath);
-  check('başka üye fotoğrafı göremez', !avOut);
-  const { data: avOwnerSees } = await owner.client.storage.from('avatars').download(avatarPath);
-  check('grup sahibi (aynı gruptaki üye) bile göremez', !avOwnerSees);
-  const { data: avAnon } = await anon.storage.from('avatars').download(avatarPath);
-  check('giriş yapmamış kişi göremez', !avAnon);
-  const { error: avDelForeign } = await outsider.client.storage.from('avatars').remove([avatarPath]);
-  const { data: avStill } = await member.client.storage.from('avatars').download(avatarPath);
-  check('başkası silemez', !!avStill, avDelForeign?.message);
-  const { error: avPathForeign } = await member.client.from('profiles').update({ avatar_path: `${owner.id}/avatar.png` }).eq('id', member.id);
-  check('profile başkasının fotoğraf yolu yazılamaz', !!avPathForeign);
-  const { error: avPathOk } = await member.client.from('profiles').update({ avatar_path: avatarPath }).eq('id', member.id);
-  check('profile kendi fotoğraf yolu yazılır', !avPathOk, avPathOk?.message);
-  const { error: avRm } = await member.client.storage.from('avatars').remove([avatarPath]);
-  // İndirme CDN önbelleğinden birkaç saniye dönebilir; silinmenin kanıtı depo listesi
-  const { data: avList } = await db.storage.from('avatars').list(member.id);
-  check('sahip fotoğrafını kaldırır (depodan silinir)', !avRm && (avList ?? []).length === 0, avRm?.message ?? avList);
+    c.storage.from('avatars').upload(path, body, { contentType });
+  const canSee = async (c: typeof member.client, path: string) => !!(await c.storage.from('avatars').download(path)).data;
+  // owner ve member aynı grupta (gid); outsider bu aşamada grupta değil
+  const p1 = `${member.id}/avatar-${hex()}.png`;
+  const { error: avOk } = await up(member.client, p1, png);
+  check('üye kendi klasörüne benzersiz adla yükler', !avOk, avOk?.message);
+  check('başkasının klasörüne yükleyemez', !!(await up(member.client, `${owner.id}/avatar-${hex()}.png`, png)).error);
+  check('sabit ad (üzerine yazma) yasak: avatar.png', !!(await up(member.client, `${member.id}/avatar.png`, png)).error);
+  check('aynı dosyanın üzerine yazılamaz', !!(await member.client.storage.from('avatars').upload(p1, png, { upsert: true, contentType: 'image/png' })).error);
+  check('100 KB üstü reddedilir', !!(await up(member.client, `${member.id}/avatar-${hex()}.png`, Buffer.alloc(150 * 1024, 1))).error);
+  check('resim olmayan tür reddedilir', !!(await up(member.client, `${member.id}/avatar-${hex()}.webp`, 'merhaba', 'text/plain')).error);
+  const { error: setForeign } = await member.client.rpc('set_avatar', { p_path: `${owner.id}/avatar-${hex()}.png` });
+  check('başkasının yolu profile bağlanamaz', !!setForeign);
+  const { error: setMissing } = await member.client.rpc('set_avatar', { p_path: `${member.id}/avatar-${hex()}.png` });
+  check('yüklenmemiş dosya profile bağlanamaz', !!setMissing && /not_uploaded/.test(setMissing.message), setMissing?.message);
+  const { error: directPath } = await member.client.from('profiles').update({ avatar_path: p1 }).eq('id', member.id);
+  check('fotoğraf yolu/durumu doğrudan değiştirilemez (sadece RPC)', !!directPath);
+  const { error: setErr } = await member.client.rpc('set_avatar', { p_path: p1 });
+  const { data: st1 } = await db.from('profiles').select('avatar_path, avatar_status, avatar_approved_path').eq('id', member.id).single();
+  check('yüklenen fotoğraf "onay bekliyor" olur', !setErr && st1?.avatar_status === 'pending' && st1.avatar_path === p1 && st1.avatar_approved_path === null, setErr?.message ?? st1);
+  check('sahip kendi fotoğrafını görür (onay beklerken de)', await canSee(member.client, p1));
+  check('onaydan ÖNCE grup arkadaşı göremez', !(await canSee(owner.client, p1)));
+  const { data: peersBefore } = await owner.client.rpc('peer_avatar_paths', { p_users: [member.id] });
+  check('onaydan önce grup arkadaşına yol verilmez', (peersBefore ?? []).length === 0, peersBefore);
+  check('grup dışı kişi göremez', !(await canSee(outsider.client, p1)));
+  check('giriş yapmamış kişi göremez', !(await canSee(anon, p1)));
+  const { error: nonAdminList } = await owner.client.rpc('admin_pending_avatars');
+  check('yönetici olmayan onay listesini açamaz', !!nonAdminList);
+  const { error: nonAdminReview } = await owner.client.rpc('admin_review_avatar', { p_user: member.id, p_path: p1, p_approve: true });
+  check('yönetici olmayan onaylayamaz', !!nonAdminReview);
+
+  await db.from('admins').insert({ user_id: outsider.id }); // grup dışı yönetici
+  const { data: pend } = await outsider.client.rpc('admin_pending_avatars');
+  check('yönetici onay listesinde fotoğrafı görür', (pend ?? []).some((r: { user_id: string; avatar_path: string }) => r.user_id === member.id && r.avatar_path === p1), pend);
+  check('yönetici inceleme için fotoğrafı açabilir', await canSee(outsider.client, p1));
+  const { data: del1, error: apErr } = await outsider.client.rpc('admin_review_avatar', { p_user: member.id, p_path: p1, p_approve: true });
+  check('yönetici onaylar (silinecek dosya yok)', !apErr && (del1 ?? []).length === 0, apErr?.message ?? del1);
+  const { data: apMsg } = await member.client.from('notifications').select('payload').eq('type', 'avatar_reviewed');
+  check('kullanıcıya "fotoğrafın onaylandı" mesajı', apMsg?.length === 1 && apMsg[0].payload.approved === true, apMsg);
+  check('onaydan SONRA grup arkadaşı görür', await canSee(owner.client, p1));
+  const { data: peersAfter } = await owner.client.rpc('peer_avatar_paths', { p_users: [member.id, outsider.id] });
+  check('grup arkadaşına onaylı yol verilir; grup dışındakinin yolu verilmez', peersAfter?.length === 1 && peersAfter[0].path === p1, peersAfter);
+
+  // Yeni fotoğraf: onaylanana kadar grupta eski onaylı görünür; reddedilirse silinir
+  const p2 = `${member.id}/avatar-${hex()}.png`;
+  await up(member.client, p2, png);
+  const { data: old2 } = await member.client.rpc('set_avatar', { p_path: p2 });
+  check('yeni yükleme: onaylı eski fotoğraf silinmek üzere döndürülmez', old2 === null, old2);
+  const { data: peersMid } = await owner.client.rpc('peer_avatar_paths', { p_users: [member.id] });
+  check('yeni fotoğraf onay beklerken grupta ESKİ onaylı görünür', peersMid?.[0]?.path === p1 && !(await canSee(owner.client, p2)), peersMid);
+  const { error: staleErr } = await outsider.client.rpc('admin_review_avatar', { p_user: member.id, p_path: p1, p_approve: false });
+  check('eski dosya üzerinden karar verilemez (stale)', !!staleErr && /stale/.test(staleErr.message), staleErr?.message);
+  const { data: del2 } = await outsider.client.rpc('admin_review_avatar', { p_user: member.id, p_path: p2, p_approve: false });
+  check('reddedilince yeni dosya silinmek üzere döner', JSON.stringify(del2) === JSON.stringify([p2]), del2);
+  await outsider.client.storage.from('avatars').remove(del2 as string[]);
+  const { data: st2 } = await db.from('profiles').select('avatar_path, avatar_status, avatar_approved_path').eq('id', member.id).single();
+  check('red: önceki onaylı fotoğraf kalır', st2?.avatar_status === 'rejected' && st2.avatar_path === p1 && st2.avatar_approved_path === p1, st2);
+  const { data: lst } = await db.storage.from('avatars').list(member.id);
+  check('reddedilen dosya depodan silindi', (lst ?? []).length === 1 && `${member.id}/${lst![0].name}` === p1, lst);
+  await db.from('admins').delete().eq('user_id', outsider.id);
+
+  await owner.client.storage.from('avatars').remove([p1]);
+  check('başkası (grup arkadaşı) silemez', await canSee(member.client, p1));
+  const { data: cleared } = await member.client.rpc('clear_avatar');
+  await member.client.storage.from('avatars').remove(cleared as string[]);
+  const { data: lst2 } = await db.storage.from('avatars').list(member.id);
+  const { data: st3 } = await db.from('profiles').select('avatar_path, avatar_status, avatar_approved_path').eq('id', member.id).single();
+  check('kaldır: profil temizlenir, dosya silinir', st3?.avatar_path === null && st3.avatar_approved_path === null && st3.avatar_status === null && (lst2 ?? []).length === 0, { st3, lst2 });
 
   // -------------------------------------------------------------------------
   section('Hatırlatma günleri');

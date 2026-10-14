@@ -46,7 +46,7 @@ export async function adminReport(opts: { ok: boolean; error?: string; log: (m: 
   if (opts.ok && sentToday) return; // başarılı çalışmada günde tek rapor
 
   const since = new Date(Date.now() - DAY).toISOString();
-  const [{ data: runs }, users, groups, members, submissions, feedbackNew, calendar, openEvents] = await Promise.all([
+  const [{ data: runs }, users, groups, members, submissions, feedbackNew, calendar, openEvents, avatarsPending] = await Promise.all([
     db.from('sync_runs').select('started_at, finished_at, ok, stats, error, trigger').gte('started_at', since).order('started_at'),
     authUserStats(),
     count('groups'),
@@ -55,11 +55,12 @@ export async function adminReport(opts: { ok: boolean; error?: string; log: (m: 
     count('feedback', (q) => q.eq('status', 'new')),
     count('calendar_connections'),
     count('events', (q) => q.gt('submission_deadline', new Date().toISOString())),
+    count('profiles', (q) => q.eq('avatar_status', 'pending')),
   ]);
 
   const { subject, html } = renderAdminReport({
     ok: opts.ok, error: opts.error, date: today, siteUrl: process.env.SITE_URL ?? '', users, groups, members,
-    submissions, calendar, openEvents, feedbackNew, runs: (runs ?? []) as ReportRun[], maintenance: opts.maintenance,
+    submissions, calendar, openEvents, feedbackNew, avatarsPending, runs: (runs ?? []) as ReportRun[], maintenance: opts.maintenance,
   });
 
   const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });

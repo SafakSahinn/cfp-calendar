@@ -63,6 +63,9 @@ export interface Profile {
   avatar_url: string | null;
   /** Yüklenen profil fotoğrafının depodaki yolu (null = yok) */
   avatar_path: string | null;
+  /** Yönetici onaylı fotoğraf (grup arkadaşları bunu görür) */
+  avatar_approved_path: string | null;
+  avatar_status: 'pending' | 'approved' | 'rejected' | null;
   locale: 'tr' | 'en';
   calendar_provider: Provider | null;
   calendar_account: string | null;
@@ -77,8 +80,8 @@ export interface Profile {
 export interface Notification {
   id: string;
   event_id: string | null;
-  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search' | 'submission_task' | 'coauthor_update';
-  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null; days?: number; search?: string; task?: 'camera_ready' | 'registration' | 'presentation'; date?: string; paper?: string | null; status?: string };
+  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search' | 'submission_task' | 'coauthor_update' | 'avatar_reviewed';
+  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null; days?: number; search?: string; task?: 'camera_ready' | 'registration' | 'presentation'; date?: string; paper?: string | null; status?: string; approved?: boolean };
   group_id: string | null;
   announcements: { title: string; body: string; url: string | null } | null;
   response: 'interested' | 'not_interested' | null;

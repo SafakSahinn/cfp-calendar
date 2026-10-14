@@ -3,6 +3,7 @@
 // Yönetici paneli Türkçedir (yönetici kitlesi).
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { AdminAvatars } from '../components/AdminAvatars';
 import { AdminStats, type UsageStats } from '../components/AdminStats';
 import { fieldsOf, TOPICS } from '../../../shared/topics';
 import { useApp } from '../lib/app';
@@ -10,7 +11,7 @@ import { formatDate, formatDeadline, timeAgo } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
-type Tab = 'overview' | 'stats' | 'feedback' | 'users' | 'events' | 'announcements' | 'audit';
+type Tab = 'overview' | 'stats' | 'approvals' | 'feedback' | 'users' | 'events' | 'announcements' | 'audit';
 
 interface Stats {
   users: number; users_new_7d: number; users_active_7d: number; calendar_connected: number; email_on: number;
@@ -56,6 +57,11 @@ function useRpc<T>(fn: string, args?: Record<string, unknown>) {
 export function AdminPage() {
   const { isAdmin } = useApp();
   const [tab, setTab] = useState<Tab>('overview');
+  // Onay bekleyen fotoğraf sayısı (sekme rozeti)
+  const [pending, setPending] = useState(0);
+  useEffect(() => {
+    if (isAdmin) supabase.rpc('admin_pending_avatars').then(({ data }) => setPending(((data ?? []) as unknown[]).length));
+  }, [isAdmin]);
 
   if (isAdmin === null) return <p className="muted center">Yükleniyor…</p>;
   if (!isAdmin) return <div className="notice">Bu sayfa yalnızca yöneticilere açıktır.</div>;
@@ -63,6 +69,7 @@ export function AdminPage() {
   const tabs: [Tab, string][] = [
     ['overview', 'Özet'],
     ['stats', 'İstatistikler'],
+    ['approvals', 'Onaylar'],
     ['feedback', 'Geri bildirimler'],
     ['users', 'Üyeler'],
     ['events', 'Etkinlik ekle'],
@@ -77,11 +84,13 @@ export function AdminPage() {
         {tabs.map(([t, label]) => (
           <button key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
             {label}
+            {t === 'approvals' && pending > 0 && <span className="badge">{pending}</span>}
           </button>
         ))}
       </div>
       {tab === 'overview' && <Overview />}
       {tab === 'stats' && <StatsTab />}
+      {tab === 'approvals' && <AdminAvatars onCount={setPending} />}
       {tab === 'feedback' && <Feedback />}
       {tab === 'users' && <Users />}
       {tab === 'events' && <ManualEvents />}

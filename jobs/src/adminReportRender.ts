@@ -28,6 +28,8 @@ export interface ReportData {
   calendar: number;
   openEvents: number;
   feedbackNew: number;
+  /** Onay bekleyen profil fotoğrafı */
+  avatarsPending?: number;
   runs: ReportRun[];
   maintenance: MaintenanceItem[];
 }
@@ -68,6 +70,7 @@ export function renderAdminReport(d: ReportData): { subject: string; html: strin
     ['Takvim bağlı', d.calendar],
     ['Açık çağrı', d.openEvents],
     ['Yeni geri bildirim', d.feedbackNew, d.feedbackNew ? 'panelde yanıt bekliyor' : undefined],
+    ['Onay bekleyen fotoğraf', d.avatarsPending ?? 0, d.avatarsPending ? 'Yönetim → Onaylar' : undefined],
   ];
   const tileRows: string[] = [];
   for (let i = 0; i < tiles.length; i += 2) {

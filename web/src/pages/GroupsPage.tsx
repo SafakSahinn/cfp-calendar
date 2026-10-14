@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { KindLegend, MonthCalendar } from '../components/MonthCalendar';
 import { GroupSubmissions } from '../components/Submissions';
 import { CommentThread, type GroupComment } from '../components/GroupComments';
+import { PeerAvatar } from '../components/Avatar';
+import { usePeerAvatars } from '../lib/avatar';
 import { useApp } from '../lib/app';
 import { itemsForEvent } from '../lib/calendarItems';
 import { eventHref } from '../lib/events';
@@ -259,6 +261,7 @@ export function GroupPage({ id }: { id: string }) {
 function Members({ group, members, reload }: { group: MyGroup; members: GroupMember[]; reload: () => void }) {
   const { t } = useI18n();
   const { showToast } = useApp();
+  const photos = usePeerAvatars(members.map((m) => m.user_id));
   const remove = async (m: GroupMember) => {
     if (!window.confirm(t.confirmRemoveMember(m.display_name ?? '—'))) return;
     const { error } = await supabase.rpc('remove_group_member', { p_group: group.id, p_user: m.user_id });
@@ -271,7 +274,8 @@ function Members({ group, members, reload }: { group: MyGroup; members: GroupMem
       <ul className="followed">
         {members.map((m) => (
           <li key={m.user_id}>
-            <span>
+            <span className="member-row">
+              <PeerAvatar src={photos.get(m.user_id)} name={m.display_name} size={32} />
               <strong>{m.display_name ?? t.unnamed}</strong>
               {m.role === 'owner' && <span className="tag rank">{t.roleOwner}</span>}
               <span className="muted small">

@@ -347,7 +347,7 @@ try {
   // -------------------------------------------------------------------------
   section('Hesap silme');
   const avPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
-  const { error: avUp } = await user.storage.from('avatars').upload(`${userId}/avatar.png`, avPng, { upsert: true, contentType: 'image/png' });
+  const { error: avUp } = await user.storage.from('avatars').upload(`${userId}/avatar-0123456789abcdef.png`, avPng, { contentType: 'image/png' });
   check('silmeden önce profil fotoğrafı yüklendi', !avUp, avUp?.message);
   const del = await fn(user, 'delete-account', { delete_calendar_entries: true });
   check('hesap silme → 200', del.status === 200, del);
