@@ -38,6 +38,7 @@ export function PrivacyTr() {
       <h2>1. İşlenen veriler</h2>
       <ul>
         <li><strong>Hesap bilgileri:</strong> e-posta adresi, ad soyad ve (Google/Microsoft ile girişte) profil fotoğrafı bağlantısı. E-posta ile üyelikte şifreniz yalnızca tek yönlü özet (hash) olarak saklanır.</li>
+        <li><strong>Profil fotoğrafı (isteğe bağlı):</strong> yüklemeyi seçerseniz fotoğrafınız tarayıcınızda kare kırpılıp 256×256 piksele küçültülür (yaklaşık 20 KB) ve yalnızca bu hâliyle, Supabase’in Frankfurt’taki <em>herkese kapalı</em> deposunda saklanır. Fotoğrafı <strong>yalnızca siz</strong> görürsünüz; grup üyeleri dahil başka hiçbir kullanıcıya gösterilmez ve başka bir amaçla kullanılmaz. Fotoğraf yüklemezseniz, Google ile girişte Google profil fotoğrafınız (adresi saklanır, görüntü Google sunucusundan yüklenir) ya da adınızın baş harfleri gösterilir.</li>
         <li><strong>Tercihler:</strong> seçtiğiniz konular, takip ettiğiniz çağrılar, dil tercihi, bildirim ayarları.</li>
         <li><strong>Site içi mesajlar:</strong> size gösterilen bildirimler ve “İlgileniyorum / İlgilenmiyorum” yanıtlarınız.</li>
         <li><strong>Takvim bağlantısı (isteğe bağlı):</strong> Google veya Microsoft’un verdiği erişim ve yenileme anahtarları (AES-256 ile şifreli), bağlı hesabın e-posta adresi ve takviminize eklediğimiz kayıtların kimlikleri.</li>
@@ -64,7 +65,7 @@ export function PrivacyTr() {
       <h2>4. Aktarım ve hizmet sağlayıcılar</h2>
       <p>Verileriniz satılmaz ve reklam amacıyla paylaşılmaz. Hizmetin çalışması için aşağıdaki sağlayıcılar kullanılır (yurt dışına aktarım, KVKK m.9 kapsamında açık talebinizle gerçekleşen hizmet ifası içindir):</p>
       <ul>
-        <li><strong>Supabase</strong> — veritabanı ve kimlik doğrulama (sunucular: Frankfurt, AB).</li>
+        <li><strong>Supabase</strong> — veritabanı, kimlik doğrulama ve profil fotoğrafı deposu (sunucular: Frankfurt, AB).</li>
         <li><strong>GitHub</strong> — sitenin barındırılması ve zamanlanmış işler (ABD).</li>
         <li><strong>Google / Microsoft</strong> — giriş ve (bağlarsanız) takvim hizmeti.</li>
         <li><strong>Gmail (Google)</strong> — hesap onay ve şifre sıfırlama e-postalarının gönderimi.</li>
@@ -75,8 +76,9 @@ export function PrivacyTr() {
       <h2>5. Saklama süresi</h2>
       <p>
         Verileriniz hesabınız açık olduğu sürece saklanır. Profil sayfasındaki <strong>Hesabı sil</strong> butonuyla
-        hesabınızı ve ilgili tüm verileri anında silebilirsiniz; bu işlem takvim izninizi de geri çeker ve isterseniz
-        takviminize eklediğimiz kayıtları kaldırır. Takvim bağlantısını profil sayfasından istediğiniz an kesebilirsiniz.
+        hesabınızı ve ilgili tüm verileri anında silebilirsiniz; bu işlem takvim izninizi de geri çeker, yüklediğiniz profil
+        fotoğrafını depodan siler ve isterseniz takviminize eklediğimiz kayıtları kaldırır. Profil fotoğrafını tek başına
+        silmek için profil sayfasındaki <strong>Kaldır</strong> butonunu kullanabilirsiniz; fotoğraf depodan hemen silinir. Takvim bağlantısını profil sayfasından istediğiniz an kesebilirsiniz.
       </p>
 
       <h2>6. Çerezler ve yerel depolama</h2>
@@ -106,6 +108,7 @@ export function PrivacyEn() {
       <h2>1. Data we process</h2>
       <ul>
         <li><strong>Account data:</strong> email address, name and (for Google/Microsoft sign-in) profile picture URL. For email sign-up your password is stored only as a one-way hash.</li>
+        <li><strong>Profile photo (optional):</strong> if you choose to upload one, your photo is cropped square and resized to 256×256 pixels (about 20 KB) in your browser and only that version is stored in Supabase’s <em>private</em> storage in Frankfurt. <strong>Only you</strong> can see it; it is never shown to other users, including group members, and is not used for any other purpose. Without an uploaded photo we show your Google profile picture (URL stored, image loaded from Google) or your initials.</li>
         <li><strong>Preferences:</strong> topics you select, calls you follow, language and notification settings.</li>
         <li><strong>In-site messages:</strong> notifications shown to you and your “Interested / Not interested” responses.</li>
         <li><strong>Calendar connection (optional):</strong> access and refresh tokens issued by Google or Microsoft (encrypted with AES-256), the connected account’s email address and the IDs of entries we added to your calendar.</li>
@@ -132,7 +135,7 @@ export function PrivacyEn() {
       <h2>4. Service providers</h2>
       <p>We never sell your data or share it for advertising. The following providers are used to run the service:</p>
       <ul>
-        <li><strong>Supabase</strong> — database and authentication (servers in Frankfurt, EU).</li>
+        <li><strong>Supabase</strong> — database, authentication and profile photo storage (servers in Frankfurt, EU).</li>
         <li><strong>GitHub</strong> — website hosting and scheduled jobs (USA).</li>
         <li><strong>Google / Microsoft</strong> — sign-in and, if connected, calendar.</li>
         <li><strong>Gmail (Google)</strong> — sending account confirmation and password reset emails.</li>
@@ -143,8 +146,9 @@ export function PrivacyEn() {
       <h2>5. Retention</h2>
       <p>
         Data is kept while your account exists. The <strong>Delete account</strong> button on your profile immediately
-        deletes your account and all related data, revokes calendar access and, optionally, removes the entries we added
-        to your calendar. You can disconnect your calendar at any time from your profile.
+        deletes your account and all related data, revokes calendar access, deletes your uploaded profile photo from storage
+        and, optionally, removes the entries we added to your calendar. Use <strong>Remove</strong> on your profile to delete
+        just the photo; it is removed from storage immediately. You can disconnect your calendar at any time from your profile.
       </p>
 
       <h2>6. Cookies and local storage</h2>

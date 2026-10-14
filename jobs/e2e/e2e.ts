@@ -346,6 +346,9 @@ try {
 
   // -------------------------------------------------------------------------
   section('Hesap silme');
+  const avPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+  const { error: avUp } = await user.storage.from('avatars').upload(`${userId}/avatar.png`, avPng, { upsert: true, contentType: 'image/png' });
+  check('silmeden önce profil fotoğrafı yüklendi', !avUp, avUp?.message);
   const del = await fn(user, 'delete-account', { delete_calendar_entries: true });
   check('hesap silme → 200', del.status === 200, del);
   const { data: gone } = await db.auth.admin.getUserById(userId);
@@ -354,6 +357,8 @@ try {
   const { count: leftInterests } = await db.from('interests').select('id', { count: 'exact', head: true }).eq('user_id', userId);
   const { count: leftProfile } = await db.from('profiles').select('id', { count: 'exact', head: true }).eq('id', userId);
   check('tüm kullanıcı verisi silindi', leftNotifs === 0 && leftInterests === 0 && leftProfile === 0, { leftNotifs, leftInterests, leftProfile });
+  const { data: avLeft } = await db.storage.from('avatars').list(userId);
+  check('hesap silinince profil fotoğrafı da depodan silindi', (avLeft ?? []).length === 0, avLeft);
   if (!gone?.user) userId = '';
 } catch (e) {
   failures++;

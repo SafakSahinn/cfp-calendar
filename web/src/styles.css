@@ -566,3 +566,11 @@ ul.plain li { line-height: 1.4; }
 .team h4 { margin: 0 0 0.3rem; }
 .coauthored { border-left: 3px solid var(--accent); }
 .cal-item.kind-task, .legend-item.kind-task { background: color-mix(in srgb, #9333ea 18%, transparent); }
+
+/* Profil fotoğrafı */
+.avatar { border-radius: 50%; object-fit: cover; flex: none; }
+.avatar-initials { display: inline-grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; line-height: 1; }
+.nav-icon .avatar { vertical-align: middle; }
+.avatar-editor { display: flex; gap: 0.9rem; align-items: center; }
+.avatar-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; max-width: 340px; }
+.avatar-actions .muted { flex-basis: 100%; }

@@ -298,6 +298,42 @@ try {
   check('en fazla 10 kayıtlı arama', !!ssLimit && /too_many_searches/.test(ssLimit.message), ssLimit?.message);
 
   // -------------------------------------------------------------------------
+  section('Profil fotoğrafı (kapalı depo)');
+  // 1×1 PNG
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+  const avatarPath = `${member.id}/avatar.png`;
+  const up = (c: typeof member.client, path: string, body: Buffer | string, contentType = 'image/png') =>
+    c.storage.from('avatars').upload(path, body, { upsert: true, contentType });
+  const { error: avOk } = await up(member.client, avatarPath, png);
+  check('üye kendi klasörüne fotoğraf yükler', !avOk, avOk?.message);
+  const { error: avForeign } = await up(member.client, `${owner.id}/avatar.png`, png);
+  check('başkasının klasörüne yükleyemez', !!avForeign);
+  const { error: avName } = await up(member.client, `${member.id}/baska.png`, png);
+  check('yalnızca avatar.(webp|jpg|png) adına izin var', !!avName);
+  const { error: avBig } = await up(member.client, avatarPath, Buffer.alloc(150 * 1024, 1));
+  check('100 KB üstü reddedilir', !!avBig);
+  const { error: avType } = await up(member.client, `${member.id}/avatar.webp`, 'merhaba', 'text/plain');
+  check('resim olmayan tür reddedilir', !!avType);
+  const { data: avOwn } = await member.client.storage.from('avatars').download(avatarPath);
+  check('sahip fotoğrafını indirir', !!avOwn && avOwn.size === png.length);
+  const { data: avOut } = await outsider.client.storage.from('avatars').download(avatarPath);
+  check('başka üye fotoğrafı göremez', !avOut);
+  const { data: avOwnerSees } = await owner.client.storage.from('avatars').download(avatarPath);
+  check('grup sahibi (aynı gruptaki üye) bile göremez', !avOwnerSees);
+  const { data: avAnon } = await anon.storage.from('avatars').download(avatarPath);
+  check('giriş yapmamış kişi göremez', !avAnon);
+  const { error: avDelForeign } = await outsider.client.storage.from('avatars').remove([avatarPath]);
+  const { data: avStill } = await member.client.storage.from('avatars').download(avatarPath);
+  check('başkası silemez', !!avStill, avDelForeign?.message);
+  const { error: avPathForeign } = await member.client.from('profiles').update({ avatar_path: `${owner.id}/avatar.png` }).eq('id', member.id);
+  check('profile başkasının fotoğraf yolu yazılamaz', !!avPathForeign);
+  const { error: avPathOk } = await member.client.from('profiles').update({ avatar_path: avatarPath }).eq('id', member.id);
+  check('profile kendi fotoğraf yolu yazılır', !avPathOk, avPathOk?.message);
+  await member.client.storage.from('avatars').remove([avatarPath]);
+  const { data: avGone } = await member.client.storage.from('avatars').download(avatarPath);
+  check('sahip fotoğrafını kaldırır', !avGone);
+
+  // -------------------------------------------------------------------------
   section('Hatırlatma günleri');
   const { data: remDefault } = await member.client.from('profiles').select('reminder_days').eq('id', member.id).single();
   check('varsayılan hatırlatma: 7 gün', JSON.stringify(remDefault?.reminder_days) === '[7]', remDefault);
@@ -413,6 +449,8 @@ try {
   if (announcementId) await db.from('announcements').delete().eq('id', announcementId);
   await db.from('announcements').delete().in('title', ['E2E duyurusu', 'Kötü bağlantı', 'Sahte duyuru']);
   for (const id of created) {
+    const { data: av } = await db.storage.from('avatars').list(id);
+    if (av?.length) await db.storage.from('avatars').remove(av.map((x) => `${id}/${x.name}`));
     await db.from('admins').delete().eq('user_id', id);
     await db.auth.admin.deleteUser(id);
   }

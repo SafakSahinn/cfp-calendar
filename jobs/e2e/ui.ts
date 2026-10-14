@@ -386,6 +386,23 @@ try {
       const { data: rd } = await db.from('profiles').select('reminder_days').eq('id', userId).single();
       check('profil: hatırlatma günü seçimi kaydedilir', JSON.stringify(rd?.reminder_days) === '[7,3]', rd);
       await db.from('profiles').update({ reminder_days: [7] }).eq('id', userId); // mobil test varsayılanı görsün
+
+      // Profil fotoğrafı: yükle → tarayıcıda 256×256 WebP'ye küçültülür → menüde görünür → kaldır
+      check('profil: fotoğraf yoksa baş harfler gösterilir', await page.locator('.avatar-editor .avatar-initials').isVisible());
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+      await page.locator('.avatar-editor input[type=file]').setInputFiles({ name: 'foto.png', mimeType: 'image/png', buffer: png });
+      await page.getByText('Profil fotoğrafı güncellendi').waitFor({ timeout: 15_000 });
+      const { data: avp } = await db.from('profiles').select('avatar_path').eq('id', userId).single();
+      const { data: avFile } = avp?.avatar_path ? await db.storage.from('avatars').download(avp.avatar_path) : { data: null };
+      check('profil: fotoğraf küçültülüp kapalı depoya yüklenir (WebP, <100 KB)', avp?.avatar_path === `${userId}/avatar.webp` && !!avFile && avFile.size < 100 * 1024, { path: avp?.avatar_path, size: avFile?.size });
+      await page.locator('.nav img.avatar').waitFor({ timeout: 10_000 });
+      check('profil: fotoğraf üst menüde görünür', await page.locator('.nav img.avatar').isVisible());
+      await shot(page, `${kind}-05c-avatar`, false);
+      await page.getByRole('button', { name: 'Kaldır' }).click();
+      await page.locator('.avatar-editor .avatar-initials').waitFor({ timeout: 10_000 });
+      const { data: avAfter } = await db.from('profiles').select('avatar_path').eq('id', userId).single();
+      const { data: avList } = await db.storage.from('avatars').list(userId);
+      check('profil: fotoğraf kaldırılınca depodan da silinir', avAfter?.avatar_path === null && (avList ?? []).length === 0, avList);
     }
     check('profil: anlık bildirim kartı', await page.getByRole('heading', { name: /Anlık bildirimler/ }).isVisible());
     // Başsız Chrome bildirim iznini her zaman "denied" bildirir; gerçek abonelik CI'da denenemez (telefonda elle denenir).
@@ -584,6 +601,8 @@ try {
 } finally {
   await browser.close();
   if (userId) {
+    const { data: av } = await db.storage.from('avatars').list(userId);
+    if (av?.length) await db.storage.from('avatars').remove(av.map((x) => `${userId}/${x.name}`));
     await db.auth.admin.deleteUser(userId);
     console.log('\n  test kullanıcısı temizlendi');
   }

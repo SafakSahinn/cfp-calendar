@@ -61,6 +61,8 @@ export interface Profile {
   institution: string | null;
   department: string | null;
   avatar_url: string | null;
+  /** Yüklenen profil fotoğrafının depodaki yolu (null = yok) */
+  avatar_path: string | null;
   locale: 'tr' | 'en';
   calendar_provider: Provider | null;
   calendar_account: string | null;

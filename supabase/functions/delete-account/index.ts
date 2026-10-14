@@ -2,7 +2,8 @@
 // POST { delete_calendar_entries?: boolean }
 //
 // Sıra: (isteğe bağlı) takvime eklenen kayıtları sil → Google iznini geri çek → kullanıcıyı sil.
-// Kullanıcı silinince profiles, interests, notifications, calendar_* satırları ON DELETE CASCADE ile gider.
+// Kullanıcı silinince profiles, interests, notifications, calendar_* satırları ON DELETE CASCADE ile gider;
+// profil fotoğrafı (avatars deposu) burada ayrıca silinir.
 
 import { deleteAllEntries, revokeAccess } from '../_shared/calendar.ts';
 import { adminClient, calendarEnv, corsHeaders, json, requireUser } from '../_shared/http.ts';
@@ -31,6 +32,14 @@ Deno.serve(async (req) => {
     await revokeAccess(admin, env, user.id);
   } catch (e) {
     result.warnings.push(`revoke: ${e}`);
+  }
+
+  // Profil fotoğrafı (depodaki dosyalar kullanıcı silinince kendiliğinden gitmez)
+  try {
+    const { data: files } = await admin.storage.from('avatars').list(user.id);
+    if (files?.length) await admin.storage.from('avatars').remove(files.map((f) => `${user.id}/${f.name}`));
+  } catch (e) {
+    result.warnings.push(`avatar: ${e}`);
   }
 
   const { error } = await admin.auth.admin.deleteUser(user.id);

@@ -6,4 +6,4 @@ export const REPO_URL = 'https://github.com/SafakSahinn/cfp-calendar';
 export const CONTACT_EMAIL = 'safaksahin022@gmail.com';
 /** Veri sorumlusu (KVKK). */
 export const DATA_CONTROLLER = 'Şafak Şahin';
-export const LEGAL_UPDATED = '2026-10-10';
+export const LEGAL_UPDATED = '2026-10-14';

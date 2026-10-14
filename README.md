@@ -54,6 +54,7 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - İzin verirseniz grup arkadaşlarınız aynı çağrıya başvurduğunuzu görür: *"Grubunuzdan 3 kişi bu çağrıya başvuruyor."*
 
 ### Diğer
+- 📷 Profil fotoğrafı yükleyin (yalnızca siz görürsünüz; küçültülerek saklanır).
 - 🌐 Türkçe / English · 🌙 karanlık / ☀️ aydınlık mod
 - 📱 Telefonunuzda **Ana ekrana ekle** ile uygulama gibi kullanabilirsiniz.
 - 🔗 Çağrıları bağlantıyla paylaşın, benzer çağrıları keşfedin.

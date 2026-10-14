@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AvatarEditor } from '../components/Avatar';
 import { PushCard, ReminderCard } from '../components/PushCard';
 import { TOPICS } from '../../../shared/topics';
 import { AccountCard, DangerZone } from '../components/AccountSettings';
@@ -46,7 +47,7 @@ export function ProfilePage() {
   return (
     <section className="profile">
       <div className="card profile-head">
-        {profile.avatar_url && <img src={profile.avatar_url} alt="" className="avatar" referrerPolicy="no-referrer" />}
+        <AvatarEditor />
         <div>
           <h2>{name}</h2>
           {(profile.academic_title || profile.institution) && (

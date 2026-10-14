@@ -8,6 +8,7 @@ import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { LandingPage } from './pages/LandingPage';
 import { ThemeButton } from './components/ThemeButton';
+import { Avatar } from './components/Avatar';
 
 // Sık kullanılmayan sayfalar ayrı parçalar hâlinde, ihtiyaç olunca yüklenir (ilk açılış hızlansın)
 const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
@@ -81,7 +82,7 @@ export function App() {
           <nav className="nav">
             {nav.map(([r, href, label, icon]) => (
               <a key={r} href={href} className={activeOf(r) ? 'active' : ''}>
-                <span className="nav-icon" aria-hidden="true">{icon}</span>
+                <span className="nav-icon" aria-hidden="true">{r === 'profile' ? <Avatar size={20} /> : icon}</span>
                 <span className="nav-label">{label}</span>
                 {r === 'inbox' && unread > 0 && <span className="badge">{unread}</span>}
               </a>

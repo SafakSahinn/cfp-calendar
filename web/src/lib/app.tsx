@@ -36,7 +36,7 @@ interface AppState {
   disconnectCalendar: () => Promise<void>;
   toggleFollow: (eventId: string) => Promise<void>;
   toggleTopic: (topic: string) => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'email_notifications' | 'email_frequency' | 'display_name' | 'academic_title' | 'institution' | 'department' | 'reminder_days'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, 'locale' | 'topic_notifications' | 'email_notifications' | 'email_frequency' | 'display_name' | 'academic_title' | 'institution' | 'department' | 'reminder_days' | 'avatar_path'>>) => Promise<void>;
   refreshUnread: () => Promise<void>;
   addToCalendar: (eventId: string) => Promise<boolean>;
   /** Şifre sıfırlama bağlantısıyla gelindi: yeni şifre formu gösterilmeli. */
