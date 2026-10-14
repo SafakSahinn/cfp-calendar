@@ -16,9 +16,14 @@ export function ProfilePage() {
   const { t, lang } = useI18n();
   const {
     session, profile, topics, followed, toggleTopic, toggleFollow,
-    connectCalendar, disconnectCalendar, updateProfile, showToast, providers,
+    connectCalendar, disconnectCalendar, updateProfile, showToast, providers, reloadProfile,
   } = useApp();
   const [followedEvents, setFollowedEvents] = useState<EventRow[]>([]);
+
+  // Fotoğraf onay durumu gibi başka yerden değişen alanlar güncel görünsün
+  useEffect(() => {
+    reloadProfile();
+  }, [reloadProfile]);
 
   useEffect(() => {
     if (followed.size === 0) {

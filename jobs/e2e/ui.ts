@@ -510,7 +510,8 @@ try {
       // Onaylar: profil testinde yüklenen fotoğraf burada bekliyor
       await page.getByRole('tab', { name: /Onaylar/ }).click();
       await page.locator('.avatar-review', { hasText: 'Deneme Kullanıcısı' }).waitFor({ timeout: 15_000 });
-      check('yönetici: onay bekleyen fotoğraf (görselle) listelenir', await page.locator('.avatar-review img').first().isVisible());
+      const reviewImg = await page.locator('.avatar-review img').first().waitFor({ timeout: 10_000 }).then(() => true).catch(() => false);
+      check('yönetici: onay bekleyen fotoğraf (görselle) listelenir', reviewImg);
       await shot(page, `${kind}-08c-admin-approvals`, false);
       await page.locator('.avatar-review', { hasText: 'Deneme Kullanıcısı' }).getByRole('button', { name: /Onayla/ }).click();
       await page.getByText('Fotoğraf onaylandı').waitFor({ timeout: 10_000 });
