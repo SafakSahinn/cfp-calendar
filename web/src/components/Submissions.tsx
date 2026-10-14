@@ -16,6 +16,9 @@ export type Status = (typeof STATUSES)[number];
 const ACTIVE: Status[] = ['planning', 'submitted', 'under_review', 'revision'];
 
 /** Tablodan okunacak sütunlar (davet kodu gibi gizli sütunlar istenmez; `*` kullanılamaz) */
+/** Güncellemede çağrı değiştirilemez (sütun izni yok): event_id gönderilmez */
+const updatable = <T extends { event_id: string }>({ event_id: _e, ...rest }: T) => (void _e, rest);
+
 export const SUB_COLS =
   'id, event_id, status, paper_title, notes, submitted_at, decision_at, shared_group_ids, share_with_members, updated_at, camera_ready_due, registration_due, presentation_at, shared_notes';
 
@@ -84,7 +87,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
       presentation_at: form.presentation_at || null,
     };
     const { data, error } = sub
-      ? await supabase.from('submissions').update(row).eq('id', sub.id).select(SUB_COLS).single()
+      ? await supabase.from('submissions').update(updatable(row)).eq('id', sub.id).select(SUB_COLS).single()
       : await supabase.from('submissions').insert(row).select(SUB_COLS).single();
     setBusy(false);
     if (error) return showToast(error.message.includes('not_a_member') ? t.notAMember : error.message);
