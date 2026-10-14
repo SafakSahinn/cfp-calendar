@@ -234,7 +234,8 @@ try {
       if (withPast[0]) {
         await page.goto(`${SITE}#/etkinlik/${withPast[0].id}`);
         await page.locator('.series').waitFor({ timeout: 10_000 });
-        check('detay: seri kartında önceki yılların son tarihleri', (await page.locator('.series .timeline > div').count()) >= 1);
+        const pastShown = await page.locator('.series .timeline > div').first().waitFor({ timeout: 10_000 }).then(() => true).catch(() => false);
+        check('detay: seri kartında önceki yılların son tarihleri', pastShown);
         await page.locator('.series').getByRole('button', { name: /Seriyi takip et/ }).click();
         await page.locator('.series').getByRole('button', { name: /Seri takipte/ }).waitFor({ timeout: 5_000 });
         await page.getByText(/serisi takipte: yeni/).first().waitFor({ timeout: 10_000 }); // kayıt yazılınca çıkan bildirim
