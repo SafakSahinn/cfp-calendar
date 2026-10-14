@@ -345,6 +345,7 @@ try {
       await page.waitForTimeout(800);
       const { data: rd } = await db.from('profiles').select('reminder_days').eq('id', userId).single();
       check('profil: hatırlatma günü seçimi kaydedilir', JSON.stringify(rd?.reminder_days) === '[7,3]', rd);
+      await db.from('profiles').update({ reminder_days: [7] }).eq('id', userId); // mobil test varsayılanı görsün
     }
     check('profil: anlık bildirim kartı', await page.getByRole('heading', { name: /Anlık bildirimler/ }).isVisible());
     // Başsız Chrome bildirim iznini her zaman "denied" bildirir; gerçek abonelik CI'da denenemez (telefonda elle denenir).
