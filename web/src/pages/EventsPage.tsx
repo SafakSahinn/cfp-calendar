@@ -3,40 +3,22 @@ import { TOPICS } from '../../../shared/topics';
 import { CalendarView } from '../components/CalendarView';
 import { TurkeySeries } from '../components/TurkeySeries';
 import { ForYouView } from '../components/ForYouView';
+import { SavedSearches } from '../components/SavedSearches';
 import { lazy, Suspense } from 'react';
 
 const MapView = lazy(() => import('../components/MapView'));
 import { EventCard } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { useApp } from '../lib/app';
-import { IN_TURKEY, IS_ONLINE, useOpenEvents } from '../lib/events';
-import { funding } from '../lib/funding';
+import { useOpenEvents } from '../lib/events';
+import { EMPTY_FILTERS, matchesFilters, type Filters as SharedFilters } from '../../../shared/filters';
 import { useI18n } from '../lib/i18n';
 import type { EventRow } from '../lib/supabase';
 
 const PAGE = 40;
 
-interface Filters {
-  q: string;
-  field: '' | 'cs' | 'ee';
-  kind: '' | EventRow['kind'];
-  topic: string;
-  within: '' | '7' | '30' | '90';
-  format: '' | 'online' | 'in_person';
-  sort: 'deadline' | 'event' | 'newest';
-  ieee: boolean;
-  ranked: boolean;
-  followedOnly: boolean;
-  showCaution: boolean;
-  turkey: boolean;
-  fundingOpen: boolean;
-  topQuartile: boolean;
-}
-
-const EMPTY: Filters = {
-  q: '', field: '', kind: '', topic: '', within: '', format: '', sort: 'deadline',
-  ieee: false, ranked: false, followedOnly: false, showCaution: false, turkey: false, fundingOpen: false, topQuartile: false,
-};
+type Filters = SharedFilters;
+const EMPTY = EMPTY_FILTERS;
 
 function loadStored<T>(key: string, fallback: T): T {
   try {
@@ -55,7 +37,6 @@ function store(key: string, value: unknown) {
   }
 }
 
-const DAY = 86_400_000;
 
 export function EventsPage() {
   const { t, lang } = useI18n();
@@ -77,26 +58,8 @@ export function EventsPage() {
 
   const visible = useMemo(() => {
     if (!events) return [];
-    const q = filters.q.trim().toLocaleLowerCase(lang);
     const now = Date.now();
-    const rows = events.filter((e) => {
-      if (filters.field && !e.fields.includes(filters.field)) return false;
-      if (filters.kind && e.kind !== filters.kind) return false;
-      if (filters.topic && !e.topics.includes(filters.topic)) return false;
-      if (filters.within && new Date(e.submission_deadline!).getTime() - now > +filters.within * DAY) return false;
-      if (filters.format === 'online' && !IS_ONLINE.test(e.location ?? '')) return false;
-      if (filters.format === 'in_person' && (!e.location || IS_ONLINE.test(e.location))) return false;
-      if (filters.ieee && !e.is_ieee) return false;
-      if (filters.ranked && Object.keys(e.ranks).length === 0) return false;
-      if (filters.followedOnly && !followed.has(e.id)) return false;
-      if (filters.turkey && !IN_TURKEY.test(e.location ?? '')) return false;
-      if (filters.fundingOpen && !funding(e)?.openNow) return false;
-      if (filters.topQuartile && !/^Q[12]$/.test(e.ranks.sjr ?? '')) return false;
-      // Takip edilenler, işaretli olsa da her zaman görünür
-      if (!filters.showCaution && e.flags?.length > 0 && !followed.has(e.id)) return false;
-      if (q && !`${e.acronym ?? ''} ${e.title} ${e.location ?? ''}`.toLocaleLowerCase(lang).includes(q)) return false;
-      return true;
-    });
+    const rows = events.filter((e) => matchesFilters(e, filters, { now, followed, lang }));
     if (filters.sort === 'event') {
       return [...rows].sort((a, b) => (a.event_start ?? '9999').localeCompare(b.event_start ?? '9999'));
     }
@@ -155,6 +118,8 @@ export function EventsPage() {
         )}
         </div>
       </div>
+
+      <SavedSearches filters={filters} apply={setFilters} />
 
       {filters.turkey && events && <TurkeySeries events={events} />}
 

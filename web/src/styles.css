@@ -547,3 +547,13 @@ ul.plain li { line-height: 1.4; }
 .fy-reasons { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .fy-reason { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--text); }
 .fy-reason.fy-series, .fy-reason.fy-applied { font-weight: 600; }
+
+/* Kayıtlı aramalar */
+.saved-searches { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: -0.25rem 0 0.75rem; }
+.ss-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.ss-chip { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); overflow: hidden; }
+.ss-chip button { border: 0; background: none; padding: 0.25rem 0.45rem; font-size: 0.82rem; cursor: pointer; color: var(--text); }
+.ss-chip .ss-apply { padding-left: 0.7rem; }
+.ss-chip button:hover { background: var(--surface-2); }
+.ss-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.ss-form input { min-width: 220px; }

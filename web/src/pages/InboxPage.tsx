@@ -59,6 +59,7 @@ export function InboxPage() {
     group_recommendation: t.nGroup,
     series_new: t.nSeries,
     group_comment: t.nGroupComment,
+    saved_search: t.nSavedSearch,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
@@ -69,6 +70,7 @@ export function InboxPage() {
     group_recommendation: '👥',
     series_new: '🔁',
     group_comment: '💬',
+    saved_search: '🔎',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;
@@ -80,7 +82,7 @@ export function InboxPage() {
       <div className="list">
         {items.map((n) => {
           const e = n.events;
-          const askable = n.type === 'submission_open' || n.type === 'topic_match' || n.type === 'group_recommendation';
+          const askable = n.type === 'submission_open' || n.type === 'topic_match' || n.type === 'group_recommendation' || n.type === 'saved_search';
           const a = n.announcements;
           return (
             <article key={n.id} className={`card message ${n.read_at ? '' : 'unread'}`}>
@@ -96,6 +98,7 @@ export function InboxPage() {
                   {a.url && <a href={a.url} target="_blank" rel="noreferrer noopener" className="small">↗ {a.url}</a>}
                 </div>
               )}
+              {n.type === 'saved_search' && n.payload.search && <p className="message-body small muted">🔎 {t.savedSearchLine(n.payload.search)}</p>}
               {n.type === 'group_comment' && (
                 <p className="message-body small">
                   {t.groupCommentLine(n.payload.by ?? '—', n.payload.group_name ?? '')}

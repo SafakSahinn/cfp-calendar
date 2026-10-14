@@ -1,7 +1,7 @@
 // Özet e-postası şablonu (saf fonksiyon; veritabanı veya SMTP gerektirmez, test edilebilir).
 
 type Locale = 'tr' | 'en';
-type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new' | 'group_comment';
+type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search';
 
 export interface DigestEvent {
   acronym: string | null;
@@ -33,8 +33,9 @@ const T = {
       group_recommendation: 'Grubunuzdan öneri',
       series_new: 'Takip ettiğiniz serinin yeni çağrısı',
       group_comment: 'Grubunuzda yeni yorum',
+      saved_search: 'Kayıtlı aramanıza uyan yeni çağrı',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎' },
     hello: (n: string | null) => (n ? `Merhaba ${n},` : 'Merhaba,'),
     intro: (n: number) => (n === 1 ? 'Takip ettiğiniz çağrılarla ilgili yeni bir bildiriminiz var:' : `Takip ettiğiniz çağrılarla ilgili ${n} yeni bildiriminiz var:`),
     deadline: 'Son başvuru',
@@ -59,8 +60,9 @@ const T = {
       group_recommendation: 'Recommended by your group',
       series_new: 'New edition of a series you follow',
       group_comment: 'New comment in your group',
+      saved_search: 'New call matching your saved search',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎' },
     hello: (n: string | null) => (n ? `Hi ${n},` : 'Hi,'),
     intro: (n: number) => (n === 1 ? 'You have a new notification about calls you follow:' : `You have ${n} new notifications about calls you follow:`),
     deadline: 'Deadline',

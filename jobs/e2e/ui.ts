@@ -264,6 +264,23 @@ try {
     await page.goto(`${SITE}#/`);
     await page.locator('article.event').first().waitFor();
 
+    // Kayıtlı arama: filtre seç → kaydet → temizle → tek tıkla geri uygula
+    if (kind === 'desktop') {
+      await openFilters(page);
+      await page.getByLabel(/Sadece IEEE/).check();
+      await page.getByRole('button', { name: /Bu aramayı kaydet/ }).click();
+      await page.getByLabel('Aramaya bir ad ver').fill('UI IEEE araması');
+      await page.locator('.ss-form').getByRole('button', { name: 'Kaydet' }).click();
+      await page.locator('.ss-chip', { hasText: 'UI IEEE araması' }).waitFor({ timeout: 10_000 });
+      const { data: ss } = await db.from('saved_searches').select('filters, notify').eq('user_id', userId);
+      check('kayıtlı arama kaydedilir (filtre + bildirim açık)', ss?.length === 1 && ss[0].filters.ieee === true && ss[0].notify === true, ss);
+      await page.getByLabel(/Sadece IEEE/).uncheck();
+      await page.locator('.ss-apply', { hasText: 'UI IEEE araması' }).click();
+      check('kayıtlı arama tek tıkla uygulanır', await page.getByLabel(/Sadece IEEE/).isChecked());
+      await shot(page, `${kind}-03i-saved-search`, false);
+      await page.getByLabel(/Sadece IEEE/).uncheck();
+    }
+
     // Senin için (test kullanıcısı VLSI + yapay zekâ konularını seçti)
     await page.getByRole('tab', { name: /Senin için/ }).click();
     await page.locator('.fy-item').first().waitFor({ timeout: 15_000 });
@@ -487,7 +504,8 @@ try {
 
     // Yasal sayfalar (oturumdan bağımsız)
     await page.goto(`${SITE}#/gizlilik`);
-    check('gizlilik sayfası', await page.getByRole('heading', { name: /Gizlilik Politikası/ }).isVisible());
+    const legalShown = await page.getByRole('heading', { name: /Gizlilik Politikası/ }).waitFor({ timeout: 15_000 }).then(() => true).catch(() => false);
+    check('gizlilik sayfası', legalShown);
     check('Google "Limited Use" beyanı', await page.getByText('Limited Use requirements').isVisible());
     await shot(page, `${kind}-06-privacy`, false);
     if (kind === 'desktop') {

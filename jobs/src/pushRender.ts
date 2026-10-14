@@ -28,6 +28,7 @@ const LABELS: Record<Locale, Record<string, string>> = {
     series_new: '🔁 Takip ettiğiniz serinin yeni çağrısı',
     announcement: '📣 Duyuru',
     group_comment: '💬 Grubunuzda yeni yorum',
+    saved_search: '🔎 Kayıtlı aramana uyan yeni çağrı',
   },
   en: {
     submission_open: '📝 Submissions are open',
@@ -38,6 +39,7 @@ const LABELS: Record<Locale, Record<string, string>> = {
     series_new: '🔁 New edition of a series you follow',
     announcement: '📣 Announcement',
     group_comment: '💬 New comment in your group',
+    saved_search: '🔎 New call matching your saved search',
   },
 };
 
@@ -57,7 +59,7 @@ export function renderPush(items: PushItem[], lang: Locale): PushMessage | null 
   if (items.length === 0) return null;
   const L = LABELS[lang];
   // Önce en acil olan: son tarih hatırlatması / değişikliği
-  const order = ['deadline_reminder', 'dates_changed', 'submission_open', 'series_new', 'group_recommendation', 'group_comment', 'announcement', 'topic_match'];
+  const order = ['deadline_reminder', 'dates_changed', 'submission_open', 'series_new', 'group_recommendation', 'group_comment', 'saved_search', 'announcement', 'topic_match'];
   const sorted = [...items].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
   const first = sorted[0];
   if (items.length === 1) {

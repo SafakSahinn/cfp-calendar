@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase, type EventRow } from './supabase';
 
-/** Türkiye'de düzenlenen etkinlikler: ülke adı veya büyük şehirler (kaynaklarda yer serbest metin). */
-export const IN_TURKEY = /t[üu]rk[iı]ye|turkey|turkiye|[iİı]stanbul|ankara|[iİı]zmir|antalya|bursa|konya|eski[sş]ehir|trabzon|kayseri|samsun|adana|mersin|gaziantep|denizli|edirne|mu[gğ]la|bodrum|kapadokya|cappadocia|nev[sş]ehir|sakarya|kocaeli|erzurum|malatya|diyarbak[iı]r|[cç]anakkale/i;
-
-/** Çevrim içi / hibrit etkinlikler. */
-export const IS_ONLINE = /virtual|online|hybrid|çevrim ?içi|webinar|remote/i;
+export { IN_TURKEY, IS_ONLINE } from '../../../shared/filters';
 
 let cache: Promise<EventRow[]> | null = null;
 

@@ -234,6 +234,20 @@ try {
   check('günde 30 yorum sınırı', !!limitErr && /rate_limited/.test(limitErr), limitErr);
 
   // -------------------------------------------------------------------------
+  section('Kayıtlı aramalar');
+  const { error: ssErr } = await member.client.from('saved_searches').insert({ name: 'Q1 sinyal', filters: { topic: 'signal', topQuartile: true } });
+  check('üye aramayı kaydeder', !ssErr, ssErr?.message);
+  const { data: ssOut } = await outsider.client.from('saved_searches').select('id');
+  check('başkasının kayıtlı aramasını göremez', (ssOut ?? []).length === 0);
+  const { error: ssForeign } = await outsider.client.from('saved_searches').insert({ user_id: member.id, name: 'sızma', filters: {} });
+  check('başkası adına arama kaydedilemez', !!ssForeign);
+  const { error: ssBadJson } = await member.client.from('saved_searches').insert({ name: 'dizi', filters: [1, 2] });
+  check('filtre nesne olmalı', !!ssBadJson);
+  for (let i = 0; i < 9; i++) await member.client.from('saved_searches').insert({ name: `arama ${i}`, filters: { q: `${i}` } });
+  const { error: ssLimit } = await member.client.from('saved_searches').insert({ name: '11.', filters: {} });
+  check('en fazla 10 kayıtlı arama', !!ssLimit && /too_many_searches/.test(ssLimit.message), ssLimit?.message);
+
+  // -------------------------------------------------------------------------
   section('Hatırlatma günleri');
   const { data: remDefault } = await member.client.from('profiles').select('reminder_days').eq('id', member.id).single();
   check('varsayılan hatırlatma: 7 gün', JSON.stringify(remDefault?.reminder_days) === '[7]', remDefault);

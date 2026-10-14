@@ -16,6 +16,8 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - Çağrılar her 12 saatte bir IEEE, WikiCFP, ccf-deadlines gibi kaynaklardan güncellenir.
 - **Liste**, **aylık takvim** veya **🗺️ harita** görünümünde inceleyin.
 - Alan, konu, tarih, yüz yüze / çevrim içi, **Türkiye'de**, **sadece IEEE**, **dereceli konferanslar** (CORE, CCF) veya **Q1–Q2 dergiler** gibi filtreleri kullanın.
+- **✨ Senin için:** ilgi alanlarına, takip ettiğin çağrı ve serilere, başvuru geçmişine göre kişisel öneriler — her önerinin nedeniyle birlikte.
+- **💾 Aramayı kaydet:** sık kullandığın filtreyi (ör. "Q1 sinyal işleme dergileri") kaydet, tek tıkla geri uygula; istersen uyan yeni çağrı çıkınca haber verilir.
 - Şüpheli ("predatory") görünen çağrılar ⚠ ile işaretlenir ve varsayılan olarak gizlenir.
 
 ### ⭐ Takip edin, takviminize eklensin

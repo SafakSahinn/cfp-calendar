@@ -75,8 +75,8 @@ export interface Profile {
 export interface Notification {
   id: string;
   event_id: string | null;
-  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new' | 'group_comment';
-  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null; days?: number };
+  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search';
+  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null; days?: number; search?: string };
   group_id: string | null;
   announcements: { title: string; body: string; url: string | null } | null;
   response: 'interested' | 'not_interested' | null;

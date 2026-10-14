@@ -8,9 +8,10 @@ import {
 import { calendarEnv, db, selectAll } from './db.ts';
 import { isCaution } from './quality.ts';
 import { reminderThreshold } from './reminders.ts';
+import { savedSearchMatches, type SavedSearch } from './savedSearches.ts';
 import { runStats } from './runStats.ts';
 
-type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[]; series_key: string | null };
+type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[]; series_key: string | null; fields: string[] };
 
 interface Profile {
   id: string;
@@ -42,7 +43,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   const events = await selectAll<Event>((from, to) =>
     db
       .from('events')
-      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee, flags, series_key`)
+      .select(`${EVENT_COLUMNS}, topics, ranks, is_ieee, flags, series_key, fields`)
       .or(`submission_deadline.gt.${new Date(now - DAY).toISOString()},event_end.gte.${today}`)
       .range(from, to),
   );
@@ -56,6 +57,9 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
     db.from('interests').select('user_id, event_id, topic').range(from, to),
   );
 
+  const savedSearches = await selectAll<SavedSearch>((from, to) =>
+    db.from('saved_searches').select('id, user_id, name, filters, created_at').eq('notify', true).range(from, to),
+  );
   const seriesFollows = await selectAll<{ user_id: string; series_key: string }>((from, to) =>
     db.from('series_follows').select('user_id, series_key').range(from, to),
   );
@@ -176,6 +180,15 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
         } catch (e) {
           log(`  ${profile.id} / ${ev.acronym ?? ev.id}: takvim hatası: ${e}`);
         }
+      }
+    }
+
+    // --- 1b) Kayıtlı aramalar: uyan YENİ çağrılar (arama başına çalışma başına en fazla 10) ----------
+    for (const s of savedSearches) {
+      if (s.user_id !== profile.id) continue;
+      for (const ev of savedSearchMatches(s, events, { now, followed, lang: profile.locale, alreadyNotified: notifiedEvents })) {
+        notify(ev.id, 'saved_search', `ss:${s.id}:${ev.id}`, { search: s.name, deadline: ev.submission_deadline });
+        notifiedEvents.add(ev.id); // aynı çağrı konu eşleşmesi olarak bir daha gelmesin
       }
     }
 
