@@ -329,9 +329,10 @@ try {
   check('profile başkasının fotoğraf yolu yazılamaz', !!avPathForeign);
   const { error: avPathOk } = await member.client.from('profiles').update({ avatar_path: avatarPath }).eq('id', member.id);
   check('profile kendi fotoğraf yolu yazılır', !avPathOk, avPathOk?.message);
-  await member.client.storage.from('avatars').remove([avatarPath]);
-  const { data: avGone } = await member.client.storage.from('avatars').download(avatarPath);
-  check('sahip fotoğrafını kaldırır', !avGone);
+  const { error: avRm } = await member.client.storage.from('avatars').remove([avatarPath]);
+  // İndirme CDN önbelleğinden birkaç saniye dönebilir; silinmenin kanıtı depo listesi
+  const { data: avList } = await db.storage.from('avatars').list(member.id);
+  check('sahip fotoğrafını kaldırır (depodan silinir)', !avRm && (avList ?? []).length === 0, avRm?.message ?? avList);
 
   // -------------------------------------------------------------------------
   section('Hatırlatma günleri');
