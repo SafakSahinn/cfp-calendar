@@ -1,6 +1,7 @@
 // Detay sayfası ekleri: konferans serisi (takip + önceki yıllar), gruptan başvuranlar, benzer çağrılar.
 
 import { useEffect, useMemo, useState } from 'react';
+import { hasCautionFlag } from '../../../shared/caution';
 import { useApp } from '../lib/app';
 import { eventHref, useOpenEvents } from '../lib/events';
 import { formatDate, formatDeadline } from '../lib/format';
@@ -8,9 +9,7 @@ import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 import { StatusTag, type Status } from './Submissions';
 
-// jobs/src/quality.ts CAUTION_FLAGS ile aynı
-const CAUTION_FLAGS = new Set(['indexing_claims', 'organizer_prefix', 'ei_duplicate', 'generic_journal']);
-const isCaution = (e: EventRow) => Object.keys(e.ranks).length === 0 && (e.flags ?? []).some((f) => CAUTION_FLAGS.has(f));
+const isCaution = (e: EventRow) => Object.keys(e.ranks).length === 0 && hasCautionFlag(e.flags);
 
 // ---------------------------------------------------------------------------
 // Seri: "ICASSP serisini takip et" + geçmiş yılların son tarihleri

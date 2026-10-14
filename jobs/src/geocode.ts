@@ -3,7 +3,7 @@
 // sonuçlar geocache tablosunda saklanır (aynı yer bir daha sorulmaz; bulunamayanlar 30 gün sonra yeniden denenir).
 
 import { chunks, db, selectAll } from './db.ts';
-import { geoQuery } from './geoQuery.ts';
+import { countryCodeOf, geoQuery } from './geoQuery.ts';
 import { runStats } from './runStats.ts';
 
 export { geoQuery };
@@ -12,8 +12,10 @@ const UA = 'CFP-Calendar/1.0 (+https://github.com/SafakSahinn/cfp-calendar)';
 const PER_RUN = 200;
 const RETRY_DAYS = 30;
 
+/** Yer metninde ülke varsa arama o ülkeyle sınırlanır ("Cambridge, UK" ABD'deki Cambridge'e gitmesin). */
 async function lookup(q: string): Promise<{ lat: number; lng: number; display_name: string } | null> {
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=en&q=${encodeURIComponent(q)}`;
+  const cc = countryCodeOf(q);
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=en&q=${encodeURIComponent(q)}${cc ? `&countrycodes=${cc.toLowerCase()}` : ''}`;
   const res = await fetch(url, { headers: { 'User-Agent': UA } });
   if (!res.ok) throw new Error(`nominatim ${res.status}`);
   const rows = (await res.json()) as { lat: string; lon: string; display_name: string }[];
@@ -26,6 +28,22 @@ export async function runGeocode(log: (m: string) => void = console.log): Promis
     db.from('events').select('id, location, lat').neq('kind', 'journal').not('location', 'is', null)
       .gt('submission_deadline', now).range(from, to),
   );
+  // --- Denetim: daha önce bulunmuş konumların ülkesi yer metniyle tutuyor mu? Tutmayan silinip yeniden aranır.
+  const { data: cachedOk } = await db.from('geocache').select('query, display_name').eq('ok', true);
+  const wrong = new Set<string>();
+  for (const c of cachedOk ?? []) {
+    const want = countryCodeOf(c.query);
+    const got = countryCodeOf((c.display_name ?? '').split(',').at(-1) ?? '');
+    if (want && got && want !== got) wrong.add(c.query);
+  }
+  if (wrong.size > 0) {
+    for (const keys of chunks([...wrong], 200)) await db.from('geocache').delete().in('query', keys);
+    const reset = events.filter((e) => e.lat != null && wrong.has(geoQuery(e.location) ?? '')).map((e) => e.id);
+    for (const ids of chunks(reset, 200)) await db.from('events').update({ lat: null, lng: null }).in('id', ids);
+    for (const e of events) if (reset.includes(e.id)) e.lat = null;
+    log(`Konum denetimi: ülkesi tutmayan ${wrong.size} yer (${[...wrong].slice(0, 10).join(' | ')}) silindi, ${reset.length} etkinlik yeniden aranacak`);
+  }
+
   const byQuery = new Map<string, string[]>();
   for (const e of events) {
     if (e.lat != null) continue;

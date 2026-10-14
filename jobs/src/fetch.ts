@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { buildIndex, loadCore, matchCore } from './core.ts';
 import { buildSjrIndex, matchJournal, type SjrData } from './sjr.ts';
 import { merge } from './merge.ts';
-import { qualityFlags } from './quality.ts';
+import { flagBulkClusters, qualityFlags } from './quality.ts';
 import { runStats } from './runStats.ts';
 import type { NormalizedEvent } from './types.ts';
 
@@ -66,6 +66,11 @@ export async function runFetch(log: (msg: string) => void = console.log): Promis
     log(`SJR ${sjr.year}: ${q} dergi çağrısına çeyrek eşleşti`);
     runStats.sjr_ranked = q;
   }
+  const bulk = flagBulkClusters(merged);
+  log(`Kalite: ${bulk} konferans toplu konferans kümesi olarak işaretlendi`);
+  const bulkSample = merged.filter((e) => e.flags.includes('bulk_cluster') && e.submission_deadline && e.submission_deadline > new Date().toISOString()).map((e) => `${e.acronym ?? '?'}@${e.event_start}`);
+  log(`  açık olanlar (${bulkSample.length}): ${bulkSample.slice(0, 60).join(', ')}`);
+  runStats.bulk_flagged = bulk;
   runStats.core_ranked = ranked;
   runStats.events_total = merged.length;
   log(`Birleştirme sonrası: ${merged.length} etkinlik`);

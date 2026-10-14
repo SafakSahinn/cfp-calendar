@@ -2,12 +2,10 @@
 // Amaç kesin "yağmacı" hükmü vermek değil, kullanıcıyı uyarmak: işaretli çağrılar arayüzde varsayılan olarak gizlenir
 // ve konu bildirimlerine girmez. Dereceli (CCF/CORE) konferanslar asla işaretlenmez.
 
+import { CAUTION_FLAGS, hasCautionFlag, type Flag } from '../../shared/caution.ts';
 import type { NormalizedEvent } from './types.ts';
 
-export type Flag = 'indexing_claims' | 'organizer_prefix' | 'ei_duplicate' | 'generic_journal';
-
-/** Kullanıcıyı uyaran işaretler; herhangi biri varsa çağrı "dikkat" sayılır. */
-export const CAUTION_FLAGS: Flag[] = ['indexing_claims', 'organizer_prefix', 'ei_duplicate', 'generic_journal'];
+export { CAUTION_FLAGS, type Flag };
 
 const RULES: { flag: Flag; test: (e: Pick<NormalizedEvent, 'acronym' | 'title' | 'kind'>) => boolean }[] = [
   {
@@ -39,5 +37,33 @@ export function qualityFlags(e: Pick<NormalizedEvent, 'acronym' | 'title' | 'kin
 }
 
 export function isCaution(flags: readonly string[]): boolean {
-  return flags.some((f) => (CAUTION_FLAGS as string[]).includes(f));
+  return hasCautionFlag(flags);
+}
+
+/** Toplu konferans kümesi için en az kaç konferans aynı tarih/yer/son başvuruyu paylaşmalı */
+export const BULK_CLUSTER_MIN = 4;
+
+/**
+ * "Toplu konferanslar": aynı organizatörün farklı konulu çok sayıda konferansı birebir aynı son başvuru gününe,
+ * aynı etkinlik günlerine ve aynı yere sahiptir (ör. 7th Int. Conf. on Electrical / Mechanical / Applied Control
+ * Engineering — hepsi 29–30 Aralık, "Virtual Conference", son başvuru 13 Ekim). Derecelendirilmiş konferanslar ve
+ * çalıştaylar (büyük konferansların ortak çalıştayları) muaftır. Yerinde değiştirir; işaretlenen sayısını döndürür.
+ */
+export function flagBulkClusters(events: { kind: string; ranks: Record<string, string>; flags: string[]; location: string | null; submission_deadline: string | null; event_start: string | null; event_end: string | null }[]): number {
+  const groups = new Map<string, typeof events>();
+  for (const e of events) {
+    if (e.kind !== 'conference' || Object.keys(e.ranks).length > 0) continue;
+    if (!e.submission_deadline || !e.event_start || !e.location) continue;
+    const key = [e.submission_deadline.slice(0, 10), e.event_start, e.event_end ?? e.event_start, e.location.trim().toLowerCase().replace(/\s+/g, ' ')].join('|');
+    groups.set(key, [...(groups.get(key) ?? []), e]);
+  }
+  let n = 0;
+  for (const g of groups.values()) {
+    if (g.length < BULK_CLUSTER_MIN) continue;
+    for (const e of g) {
+      if (!e.flags.includes('bulk_cluster')) e.flags = [...e.flags, 'bulk_cluster'];
+      n++;
+    }
+  }
+  return n;
 }

@@ -1,6 +1,8 @@
 // "Senin için": kullanıcının seçtiği konular, takip ettiği çağrılar ve seriler, başvuru geçmişinden kişisel öneri.
 // Saf fonksiyon (tarayıcıya bağımlı değil) — jobs/test/forYou.test.ts ile test edilir.
 
+import { hasCautionFlag } from '../../../shared/caution.ts';
+
 export interface ForYouEvent {
   id: string;
   kind: string;
@@ -32,7 +34,6 @@ export interface ForYouInput {
   now?: number;
 }
 
-const CAUTION = new Set(['indexing_claims', 'organizer_prefix', 'ei_duplicate', 'generic_journal']);
 const DAY = 86_400_000;
 const TOP_RANKS: [string, RegExp][] = [['core', /^A\*?$/], ['ccf', /^A$/], ['sjr', /^Q1$/], ['thcpl', /^A$/]];
 
@@ -48,7 +49,7 @@ export function forYou(input: ForYouInput, limit = 20): { event: ForYouEvent; sc
   const out: { event: ForYouEvent; score: number; reasons: Reason[] }[] = [];
   for (const e of input.events) {
     if (input.followed.has(e.id) || !e.submission_deadline) continue;
-    if (Object.keys(e.ranks).length === 0 && e.flags.some((f) => CAUTION.has(f))) continue;
+    if (Object.keys(e.ranks).length === 0 && hasCautionFlag(e.flags)) continue;
     const left = new Date(e.submission_deadline).getTime() - now;
     if (left < 2 * DAY) continue; // yetişmesi zor
 
