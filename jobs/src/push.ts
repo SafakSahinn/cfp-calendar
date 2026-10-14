@@ -78,3 +78,24 @@ export async function runPush(log: (m: string) => void = console.log): Promise<v
   log(`Anlık bildirim: ${byUser.size} kullanıcı, ${subs.length} cihaz, ${sent} gönderildi, ${removed} geçersiz abonelik silindi`);
   runStats.push_sent = sent;
 }
+
+/** Deneme: son 2 saatte abone olan cihazlara tek seferlik "çalışıyor" bildirimi (kişisel veri kaydedilmez, sadece sayı). */
+export async function runPushTest(log: (m: string) => void = console.log): Promise<void> {
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (!pub || !priv) return log('Push denemesi: VAPID anahtarı yok');
+  webpush.setVapidDetails(`mailto:${process.env.ADMIN_EMAIL || 'noreply@example.org'}`, pub, priv);
+  const since = new Date(Date.now() - 2 * 3600_000).toISOString();
+  const { data } = await db.from('push_subscriptions').select('id, endpoint, p256dh, auth').gte('created_at', since);
+  let ok = 0;
+  for (const s of data ?? []) {
+    const msg = { title: 'CFP Calendar', body: 'Sunucudan gelen deneme bildirimi: bildirimler bu cihazda çalışıyor ✅', url: '#/profil', tag: 'cfp-server-test' };
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(msg), { TTL: 3600 });
+      ok++;
+    } catch (e) {
+      log(`  deneme ${s.id}: ${(e as { statusCode?: number }).statusCode ?? ''} ${(e as Error).message}`);
+    }
+  }
+  log(`Push denemesi: son 2 saatte abone olan ${(data ?? []).length} cihaz, ${ok} gönderildi`);
+}

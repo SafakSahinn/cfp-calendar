@@ -8,7 +8,7 @@ on:
       step:
         description: 'Çalışacak adım'
         type: choice
-        options: [all, fetch, geocode, dispatch, push, email]
+        options: [all, fetch, geocode, dispatch, push, push-test, email]
         default: all
       test_to_admin:
         description: 'E-posta denemesi: SADECE yönetici adresine gönder (diğer üyelere gitmez)'
