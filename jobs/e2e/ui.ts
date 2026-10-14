@@ -1,7 +1,7 @@
 // Tarayıcı testi: canlı sitede geçici kullanıcıyla gerçek arayüzü kullanır, ekran görüntüleri alır, sonunda hesabı
 // arayüzden siler. GitHub Actions'ta "Tarayıcı testi" iş akışıyla çalışır; görüntüler artifact olarak yüklenir.
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { chromium, devices, type Page } from 'playwright';
 import { db } from '../src/db.ts';
 import { runDispatch } from '../src/dispatch.ts';
@@ -376,6 +376,13 @@ try {
       await page.getByText('UI Test Makalesi').waitFor({ timeout: 10_000 });
       check('Takvimim → Başvurularım listesinde görünür', (await page.locator('.pipe').count()) >= 1);
       await shot(page, `${kind}-11b-submissions`, false);
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: /Excel \(CSV\)/ }).click()]);
+      const csvText = readFileSync((await dl.path())!, 'utf8');
+      check('Başvurularım: CSV indirilir (BOM, başlık satırı, makale)', dl.suggestedFilename() === 'basvurularim.csv' && csvText.startsWith('﻿Durum;Makale başlığı') && csvText.includes('UI Test Makalesi'), dl.suggestedFilename());
+      const [popup] = await Promise.all([page.waitForEvent('popup'), page.getByRole('button', { name: /Yazdır \/ PDF/ }).click()]);
+      await popup.waitForLoadState();
+      check('Başvurularım: yazdırma sayfası açılır (gruplu liste)', (await popup.title()).startsWith('Bildiri ve makale başvurularım') && (await popup.locator('li', { hasText: 'UI Test Makalesi' }).count()) === 1);
+      await popup.close();
 
       await page.getByRole('link', { name: 'Gruplar' }).click();
       await page.getByLabel('Grup adı').fill('UI Test Grubu');

@@ -45,6 +45,7 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - Gruba çağrı önerin; grubun **ortak takvimi** olsun.
 - **Başvurularınızı takip edin:** Planlanıyor → Gönderildi → Değerlendirmede → Kabul / Ret.
 - İsterseniz başvurunuzun durumunu **danışmanınızla** (grup sahibi) paylaşın. Kişisel notlarınız hiçbir zaman paylaşılmaz.
+- **Başvurularınızı dışa aktarın:** Takvimim → Başvurularım → **Excel (CSV)** veya **Yazdır / PDF** — yıllık faaliyet raporu ve özgeçmiş için yıl seçerek.
 - İzin verirseniz grup arkadaşlarınız aynı çağrıya başvurduğunuzu görür: *"Grubunuzdan 3 kişi bu çağrıya başvuruyor."*
 
 ### Diğer

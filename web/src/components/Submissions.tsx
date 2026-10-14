@@ -8,6 +8,7 @@ import { formatDate, formatDeadline, timeAgo } from '../lib/format';
 import { useMyGroups } from '../lib/groups';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
+import { filterByYear, toCsv, toPrintHtml, yearOf, type ExportLabels, type ExportRow } from '../lib/exportSubmissions';
 
 export const STATUSES = ['planning', 'submitted', 'under_review', 'revision', 'accepted', 'rejected', 'withdrawn'] as const;
 export type Status = (typeof STATUSES)[number];
@@ -179,6 +180,7 @@ export function MySubmissions() {
           <div key={s} className={`pipe st-${s}`}><strong>{n}</strong><span>{t.statuses[s]}</span></div>
         ))}
       </div>
+      <ExportBar rows={rows} />
       <div className="list">
         {rows.map((r) => (
           <a key={r.id} href={eventHref(r.event_id)} className="card sub-row">
@@ -250,6 +252,58 @@ export function GroupSubmissions({ groupId }: { groupId: string }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Başvurularım → dışa aktar (Excel/CSV, yazdır/PDF)
+// ---------------------------------------------------------------------------
+function ExportBar({ rows }: { rows: Submission[] }) {
+  const { t, lang } = useI18n();
+  const { profile } = useApp();
+  const years = [...new Set(rows.map((r) => yearOf(r as unknown as ExportRow)).filter((y): y is number => y !== null))].sort((a, b) => b - a);
+  const [year, setYear] = useState<number | null>(null);
+  const [notes, setNotes] = useState(false);
+
+  const labels: ExportLabels = {
+    statuses: t.statuses,
+    kinds: { conference: t.kindConference, workshop: t.kindWorkshop, journal: t.kindJournal },
+    columns: t.exportColumns,
+    reportTitle: t.exportReportTitle,
+    generated: t.exportGenerated,
+    owner: t.exportOwner,
+    dateLocale: lang === 'tr' ? 'tr-TR' : 'en-GB',
+  };
+  const selected = () => filterByYear(rows as unknown as ExportRow[], year);
+
+  const downloadCsv = () => {
+    const blob = new Blob([toCsv(selected(), labels, notes)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${t.exportFileName}${year ? `-${year}` : ''}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const print = () => {
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(toPrintHtml(selected(), labels, { includeNotes: notes, ownerName: profile?.display_name ?? null, year }));
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
+  return (
+    <div className="card export-bar">
+      <strong className="grow">{t.exportTitle}</strong>
+      <select value={year ?? ''} onChange={(e) => setYear(e.target.value ? +e.target.value : null)} aria-label={t.exportYear} className="small-select">
+        <option value="">{t.exportAllYears}</option>
+        {years.map((y) => <option key={y} value={y}>{y}</option>)}
+      </select>
+      <label className="check small"><input type="checkbox" checked={notes} onChange={(e) => setNotes(e.target.checked)} /> {t.exportIncludeNotes}</label>
+      <button className="small" onClick={downloadCsv}>📥 {t.exportCsv}</button>
+      <button className="small" onClick={print}>🖨️ {t.exportPrint}</button>
     </div>
   );
 }
