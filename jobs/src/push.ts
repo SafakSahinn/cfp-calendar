@@ -8,7 +8,7 @@ import { runStats } from './runStats.ts';
 
 const BACKLOG_HOURS = 36; // daha eski bildirimler push'lanmaz (12 saatlik döngü + 8 saat bekletme payı)
 /** Bir cihaza bu süre içinde push gittiyse yenisi gönderilmez, bir sonraki özete kalır → günde en fazla ~2 bildirim */
-const MIN_GAP_HOURS = 8; // daha eski bildirimler push'lanmaz (ilk kurulumda geçmiş yığılması olmasın)
+const MIN_GAP_HOURS = 8;
 
 interface Row {
   id: string;
