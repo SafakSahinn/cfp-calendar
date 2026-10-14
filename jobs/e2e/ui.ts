@@ -220,6 +220,21 @@ try {
       const { data: subs } = await db.from('submissions').select('status, paper_title, submitted_at').eq('user_id', userId);
       check('başvuru veritabanında, gönderim tarihi otomatik', subs?.[0]?.status === 'submitted' && !!subs[0].submitted_at, subs);
       check('detay: TÜBİTAK kartı (varsa) doğru programla', (await page.locator('.funding').count()) === 0 || /2224-[AB]/.test((await page.locator('.funding h3').textContent()) ?? ''));
+
+      // Kabul sonrası: durum "Kabul edildi" olunca camera-ready / kayıt / sunum tarihleri girilir
+      const crDay = new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10);
+      await page.locator('.submission').getByRole('button', { name: 'Güncelle' }).click();
+      await page.getByLabel('Durum').selectOption('accepted');
+      await page.getByLabel('Camera-ready son günü').fill(crDay);
+      await page.locator('#s-shared').fill('Şekiller bende, metin sende');
+      await page.locator('.submission').getByRole('button', { name: 'Kaydet' }).click();
+      await page.locator('.submission .task-list').waitFor({ timeout: 10_000 });
+      const { data: acc } = await db.from('submissions').select('status, camera_ready_due, shared_notes').eq('user_id', userId).single();
+      check('kabul sonrası: camera-ready tarihi ve ortak not kaydedilir', acc?.status === 'accepted' && acc.camera_ready_due === crDay && acc.shared_notes === 'Şekiller bende, metin sende', acc);
+      await page.getByRole('button', { name: /Ortak yazar davet bağlantısını kopyala/ }).click();
+      await page.getByText('Davet bağlantısı kopyalandı').waitFor({ timeout: 5_000 });
+      check('ortak yazar davet bağlantısı kopyalanır', /#\/ortak\/[0-9a-f]{16}$/.test(await page.evaluate(() => navigator.clipboard.readText())));
+      await shot(page, `${kind}-03j-accepted-team`, true);
     }
     if (kind === 'desktop') {
       // Seri: geçmiş yılları olan bir konferans
@@ -404,7 +419,7 @@ try {
       await page.getByRole('heading', { name: 'Takvimim' }).waitFor({ timeout: 10_000 });
       await page.locator('.calendar').waitFor({ timeout: 10_000 });
       check('Takvimim: takip edilen çağrılarla takvim açılır', (await page.locator('.cal-item').count()) > 0 || (await page.locator('.cal-agenda').count()) > 0);
-      check('Takvimim: tür açıklaması (açılış/özet/son başvuru/TÜBİTAK/etkinlik)', (await page.locator('.legend-item').count()) === 5);
+      check('Takvimim: tür açıklaması (açılış/özet/son başvuru/TÜBİTAK/etkinlik/kabul sonrası)', (await page.locator('.legend-item').count()) === 6);
       await shot(page, `${kind}-11-mycalendar`, false);
       await page.getByRole('tab', { name: /Başvurularım/ }).click();
       await page.getByText('UI Test Makalesi').waitFor({ timeout: 10_000 });

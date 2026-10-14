@@ -4,7 +4,7 @@ import { eventHref } from './events';
 import { funding } from './funding';
 import type { EventRow } from './supabase';
 
-export type ItemKind = 'open' | 'abstract' | 'deadline' | 'event' | 'funding';
+export type ItemKind = 'open' | 'abstract' | 'deadline' | 'event' | 'funding' | 'task';
 
 export interface CalItem {
   key: string;
@@ -54,4 +54,16 @@ export function itemsForEvent(e: EventRow, kinds: ItemKind[], highlight = false)
   return out;
 }
 
-export const KIND_ICON: Record<ItemKind, string> = { open: '📝', abstract: '✍️', deadline: '⏰', event: '🎤', funding: '💰' };
+export const KIND_ICON: Record<ItemKind, string> = { open: '📝', abstract: '✍️', deadline: '⏰', event: '🎤', funding: '💰', task: '📌' };
+
+/** Başvurunun kabul sonrası işleri (camera-ready / kayıt / sunum) takvim kalemi olarak. */
+export function itemsForTasks(
+  subs: { id: string; event_id: string; camera_ready_due: string | null; registration_due: string | null; presentation_at: string | null; acronym: string }[],
+  labels: Record<'camera_ready_due' | 'registration_due' | 'presentation_at', string>,
+): CalItem[] {
+  return subs.flatMap((s) =>
+    (['camera_ready_due', 'registration_due', 'presentation_at'] as const)
+      .filter((k) => s[k])
+      .map((k) => ({ key: `${s.id}-${k}`, day: s[k]!, kind: 'task' as const, label: `${labels[k]} · ${s.acronym}`, title: `${labels[k]} — ${s.acronym}`, href: eventHref(s.event_id), highlight: true })),
+  );
+}

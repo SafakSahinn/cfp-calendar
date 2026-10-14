@@ -47,6 +47,8 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - **Gruplar** sayfasından laboratuvarınız veya ekibiniz için bir grup kurun, davet bağlantısını paylaşın.
 - Gruba çağrı önerin; grubun **ortak takvimi** olsun. Önerilen çağrıların altında **yorumlaşın** (yalnızca grup üyeleri görür).
 - **Başvurularınızı takip edin:** Planlanıyor → Gönderildi → Değerlendirmede → Kabul / Ret.
+- **Kabul sonrası:** başvuru kabul edilince camera-ready, kayıt ve sunum tarihlerini girin; hatırlatmalar gelsin, Takvimim'de görünsün.
+- **Ortak yazarlar:** başvuru kartındaki davet bağlantısıyla ortak yazarları ekleyin; durum, tarihler ve ortak notları birlikte güncelleyin (kişisel notlarınız yalnızca sizde kalır).
 - İsterseniz başvurunuzun durumunu **danışmanınızla** (grup sahibi) paylaşın. Kişisel notlarınız hiçbir zaman paylaşılmaz.
 - **Başvurularınızı dışa aktarın:** Takvimim → Başvurularım → **Excel (CSV)** veya **Yazdır / PDF** — yıllık faaliyet raporu ve özgeçmiş için yıl seçerek.
 - İzin verirseniz grup arkadaşlarınız aynı çağrıya başvurduğunuzu görür: *"Grubunuzdan 3 kişi bu çağrıya başvuruyor."*

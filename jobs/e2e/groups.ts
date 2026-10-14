@@ -145,7 +145,7 @@ try {
   // -------------------------------------------------------------------------
   section('Başvuru takibi ve danışman görünümü');
   const { data: subIns, error: subErr } = await member.client.from('submissions')
-    .insert({ event_id: ev3, status: 'submitted', paper_title: 'Gizli Makale', notes: 'ÖZEL NOT', shared_group_ids: [gid] }).select().single();
+    .insert({ event_id: ev3, status: 'submitted', paper_title: 'Gizli Makale', notes: 'ÖZEL NOT', shared_group_ids: [gid] }).select('id, submitted_at').single();
   check('üye başvuru kaydı oluşturur (gruba paylaşımlı)', !subErr && subIns?.submitted_at != null, subErr?.message);
   const { data: outSubs } = await outsider.client.from('submissions').select('id');
   check('başkası başvuruyu göremez', (outSubs ?? []).length === 0);
@@ -196,6 +196,56 @@ try {
   check('üye olmayan grup sayacını açamaz', !!leftCount);
   const { error: anonPart } = await anon.rpc('event_group_participants', { p_event: ev3 });
   check('giriş yapmamış kişi göremez', !!anonPart);
+
+  // -------------------------------------------------------------------------
+  section('Ortak yazarlar ve kabul sonrası işler');
+  const { error: codeColErr } = await member.client.from('submissions').select('invite_code').eq('id', subIns!.id);
+  check('davet kodu tablo üzerinden okunamaz', !!codeColErr, codeColErr?.message);
+  const { error: starErr } = await member.client.from('submissions').select('*').eq('id', subIns!.id);
+  check('"*" ile de gizli sütun sızmaz (sorgu reddedilir)', !!starErr);
+  const { error: outSubCode } = await outsider.client.rpc('submission_invite_code', { p_submission: subIns!.id });
+  check('başkası davet kodu alamaz', !!outSubCode);
+  const { data: subCode, error: subCodeErr } = await member.client.rpc('submission_invite_code', { p_submission: subIns!.id });
+  check('sahip davet kodu alır (16 karakter)', !subCodeErr && /^[0-9a-f]{16}$/.test(subCode), subCodeErr?.message);
+  const { data: badPrev } = await outsider.client.rpc('submission_preview', { p_code: '0000000000000000' });
+  check('yanlış kodla önizleme boş', (badPrev ?? []).length === 0);
+  const { data: prev } = await outsider.client.rpc('submission_preview', { p_code: subCode });
+  check('önizleme: başlık + çağrı + sahip adı', prev?.[0]?.paper_title === 'Gizli Makale' && prev[0].owner_name === 'Test uye', prev);
+  const { error: joinErr } = await outsider.client.rpc('join_submission', { p_code: subCode });
+  check('ortak yazar davetle katılır', !joinErr, joinErr?.message);
+  const { data: coRows } = await outsider.client.rpc('my_coauthored_submissions');
+  check('ortak yazar başvuruyu görür; sahibin KİŞİSEL NOTU yok', coRows?.length === 1 && coRows[0].paper_title === 'Gizli Makale' && !JSON.stringify(coRows).includes('ÖZEL NOT') && !('notes' in (coRows[0] ?? {})), coRows);
+  const { data: coDirect } = await outsider.client.from('submissions').select('id').eq('id', subIns!.id);
+  check('ortak yazar tabloyu doğrudan okuyamaz', (coDirect ?? []).length === 0);
+  const { data: coFollow } = await outsider.client.from('interests').select('event_id').eq('event_id', ev3);
+  check('katılınca çağrı ortak yazarın takip listesine eklenir', coFollow?.length === 1);
+  const crDue = new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10);
+  const { error: coUpd } = await outsider.client.rpc('update_shared_submission', {
+    p_submission: subIns!.id, p_status: 'accepted', p_paper_title: 'Gizli Makale', p_submitted_at: null, p_decision_at: null,
+    p_camera_ready_due: crDue, p_registration_due: null, p_presentation_at: null, p_shared_notes: 'Ortak not',
+  });
+  check('ortak yazar ortak alanları günceller (camera-ready + ortak not)', !coUpd, coUpd?.message);
+  const { data: afterCo } = await member.client.from('submissions').select('camera_ready_due, shared_notes, notes').eq('id', subIns!.id).single();
+  check('sahip güncellemeyi görür, kişisel notu bozulmaz', afterCo?.camera_ready_due === crDue && afterCo.shared_notes === 'Ortak not' && afterCo.notes === 'ÖZEL NOT', afterCo);
+  const { data: coNotif } = await member.client.from('notifications').select('type, payload').eq('type', 'coauthor_update');
+  check('sahibe "ortak yazarlı başvuru güncellendi" mesajı', coNotif?.length === 1 && coNotif[0].payload.by === 'Test disari', coNotif);
+  const { error: ownerUpdCo } = await owner.client.rpc('update_shared_submission', {
+    p_submission: subIns!.id, p_status: 'rejected', p_paper_title: 'x', p_submitted_at: null, p_decision_at: null,
+    p_camera_ready_due: null, p_registration_due: null, p_presentation_at: null, p_shared_notes: null,
+  });
+  check('ekipte olmayan (grup sahibi bile) başvuruyu değiştiremez', !!ownerUpdCo);
+  const { data: team } = await outsider.client.rpc('submission_team', { p_submission: subIns!.id });
+  check('ekip listesi: sahip + ortak yazar, e-posta yok', team?.length === 2 && !JSON.stringify(team).includes('@'), team);
+  const { error: coRemoveOwner } = await outsider.client.rpc('remove_coauthor', { p_submission: subIns!.id, p_user: member.id });
+  const { count: stillOwner } = await db.from('submissions').select('*', { count: 'exact', head: true }).eq('id', subIns!.id);
+  check('ortak yazar sahibi çıkaramaz / kaydı silemez', !!coRemoveOwner || stillOwner === 1);
+  await member.client.rpc('remove_coauthor', { p_submission: subIns!.id, p_user: outsider.id });
+  const { data: coAfterRemove } = await outsider.client.rpc('my_coauthored_submissions');
+  check('sahip ortak yazarı çıkarır', (coAfterRemove ?? []).length === 0);
+  const { data: newSubCode } = await member.client.rpc('submission_invite_code', { p_submission: subIns!.id, p_regenerate: true });
+  const { error: oldJoin } = await outsider.client.rpc('join_submission', { p_code: subCode });
+  check('yenilenen bağlantıdan sonra eski kod çalışmaz', newSubCode !== subCode && !!oldJoin);
+  await member.client.from('submissions').update({ camera_ready_due: null, shared_notes: null }).eq('id', subIns!.id);
 
   // -------------------------------------------------------------------------
   section('Grup yorumları');

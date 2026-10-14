@@ -60,6 +60,8 @@ export function InboxPage() {
     series_new: t.nSeries,
     group_comment: t.nGroupComment,
     saved_search: t.nSavedSearch,
+    submission_task: t.nTask,
+    coauthor_update: t.nCoauthorUpdate,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
@@ -71,6 +73,8 @@ export function InboxPage() {
     series_new: '🔁',
     group_comment: '💬',
     saved_search: '🔎',
+    submission_task: '📌',
+    coauthor_update: '✏️',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;
@@ -88,7 +92,7 @@ export function InboxPage() {
             <article key={n.id} className={`card message ${n.read_at ? '' : 'unread'}`}>
               <div className="message-head">
                 <span className="message-icon">{icon[n.type]}</span>
-                <strong>{n.type === 'deadline_reminder' && n.payload.days ? t.nReminderDays(n.payload.days) : heading[n.type]}</strong>
+                <strong>{n.type === 'deadline_reminder' && n.payload.days ? t.nReminderDays(n.payload.days) : n.type === 'submission_task' && n.payload.task && n.payload.days ? t.nTaskDays(t.taskNames[n.payload.task], n.payload.days) : heading[n.type]}</strong>
                 <span className="muted small">{timeAgo(n.created_at, lang)}</span>
               </div>
               {n.type === 'announcement' && a && (
@@ -98,6 +102,7 @@ export function InboxPage() {
                   {a.url && <a href={a.url} target="_blank" rel="noreferrer noopener" className="small">↗ {a.url}</a>}
                 </div>
               )}
+              {(n.type === 'submission_task' || n.type === 'coauthor_update') && n.payload.paper && <p className="message-body small muted">📄 {n.payload.paper}{n.type === 'coauthor_update' && n.payload.by ? ` · ${t.updatedBy(n.payload.by)}` : ''}</p>}
               {n.type === 'saved_search' && n.payload.search && <p className="message-body small muted">🔎 {t.savedSearchLine(n.payload.search)}</p>}
               {n.type === 'group_comment' && (
                 <p className="message-body small">

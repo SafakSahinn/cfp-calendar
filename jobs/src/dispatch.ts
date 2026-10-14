@@ -7,7 +7,7 @@ import {
 } from '../../supabase/functions/_shared/calendar.ts';
 import { calendarEnv, db, selectAll } from './db.ts';
 import { isCaution } from './quality.ts';
-import { reminderThreshold } from './reminders.ts';
+import { reminderThreshold, taskReminders, type TaskSubmission } from './reminders.ts';
 import { savedSearchMatches, type SavedSearch } from './savedSearches.ts';
 import { runStats } from './runStats.ts';
 
@@ -69,6 +69,14 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
     if (!ev.series_key || !ev.submission_deadline || new Date(ev.submission_deadline).getTime() <= now) continue;
     bySeries.set(ev.series_key, [...(bySeries.get(ev.series_key) ?? []), ev]);
   }
+
+  // Kabul sonrası işler (camera-ready / kayıt / sunum): sahip + ortak yazarlar
+  const taskSubs = await selectAll<TaskSubmission>((from, to) =>
+    db.from('submissions')
+      .select('id, user_id, event_id, status, paper_title, camera_ready_due, registration_due, presentation_at, submission_members (user_id)')
+      .or(`camera_ready_due.gte.${today},registration_due.gte.${today},presentation_at.gte.${today}`)
+      .range(from, to),
+  );
 
   let notified = 0;
   let synced = 0;
@@ -181,6 +189,11 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
           log(`  ${profile.id} / ${ev.acronym ?? ev.id}: takvim hatası: ${e}`);
         }
       }
+    }
+
+    // --- 1a) Kabul sonrası işler: seçilen hatırlatma günlerine göre
+    for (const r of taskReminders(taskSubs, profile.id, profile.reminder_days ?? [REMINDER_DAYS], now)) {
+      notify(r.event_id, 'submission_task', r.dedupe_key, r.payload);
     }
 
     // --- 1b) Kayıtlı aramalar: uyan YENİ çağrılar (arama başına çalışma başına en fazla 10) ----------

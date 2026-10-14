@@ -53,3 +53,17 @@ test('push: seçilen güne göre hatırlatma başlığı ve grup yorumu', () => 
   assert.equal(c.body, 'Ayşe: Ben de gönderiyorum · DAC');
   assert.equal(c.url, '#/grup/g1');
 });
+
+test('kabul sonrası işler: sahip ve ortak yazara, seçilen eşikte; reddedilen/geçmiş tarihli hariç', async () => {
+  const { taskReminders } = await import('../src/reminders.ts');
+  const now = Date.parse('2026-10-14T09:00:00Z');
+  const sub = (o: Record<string, unknown>) => ({ id: 's', user_id: 'owner', event_id: 'e', status: 'accepted', paper_title: 'P', camera_ready_due: null, registration_due: null, presentation_at: null, submission_members: [{ user_id: 'co' }], ...o });
+  const subs = [sub({ camera_ready_due: '2026-10-16', registration_due: '2026-11-30' })];
+  const own = taskReminders(subs, 'owner', [7, 3], now);
+  assert.equal(own.length, 1); // kayıt tarihi 7 günden uzak
+  assert.deepEqual(own[0].payload, { task: 'camera_ready', date: '2026-10-16', paper: 'P', days: 3 });
+  assert.equal(taskReminders(subs, 'co', [7], now)[0].payload.days, 7); // ortak yazar kendi eşiğiyle
+  assert.equal(taskReminders(subs, 'stranger', [7], now).length, 0);
+  assert.equal(taskReminders([sub({ status: 'rejected', camera_ready_due: '2026-10-16' })], 'owner', [7], now).length, 0);
+  assert.equal(taskReminders([sub({ camera_ready_due: '2026-10-01' })], 'owner', [7], now).length, 0);
+});

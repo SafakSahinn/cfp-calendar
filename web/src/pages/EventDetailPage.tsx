@@ -4,6 +4,7 @@ import { KindTag } from '../components/EventCard';
 import { FeedbackDialog } from '../components/FeedbackDialog';
 import { RecommendDialog } from '../components/RecommendDialog';
 import { SubmissionCard } from '../components/Submissions';
+import { CoauthoredCard } from '../components/SubmissionTeam';
 import { FundingCard } from '../components/FundingCard';
 import { GroupParticipants, SeriesCard, SimilarCalls } from '../components/EventExtras';
 import { useApp } from '../lib/app';
@@ -108,6 +109,7 @@ export function EventDetailPage({ id }: { id: string }) {
 
       <GroupParticipants eventId={e.id} />
       <SubmissionCard event={e} />
+      <CoauthoredCard event={e} />
       <FundingCard event={e} />
       <SeriesCard event={e} />
 

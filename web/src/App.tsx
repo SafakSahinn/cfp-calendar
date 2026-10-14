@@ -16,11 +16,12 @@ const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((m) =>
 const MyCalendarPage = lazy(() => import('./pages/MyCalendarPage').then((m) => ({ default: m.MyCalendarPage })));
 const InboxPage = lazy(() => import('./pages/InboxPage').then((m) => ({ default: m.InboxPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const JoinSubmissionPage = lazy(() => import('./components/SubmissionTeam').then((m) => ({ default: m.JoinSubmissionPage })));
 const GroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.GroupPage })));
 const GroupsPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.GroupsPage })));
 const JoinGroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.JoinGroupPage })));
 
-type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join';
+type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join' | 'coauthor';
 
 function routeFromHash(h: string): Route {
   if (h.startsWith('#/mesajlar')) return 'inbox';
@@ -32,6 +33,7 @@ function routeFromHash(h: string): Route {
   if (h.startsWith('#/takvimim')) return 'mycal';
   if (h.startsWith('#/gruplar')) return 'groups';
   if (h.startsWith('#/grup/')) return 'group';
+  if (h.startsWith('#/ortak/')) return 'coauthor';
   if (h.startsWith('#/katil/')) return 'join';
   return 'events';
 }
@@ -123,6 +125,8 @@ export function App() {
           <GroupsPage />
         ) : route === 'group' ? (
           <GroupPage key={hash} id={hash.slice('#/grup/'.length)} />
+        ) : route === 'coauthor' ? (
+          <JoinSubmissionPage code={hash.slice('#/ortak/'.length)} />
         ) : route === 'join' ? (
           <JoinGroupPage code={hash.slice('#/katil/'.length)} />
         ) : route === 'detail' ? (

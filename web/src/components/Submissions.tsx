@@ -8,11 +8,16 @@ import { formatDate, formatDeadline, timeAgo } from '../lib/format';
 import { useMyGroups } from '../lib/groups';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
+import { TaskFields, TaskSummary, TeamSection, useCoauthored, type TaskDates } from './SubmissionTeam';
 import { filterByYear, toCsv, toPrintHtml, yearOf, type ExportLabels, type ExportRow } from '../lib/exportSubmissions';
 
 export const STATUSES = ['planning', 'submitted', 'under_review', 'revision', 'accepted', 'rejected', 'withdrawn'] as const;
 export type Status = (typeof STATUSES)[number];
 const ACTIVE: Status[] = ['planning', 'submitted', 'under_review', 'revision'];
+
+/** Tablodan okunacak sütunlar (davet kodu gibi gizli sütunlar istenmez; `*` kullanılamaz) */
+export const SUB_COLS =
+  'id, event_id, status, paper_title, notes, submitted_at, decision_at, shared_group_ids, share_with_members, updated_at, camera_ready_due, registration_due, presentation_at, shared_notes';
 
 export interface Submission {
   id: string;
@@ -25,7 +30,13 @@ export interface Submission {
   shared_group_ids: string[];
   share_with_members: boolean;
   updated_at: string;
+  camera_ready_due: string | null;
+  registration_due: string | null;
+  presentation_at: string | null;
+  shared_notes: string | null;
   events?: EventRow;
+  /** Ortak yazarı olduğum başvurularda sahibin adı */
+  owner_name?: string | null;
 }
 
 export function StatusTag({ status }: { status: Status }) {
@@ -41,15 +52,19 @@ export function SubmissionCard({ event }: { event: EventRow }) {
   const { showToast, followed, toggleFollow } = useApp();
   const { groups } = useMyGroups();
   const [sub, setSub] = useState<Submission | null | undefined>(undefined);
-  const [form, setForm] = useState({ status: 'planning' as Status, paper_title: '', notes: '', shared: [] as string[], members: false });
+  const EMPTY_FORM = { status: 'planning' as Status, paper_title: '', notes: '', shared: [] as string[], members: false, shared_notes: '', camera_ready_due: '', registration_due: '', presentation_at: '' };
+  const [form, setForm] = useState(EMPTY_FORM);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.from('submissions').select('*').eq('event_id', event.id).maybeSingle().then(({ data }) => {
+    supabase.from('submissions').select(SUB_COLS).eq('event_id', event.id).maybeSingle().then(({ data }) => {
       const s = data as Submission | null;
       setSub(s);
-      if (s) setForm({ status: s.status, paper_title: s.paper_title ?? '', notes: s.notes ?? '', shared: s.shared_group_ids, members: s.share_with_members });
+      if (s) setForm({
+        status: s.status, paper_title: s.paper_title ?? '', notes: s.notes ?? '', shared: s.shared_group_ids, members: s.share_with_members,
+        shared_notes: s.shared_notes ?? '', camera_ready_due: s.camera_ready_due ?? '', registration_due: s.registration_due ?? '', presentation_at: s.presentation_at ?? '',
+      });
     });
   }, [event.id]);
 
@@ -63,10 +78,14 @@ export function SubmissionCard({ event }: { event: EventRow }) {
       notes: form.notes.trim() || null,
       shared_group_ids: form.shared,
       share_with_members: form.shared.length > 0 && form.members,
+      shared_notes: form.shared_notes.trim() || null,
+      camera_ready_due: form.camera_ready_due || null,
+      registration_due: form.registration_due || null,
+      presentation_at: form.presentation_at || null,
     };
     const { data, error } = sub
-      ? await supabase.from('submissions').update(row).eq('id', sub.id).select().single()
-      : await supabase.from('submissions').insert(row).select().single();
+      ? await supabase.from('submissions').update(row).eq('id', sub.id).select(SUB_COLS).single()
+      : await supabase.from('submissions').insert(row).select(SUB_COLS).single();
     setBusy(false);
     if (error) return showToast(error.message.includes('not_a_member') ? t.notAMember : error.message);
     setSub(data as Submission);
@@ -79,7 +98,7 @@ export function SubmissionCard({ event }: { event: EventRow }) {
     if (!sub || !window.confirm(t.confirmDeleteSubmission)) return;
     await supabase.from('submissions').delete().eq('id', sub.id);
     setSub(null);
-    setForm({ status: 'planning', paper_title: '', notes: '', shared: [], members: false });
+    setForm(EMPTY_FORM);
   };
 
   if (sub === undefined) return null;
@@ -105,8 +124,11 @@ export function SubmissionCard({ event }: { event: EventRow }) {
             {event.notification_date && ACTIVE.includes(sub.status) && `${t.dateNotification}: ${formatDate(event.notification_date, 'tr')} · `}
             {t.updated} {timeAgo(sub.updated_at, 'tr')}
           </p>
+          <TaskSummary s={sub} />
+          {sub.shared_notes && <p className="note pre">📝 {sub.shared_notes}</p>}
           {sub.shared_group_ids.length > 0 && <p className="muted small">👥 {t.sharedWith(sub.shared_group_ids.length)}{sub.share_with_members && ` · ${t.visibleToMembers}`}</p>}
           <button className="small" onClick={() => setOpen(true)}>{t.update}</button>
+          <TeamSection submissionId={sub.id} isOwner />
         </>
       )}
       {open && (
@@ -124,6 +146,13 @@ export function SubmissionCard({ event }: { event: EventRow }) {
           <div className="field">
             <label htmlFor="s-notes">{t.privateNotes}</label>
             <textarea id="s-notes" rows={3} maxLength={2000} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder={t.privateNotesHint} />
+          </div>
+          {(form.status === 'accepted' || form.camera_ready_due || form.registration_due || form.presentation_at) && (
+            <TaskFields value={form as TaskDates} onChange={(v) => setForm({ ...form, ...v })} />
+          )}
+          <div className="field">
+            <label htmlFor="s-shared">{t.sharedNotes}</label>
+            <textarea id="s-shared" rows={2} maxLength={2000} value={form.shared_notes} onChange={(e) => setForm({ ...form, shared_notes: e.target.value })} placeholder={t.sharedNotesHint} />
           </div>
           {groups && groups.length > 0 && (
             <fieldset className="share-groups">
@@ -162,12 +191,25 @@ export function SubmissionCard({ event }: { event: EventRow }) {
 // ---------------------------------------------------------------------------
 export function MySubmissions() {
   const { t, lang } = useI18n();
-  const [rows, setRows] = useState<Submission[] | null>(null);
+  const [own, setOwn] = useState<Submission[] | null>(null);
+  const { rows: co } = useCoauthored();
+  const [coEvents, setCoEvents] = useState<Map<string, EventRow>>(new Map());
 
   useEffect(() => {
-    supabase.from('submissions').select('*, events(*)').order('updated_at', { ascending: false })
-      .then(({ data }) => setRows(((data ?? []) as Submission[]).filter((s) => s.events)));
+    supabase.from('submissions').select(`${SUB_COLS}, events(*)`).order('updated_at', { ascending: false })
+      .then(({ data }) => setOwn(((data ?? []) as unknown as Submission[]).filter((s) => s.events)));
   }, []);
+  useEffect(() => {
+    const ids = [...new Set((co ?? []).map((c) => c.event_id))];
+    if (ids.length === 0) return;
+    supabase.from('events').select('*').in('id', ids).then(({ data }) => setCoEvents(new Map(((data ?? []) as EventRow[]).map((e) => [e.id, e]))));
+  }, [co]);
+  const rows: Submission[] | null = own === null || co === null ? null : [
+    ...own,
+    ...co.filter((c) => coEvents.has(c.event_id)).map((c) => ({
+      ...c, notes: null, shared_group_ids: [], share_with_members: false, events: coEvents.get(c.event_id), owner_name: c.owner_name ?? '—',
+    })),
+  ].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 
   if (rows === null) return <p className="muted center">{t.loading}</p>;
   if (rows.length === 0) return <div className="card center"><p>{t.noSubmissions}</p></div>;
@@ -188,7 +230,9 @@ export function MySubmissions() {
               <strong className="grow">{r.events!.acronym ?? r.events!.title}</strong>
               <StatusTag status={r.status} />
             </div>
+            {r.owner_name && <span className="small muted">👥 {t.coauthoredBy(r.owner_name)}</span>}
             {r.paper_title && <span className="small">📄 {r.paper_title}</span>}
+            <TaskSummary s={r} />
             <span className="muted small">
               {r.events!.submission_deadline && `${t.deadline}: ${formatDeadline(r.events!.submission_deadline, lang)}`}
               {r.events!.notification_date && ACTIVE.includes(r.status) && ` · ${t.dateNotification}: ${formatDate(r.events!.notification_date, lang)}`}

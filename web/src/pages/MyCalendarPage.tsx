@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { KindLegend, MonthCalendar } from '../components/MonthCalendar';
 import { MySubmissions } from '../components/Submissions';
 import { useApp } from '../lib/app';
-import { itemsForEvent, type ItemKind } from '../lib/calendarItems';
+import { itemsForEvent, itemsForTasks, type ItemKind } from '../lib/calendarItems';
+import { useCoauthored } from '../components/SubmissionTeam';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
-const ALL_KINDS: ItemKind[] = ['open', 'abstract', 'deadline', 'funding', 'event'];
+const ALL_KINDS: ItemKind[] = ['open', 'abstract', 'deadline', 'funding', 'event', 'task'];
 
 export function MyCalendarPage() {
   const { t } = useI18n();
@@ -22,7 +23,22 @@ export function MyCalendarPage() {
     supabase.from('events').select('*').in('id', [...followed]).then(({ data }) => setEvents((data ?? []) as EventRow[]));
   }, [followed]);
 
-  const items = useMemo(() => (events ?? []).flatMap((e) => itemsForEvent(e, kinds)), [events, kinds]);
+  // Kabul sonrası işler: kendi başvurularım + ortak yazarı olduklarım
+  const [ownTasks, setOwnTasks] = useState<{ id: string; event_id: string; camera_ready_due: string | null; registration_due: string | null; presentation_at: string | null; acronym: string }[]>([]);
+  const { rows: co } = useCoauthored();
+  useEffect(() => {
+    supabase.from('submissions').select('id, event_id, camera_ready_due, registration_due, presentation_at, events(acronym, title)')
+      .or('camera_ready_due.not.is.null,registration_due.not.is.null,presentation_at.not.is.null')
+      .then(({ data }) => setOwnTasks(((data ?? []) as unknown as { id: string; event_id: string; camera_ready_due: string | null; registration_due: string | null; presentation_at: string | null; events: { acronym: string | null; title: string } | null }[])
+        .map((s) => ({ ...s, acronym: s.events?.acronym ?? s.events?.title.slice(0, 30) ?? '' }))));
+  }, []);
+  const items = useMemo(() => {
+    const base = (events ?? []).flatMap((e) => itemsForEvent(e, kinds));
+    if (!kinds.includes('task')) return base;
+    const byId = new Map((events ?? []).map((e) => [e.id, e.acronym ?? e.title.slice(0, 30)]));
+    const coTasks = (co ?? []).map((c) => ({ ...c, acronym: byId.get(c.event_id) ?? '' }));
+    return [...base, ...itemsForTasks([...ownTasks, ...coTasks], t.taskLabels)];
+  }, [events, kinds, ownTasks, co, t]);
   const toggle = (k: ItemKind) => setKinds((ks) => (ks.includes(k) ? ks.filter((x) => x !== k) : [...ks, k]));
 
   return (
@@ -52,7 +68,7 @@ export function MyCalendarPage() {
           <a href="#/" className="button">{t.navEvents}</a>
         </div>
       ) : (
-        <MonthCalendar items={items} legend={<KindLegend />} />
+        <MonthCalendar items={items} legend={<KindLegend withTasks />} />
       )}
       {profile && !profile.calendar_provider && events && events.length > 0 && (
         <p className="muted small">{t.myCalendarConnectHint} <a href="#/profil">{t.navProfile} →</a></p>

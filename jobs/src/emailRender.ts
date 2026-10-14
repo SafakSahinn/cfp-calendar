@@ -1,7 +1,7 @@
 // Özet e-postası şablonu (saf fonksiyon; veritabanı veya SMTP gerektirmez, test edilebilir).
 
 type Locale = 'tr' | 'en';
-type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search';
+type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new' | 'group_comment' | 'saved_search' | 'submission_task' | 'coauthor_update';
 
 export interface DigestEvent {
   acronym: string | null;
@@ -15,7 +15,7 @@ export interface DigestEvent {
 
 export interface DigestItem {
   type: NotifType;
-  payload: { old_deadline?: string; group_name?: string; by?: string | null; days?: number; note?: string | null };
+  payload: { old_deadline?: string; group_name?: string; by?: string | null; days?: number; note?: string | null; task?: string; date?: string; paper?: string | null };
   event: DigestEvent | null;
 }
 
@@ -34,8 +34,10 @@ const T = {
       series_new: 'Takip ettiğiniz serinin yeni çağrısı',
       group_comment: 'Grubunuzda yeni yorum',
       saved_search: 'Kayıtlı aramanıza uyan yeni çağrı',
+      submission_task: 'Kabul sonrası iş yaklaşıyor',
+      coauthor_update: 'Ortak yazarlı başvurunuz güncellendi',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎', submission_task: '📌', coauthor_update: '✏️' },
     hello: (n: string | null) => (n ? `Merhaba ${n},` : 'Merhaba,'),
     intro: (n: number) => (n === 1 ? 'Takip ettiğiniz çağrılarla ilgili yeni bir bildiriminiz var:' : `Takip ettiğiniz çağrılarla ilgili ${n} yeni bildiriminiz var:`),
     deadline: 'Son başvuru',
@@ -61,8 +63,10 @@ const T = {
       series_new: 'New edition of a series you follow',
       group_comment: 'New comment in your group',
       saved_search: 'New call matching your saved search',
+      submission_task: 'Post-acceptance task coming up',
+      coauthor_update: 'Your co-authored submission was updated',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬', saved_search: '🔎', submission_task: '📌', coauthor_update: '✏️' },
     hello: (n: string | null) => (n ? `Hi ${n},` : 'Hi,'),
     intro: (n: number) => (n === 1 ? 'You have a new notification about calls you follow:' : `You have ${n} new notifications about calls you follow:`),
     deadline: 'Deadline',
@@ -145,7 +149,9 @@ export function renderDigest(opts: {
   const label = (i: DigestItem) =>
     i.type === 'deadline_reminder' && i.payload.days
       ? (opts.locale === 'tr' ? `Son başvuruya ${i.payload.days} günden az kaldı` : `Less than ${i.payload.days} days to the deadline`)
-      : t.labels[i.type];
+      : i.type === 'submission_task' && i.payload.task && i.payload.days
+        ? `${(opts.locale === 'tr' ? { camera_ready: 'Camera-ready son günü', registration: 'Kayıt son günü', presentation: 'Sunum günü' } : { camera_ready: 'Camera-ready deadline', registration: 'Registration deadline', presentation: 'Presentation day' })[i.payload.task as 'camera_ready'] ?? ''}: ${opts.locale === 'tr' ? `${i.payload.days} günden az kaldı` : `less than ${i.payload.days} days`}`
+        : t.labels[i.type];
   const items = opts.items.filter((i) => i.event).slice(0, MAX_ITEMS);
   const rest = opts.items.length - items.length;
   const first = items[0];

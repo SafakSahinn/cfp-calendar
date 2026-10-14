@@ -6,7 +6,7 @@ export interface PushItem {
   type: string;
   event: { id: string; acronym: string | null; title: string; submission_deadline: string | null } | null;
   announcement: { title: string } | null;
-  payload: { group_name?: string; days?: number; by?: string | null; note?: string | null };
+  payload: { group_name?: string; days?: number; by?: string | null; note?: string | null; task?: string; paper?: string | null };
   group_id?: string | null;
 }
 
@@ -29,6 +29,7 @@ const LABELS: Record<Locale, Record<string, string>> = {
     announcement: '📣 Duyuru',
     group_comment: '💬 Grubunuzda yeni yorum',
     saved_search: '🔎 Kayıtlı aramana uyan yeni çağrı',
+    coauthor_update: '✏️ Ortak yazarlı başvurun güncellendi',
   },
   en: {
     submission_open: '📝 Submissions are open',
@@ -40,6 +41,7 @@ const LABELS: Record<Locale, Record<string, string>> = {
     announcement: '📣 Announcement',
     group_comment: '💬 New comment in your group',
     saved_search: '🔎 New call matching your saved search',
+    coauthor_update: '✏️ Your co-authored submission was updated',
   },
 };
 
@@ -47,7 +49,9 @@ const fmt = (iso: string, lang: Locale) =>
   new Intl.DateTimeFormat(lang === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/Istanbul' }).format(new Date(iso));
 
 const labelOf = (i: PushItem, L: Record<string, string>, lang: Locale) =>
-  i.type === 'deadline_reminder' && i.payload.days
+  i.type === 'submission_task' && i.payload.task && i.payload.days
+    ? `📌 ${(lang === 'tr' ? { camera_ready: 'Camera-ready son günü', registration: 'Kayıt son günü', presentation: 'Sunum günü' } : { camera_ready: 'Camera-ready deadline', registration: 'Registration deadline', presentation: 'Presentation day' })[i.payload.task as 'camera_ready'] ?? ''}: ${lang === 'tr' ? `${i.payload.days} günden az kaldı` : `less than ${i.payload.days} days`}`
+    : i.type === 'deadline_reminder' && i.payload.days
     ? lang === 'tr' ? `⏰ Son başvuruya ${i.payload.days} günden az kaldı` : `⏰ Less than ${i.payload.days} days to the deadline`
     : L[i.type] ?? 'CFP Calendar';
 
@@ -59,7 +63,7 @@ export function renderPush(items: PushItem[], lang: Locale): PushMessage | null 
   if (items.length === 0) return null;
   const L = LABELS[lang];
   // Önce en acil olan: son tarih hatırlatması / değişikliği
-  const order = ['deadline_reminder', 'dates_changed', 'submission_open', 'series_new', 'group_recommendation', 'group_comment', 'saved_search', 'announcement', 'topic_match'];
+  const order = ['submission_task', 'deadline_reminder', 'dates_changed', 'submission_open', 'series_new', 'group_recommendation', 'group_comment', 'saved_search', 'announcement', 'topic_match'];
   const sorted = [...items].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
   const first = sorted[0];
   if (items.length === 1) {
