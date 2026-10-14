@@ -94,6 +94,12 @@ test('takvim kaydı içeriği', () => {
   const days = buildItem(e, 'event_days', 'tr', 'https://x');
   assert.deepEqual(days.allDay, { start: '2027-06-20', endExclusive: '2027-06-25' });
   assert.equal(entryHash(e, 'event_days'), 'days:2027-06-20:2027-06-24');
+
+  // Kullanıcının seçtiği hatırlatma günleri (14/3) takvim kaydına ve özetine yansır; seçim değişince kayıt güncellenir
+  assert.deepEqual(buildItem(e, 'deadline', 'tr', 'https://x', [3, 14]).reminders, [20160, 4320]);
+  assert.deepEqual(buildItem(e, 'deadline', 'tr', 'https://x', []).reminders, []);
+  assert.equal(entryHash(e, 'deadline', [3, 14]), 'dl:2026-11-16T11:59:59.000Z:r14,3');
+  assert.notEqual(entryHash(e, 'deadline', [7]), entryHash(e, 'deadline', [7, 1]));
 });
 
 test('WikiCFP: resmi site bağlantısı ayrıştırılır, güvensiz bağlantı reddedilir', async () => {

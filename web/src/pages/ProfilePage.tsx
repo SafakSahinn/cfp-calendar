@@ -8,6 +8,9 @@ import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 import { GoogleIcon, MicrosoftIcon } from './LandingPage';
 
+/** Üye e-postaları sitede açık mı (GitHub değişkeni MEMBER_EMAILS=on); kapalıyken e-posta ayarları gösterilmez. */
+const MEMBER_EMAILS = import.meta.env.VITE_MEMBER_EMAILS === 'on';
+
 export function ProfilePage() {
   const { t, lang } = useI18n();
   const {
@@ -99,15 +102,15 @@ export function ProfilePage() {
           />{' '}
           {t.topicNotifications}
         </label>
-        <label className="check">
+        {MEMBER_EMAILS && <label className="check">
           <input
             type="checkbox"
             checked={profile.email_notifications}
             onChange={(e) => updateProfile({ email_notifications: e.target.checked })}
           />{' '}
           {t.emailNotifications}
-        </label>
-        {profile.email_notifications && (
+        </label>}
+        {MEMBER_EMAILS && profile.email_notifications && (
           <label className="inline-field freq">
             <span className="small muted">{t.emailFrequency}</span>
             <select value={profile.email_frequency} onChange={(e) => updateProfile({ email_frequency: e.target.value as 'weekly' | 'instant' })}>

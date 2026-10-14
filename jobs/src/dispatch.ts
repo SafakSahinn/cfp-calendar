@@ -164,13 +164,13 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
           // Başvuru kayıtları: açıkken eklenir; daha önce eklendiyse tarih değişikliğinde güncellenir.
           for (const type of SUBMISSION_ENTRY_TYPES) {
             if (isOpen || existing.has(type)) {
-              const r = await syncEntry(db, env, profile.id, ev, type, profile.locale, access);
+              const r = await syncEntry(db, env, profile.id, ev, type, profile.locale, access, profile.reminder_days ?? undefined);
               if (r === 'created' || r === 'updated') synced++;
             }
           }
           // Konferans günleri: sadece kullanıcı "ilgileniyorum" dediyse (kayıt zaten varsa) güncellenir.
           if (existing.has('event_days')) {
-            const r = await syncEntry(db, env, profile.id, ev, 'event_days', profile.locale, access);
+            const r = await syncEntry(db, env, profile.id, ev, 'event_days', profile.locale, access, profile.reminder_days ?? undefined);
             if (r === 'updated') synced++;
           }
         } catch (e) {

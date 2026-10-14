@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
   // Takibe al (sonraki tarih değişiklikleri de takvime yansısın).
   await admin.from('interests').upsert({ user_id: user.id, event_id: eventId }, { onConflict: 'user_id,event_id', ignoreDuplicates: true });
-  const { data: profile } = await admin.from('profiles').select('locale').eq('id', user.id).single();
+  const { data: profile } = await admin.from('profiles').select('locale, reminder_days').eq('id', user.id).single();
 
   const results: Record<string, string> = {};
   const types: EntryType[] = ['event_days'];
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   }
   try {
     for (const type of types) {
-      results[type] = await syncEntry(admin, calendarEnv(), user.id, event as EventRow, type, profile?.locale ?? 'tr');
+      results[type] = await syncEntry(admin, calendarEnv(), user.id, event as EventRow, type, profile?.locale ?? 'tr', undefined, profile?.reminder_days ?? undefined);
     }
   } catch (e) {
     return json({ ok: true, calendar: results, calendar_error: String(e) });

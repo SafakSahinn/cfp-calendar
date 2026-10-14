@@ -55,9 +55,11 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
           VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          MEMBER_EMAILS: ${{ vars.MEMBER_EMAILS }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
           EMAIL_ONLY_TO: ${{ inputs.test_to_admin && vars.ADMIN_EMAIL || '' }}
           FORCE_WEEKLY: ${{ inputs.force_weekly && '1' || '' }}
       - uses: liskin/gh-workflow-keepalive@v1
+        if: always() # veri adımı hata verse de zamanlanmış iş kapanmasın

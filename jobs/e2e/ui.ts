@@ -337,7 +337,7 @@ try {
     check('profil: konu seçimleri işaretli', (await page.locator('.chip.on').count()) === 2, await page.locator('.chip.on').count());
     check('profil: şifre değiştirme (e-posta üyesi)', await page.getByRole('heading', { name: 'Şifre değiştir' }).isVisible());
     check('profil: hesap silme bölümü', await page.getByRole('heading', { name: 'Hesabı sil' }).isVisible());
-    check('profil: e-posta bildirimleri açık', await page.getByLabel('E-posta bildirimleri').isChecked());
+    check('profil: üye e-postaları kapalıyken e-posta ayarı gösterilmez', (await page.getByLabel('E-posta bildirimleri').count()) === 0);
     await shot(page, `${kind}-05-profile`);
     check('profil: hatırlatma günleri kartı (varsayılan 7 gün seçili)', await page.getByLabel('7 gün önce').isChecked() && !(await page.getByLabel('3 gün önce').isChecked()));
     if (kind === 'desktop') {

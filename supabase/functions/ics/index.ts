@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   if (groupId !== null && !/^[0-9a-f-]{36}$/i.test(groupId)) return new Response('Not found', { status: 404 });
 
   const admin = adminClient();
-  const { data: profile } = await admin.from('profiles').select('id, locale').eq('ics_token', token).maybeSingle();
+  const { data: profile } = await admin.from('profiles').select('id, locale, reminder_days').eq('ics_token', token).maybeSingle();
   if (!profile) return new Response('Not found', { status: 404 });
 
   // ?group=… → grubun ortak takvimi (yalnızca token sahibi o grubun ÜYESİYSE); yoksa kişisel takip listesi.
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (!e) continue;
     for (const type of [...SUBMISSION_ENTRY_TYPES, 'event_days'] as EntryType[]) {
       if (!isApplicable(e, type)) continue;
-      const item = buildItem(e, type, profile.locale, siteUrl);
+      const item = buildItem(e, type, profile.locale, siteUrl, profile.reminder_days ?? undefined);
       lines.push('BEGIN:VEVENT', `UID:${e.id}-${type}@cfp-calendar`, `DTSTAMP:${now}`);
       if (item.allDay) {
         lines.push(`DTSTART;VALUE=DATE:${day(item.allDay.start)}`, `DTEND;VALUE=DATE:${day(item.allDay.endExclusive)}`);

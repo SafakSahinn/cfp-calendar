@@ -1,0 +1,61 @@
+name: Veritabanı yedeği (haftalık, şifreli)
+
+# Supabase ücretsiz planında otomatik geri yükleme yok: her pazar şema + veri (kullanıcı hesapları dahil) dökülür,
+# BACKUP_PASSPHRASE ile AES-256 şifrelenir ve 90 gün saklanan bir Actions dosyası (artifact) olarak yüklenir.
+# Repo public olduğu için yedek ŞİFRESİZ asla yüklenmez. Geri yükleme: docs/BAKIM.md → "Yedekten geri yükleme".
+
+on:
+  schedule:
+    - cron: '41 2 * * 0' # pazar 02:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Şifre tanımlı mı
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::BACKUP_PASSPHRASE tanımlı değil; şifresiz yedek alınmaz."; exit 1; fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Projeye bağlan
+        run: supabase init --force >/dev/null && supabase link --project-ref "$PROJECT_REF"
+      - name: Döküm al
+        run: |
+          mkdir -p dump
+          supabase db dump --linked -f dump/schema.sql
+          supabase db dump --linked --data-only -f dump/data.sql
+          supabase db dump --linked --data-only --schema auth -f dump/auth.sql
+          wc -c dump/*.sql
+      - name: Şifrele (AES-256)
+        run: |
+          stamp=$(date -u +%Y-%m-%d)
+          tar -czf - -C dump . | gpg --batch --yes --symmetric --cipher-algo AES256 --pinentry-mode loopback \
+            --passphrase-fd 3 -o "cfp-calendar-backup-$stamp.tar.gz.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          rm -rf dump
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          ls -l *.gpg
+      - name: Doğrula (şifre çözülüyor mu, içerik tam mı)
+        run: |
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 -d cfp-calendar-backup-*.tar.gz.gpg 3<<<"$BACKUP_PASSPHRASE" | tar -tzvf - | tee /tmp/list
+          for f in schema.sql data.sql auth.sql; do grep -q "$f" /tmp/list || { echo "::error::$f eksik"; exit 1; }; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfp-calendar-backup-${{ env.STAMP }}
+          path: cfp-calendar-backup-*.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error

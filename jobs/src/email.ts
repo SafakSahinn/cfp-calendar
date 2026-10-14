@@ -56,8 +56,14 @@ export async function runEmails(log: (msg: string) => void = console.log): Promi
   const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
   const ctx = { transport, from: user, siteUrl: process.env.SITE_URL!, fnBase: `${process.env.SUPABASE_URL}/functions/v1`, allowed, onlyTo, log };
 
-  await sendInstant(ctx);
-  await sendWeekly(ctx);
+  // Üye e-postaları (anında/haftalık özet) ayrıca açılmadıkça gönderilmez: SMTP sadece yönetici raporu için de girilebilir.
+  // GitHub değişkeni MEMBER_EMAILS=on → açık. Deneme modu (EMAIL_ONLY_TO) her zaman çalışır.
+  if (process.env.MEMBER_EMAILS === 'on' || onlyTo.length > 0) {
+    await sendInstant(ctx);
+    await sendWeekly(ctx);
+  } else {
+    log('E-posta: üye e-postaları kapalı (MEMBER_EMAILS=on değil); yalnızca yönetici e-postaları');
+  }
   if (onlyTo.length === 0) await forwardFeedback(transport, user, log);
 }
 

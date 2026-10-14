@@ -71,10 +71,14 @@ export function isApplicable(e: EventRow, type: EntryType): boolean {
   return !!e.submission_deadline; // başvuru açılışı sadece son tarihi olan çağrılar için anlamlı
 }
 
-export function entryHash(e: EventRow, type: EntryType): string {
+/** Son tarih kayıtlarının hatırlatıcıları kullanıcının seçtiği günlerden gelir (profiles.reminder_days); verilmezse eski varsayılan 7 + 1 gün. */
+export const DEFAULT_CAL_REMINDER_DAYS = [7, 1];
+const remKey = (days?: number[]) => (days ? `:r${[...days].sort((a, b) => b - a).join(',')}` : '');
+
+export function entryHash(e: EventRow, type: EntryType, reminderDays?: number[]): string {
   if (type === 'submission_open') return `open:${openDateOf(e)}`;
-  if (type === 'deadline') return `dl:${e.submission_deadline}`;
-  if (type === 'abstract') return `abs:${e.abstract_deadline}`;
+  if (type === 'deadline') return `dl:${e.submission_deadline}${remKey(reminderDays)}`;
+  if (type === 'abstract') return `abs:${e.abstract_deadline}${remKey(reminderDays)}`;
   return `days:${e.event_start}:${e.event_end ?? e.event_start}`;
 }
 
@@ -100,7 +104,7 @@ function displayName(e: EventRow): string {
   return e.acronym ? `${e.acronym} – ${e.title}` : e.title;
 }
 
-export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl: string): CalItem {
+export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl: string, reminderDays?: number[]): CalItem {
   const label = LABELS[locale][type];
   const name = e.acronym ?? e.title;
   const tz = e.deadline_tz ? ` (${e.deadline_tz})` : '';
@@ -131,7 +135,8 @@ export function buildItem(e: EventRow, type: EntryType, locale: Locale, siteUrl:
       ...base,
       summary: `${label}: ${name}`,
       timed: { startIso: start.toISOString(), endIso: end.toISOString() },
-      reminders: [7 * 24 * 60, 24 * 60],
+      // Google en fazla 4 hafta önceye izin verir; 14 gün sorun değil
+      reminders: [...new Set(reminderDays ?? DEFAULT_CAL_REMINDER_DAYS)].sort((a, b) => b - a).map((d) => d * 24 * 60),
     };
   }
   const start = e.event_start!;
@@ -257,7 +262,7 @@ async function microsoftWrite(token: string, item: CalItem, externalId?: string)
     location: item.location ? { displayName: item.location } : undefined,
     showAs: 'free',
     isReminderOn: item.reminders.length > 0,
-    reminderMinutesBeforeStart: item.reminders[0] ?? 0,
+    reminderMinutesBeforeStart: item.reminders[0] ?? 0, // Outlook tek hatırlatıcı destekler: en erken olan
   };
   if (item.allDay) {
     body.isAllDay = true;
@@ -332,6 +337,7 @@ export async function syncEntry(
   type: EntryType,
   locale: Locale,
   access?: { provider: Provider; token: string } | null,
+  reminderDays?: number[],
 ): Promise<SyncResult> {
   if (!isApplicable(event, type)) return 'skipped';
   access ??= await getAccessToken(db, env, userId);
@@ -348,11 +354,11 @@ export async function syncEntry(
   // Kullanıcı takviminden sildiyse tekrar eklemiyoruz.
   if (existing?.status === 'removed_by_user') return 'skipped';
 
-  const hash = entryHash(event, type);
+  const hash = entryHash(event, type, reminderDays);
   const sameProvider = existing && existing.provider === access.provider && existing.external_id;
   if (sameProvider && existing.synced_hash === hash) return 'unchanged';
 
-  const item = buildItem(event, type, locale, env.SITE_URL);
+  const item = buildItem(event, type, locale, env.SITE_URL, reminderDays);
   const externalId = sameProvider ? existing.external_id : undefined;
   const result =
     access.provider === 'google'
