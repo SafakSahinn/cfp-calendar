@@ -264,6 +264,14 @@ try {
     await page.goto(`${SITE}#/`);
     await page.locator('article.event').first().waitFor();
 
+    // Senin için (test kullanıcısı VLSI + yapay zekâ konularını seçti)
+    await page.getByRole('tab', { name: /Senin için/ }).click();
+    await page.locator('.fy-item').first().waitFor({ timeout: 15_000 });
+    check('Senin için: kişisel öneriler nedenleriyle listelenir', (await page.locator('.fy-item').count()) > 0 && (await page.locator('.fy-reason', { hasText: /İlgi alanın|Takip ettiklerine benzer/ }).count()) > 0);
+    await shot(page, `${kind}-03h-foryou`, false);
+    await page.getByRole('tab', { name: /Liste/ }).click();
+    await page.locator('article.event').first().waitFor();
+
     // Harita görünümü
     await page.getByRole('tab', { name: /Harita/ }).click();
     await page.locator('.leaflet-container').waitFor({ timeout: 15_000 });

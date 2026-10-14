@@ -541,3 +541,9 @@ ul.plain li { line-height: 1.4; }
 .hbar-track { height: 10px; }
 .hbar { display: block; height: 10px; min-width: 2px; background: var(--chart-1); border-radius: 0 4px 4px 0; }
 .hbar-value { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Senin için */
+.fy-item { display: grid; gap: 0.3rem; }
+.fy-reasons { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.fy-reason { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--accent-soft); color: var(--text); }
+.fy-reason.fy-series, .fy-reason.fy-applied { font-weight: 600; }

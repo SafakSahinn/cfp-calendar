@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { TOPICS } from '../../../shared/topics';
 import { CalendarView } from '../components/CalendarView';
 import { TurkeySeries } from '../components/TurkeySeries';
+import { ForYouView } from '../components/ForYouView';
 import { lazy, Suspense } from 'react';
 
 const MapView = lazy(() => import('../components/MapView'));
@@ -61,7 +62,7 @@ export function EventsPage() {
   const { followed } = useApp();
   const events = useOpenEvents();
   const [filters, setFilters] = useState<Filters>(() => loadStored('cfp.filters', EMPTY));
-  const [view, setView] = useState<'list' | 'calendar' | 'map'>(() => loadStored('cfp.view', { v: 'list' as 'list' | 'calendar' | 'map' }).v);
+  const [view, setView] = useState<'list' | 'calendar' | 'map' | 'foryou'>(() => loadStored('cfp.view', { v: 'list' as 'list' | 'calendar' | 'map' | 'foryou' }).v);
   const [limit, setLimit] = useState(PAGE);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dialog, setDialog] = useState<{ event: EventRow | null } | null>(null);
@@ -168,6 +169,7 @@ export function EventsPage() {
             </select>
           )}
           <div className="seg" role="tablist" aria-label={t.view}>
+            <button role="tab" aria-selected={view === 'foryou'} className={view === 'foryou' ? 'on' : ''} onClick={() => setView('foryou')}>✨ {t.viewForYou}</button>
             <button role="tab" aria-selected={view === 'list'} className={view === 'list' ? 'on' : ''} onClick={() => setView('list')}>☰ {t.viewList}</button>
             <button role="tab" aria-selected={view === 'calendar'} className={view === 'calendar' ? 'on' : ''} onClick={() => setView('calendar')}>📅 {t.viewCalendar}</button>
             <button role="tab" aria-selected={view === 'map'} className={view === 'map' ? 'on' : ''} onClick={() => setView('map')}>🗺️ {t.viewMap}</button>
@@ -178,6 +180,8 @@ export function EventsPage() {
 
       {!events ? null : view === 'calendar' ? (
         <CalendarView events={visible} />
+      ) : view === 'foryou' ? (
+        <ForYouView events={visible} onReport={(ev) => setDialog({ event: ev })} />
       ) : view === 'map' ? (
         <Suspense fallback={<p className="muted center">{t.loading}</p>}>
           <MapView events={visible} />
