@@ -67,14 +67,16 @@ export interface Profile {
   topic_notifications: boolean;
   email_notifications: boolean;
   email_frequency: 'weekly' | 'instant';
+  /** Son başvurudan kaç gün önce hatırlatılsın (14/7/3/1) */
+  reminder_days: number[];
   ics_token: string;
 }
 
 export interface Notification {
   id: string;
   event_id: string | null;
-  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new';
-  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null };
+  type: 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'announcement' | 'group_recommendation' | 'series_new' | 'group_comment';
+  payload: { deadline?: string; old_deadline?: string; topics?: string[]; group_name?: string; by?: string | null; note?: string | null; days?: number };
   group_id: string | null;
   announcements: { title: string; body: string; url: string | null } | null;
   response: 'interested' | 'not_interested' | null;

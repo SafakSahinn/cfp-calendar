@@ -339,6 +339,13 @@ try {
     check('profil: hesap silme bölümü', await page.getByRole('heading', { name: 'Hesabı sil' }).isVisible());
     check('profil: e-posta bildirimleri açık', await page.getByLabel('E-posta bildirimleri').isChecked());
     await shot(page, `${kind}-05-profile`);
+    check('profil: hatırlatma günleri kartı (varsayılan 7 gün seçili)', await page.getByLabel('7 gün önce').isChecked() && !(await page.getByLabel('3 gün önce').isChecked()));
+    if (kind === 'desktop') {
+      await page.getByLabel('3 gün önce').check();
+      await page.waitForTimeout(800);
+      const { data: rd } = await db.from('profiles').select('reminder_days').eq('id', userId).single();
+      check('profil: hatırlatma günü seçimi kaydedilir', JSON.stringify(rd?.reminder_days) === '[7,3]', rd);
+    }
     check('profil: anlık bildirim kartı', await page.getByRole('heading', { name: /Anlık bildirimler/ }).isVisible());
     // Başsız Chrome bildirim iznini her zaman "denied" bildirir; gerçek abonelik CI'da denenemez (telefonda elle denenir).
     // Burada kartın tarayıcı durumunu doğru yansıttığını doğrularız.
@@ -411,6 +418,12 @@ try {
       await page.getByRole('tab', { name: 'Önerilen çağrılar' }).click();
       await page.getByText('💬 UI testi önerisi').waitFor({ timeout: 10_000 });
       check('önerilen çağrı notuyla grup listesinde', true);
+      await page.getByRole('button', { name: /💬 Yorumlar/ }).first().click();
+      await page.getByPlaceholder(/Gruba bir not yazın/).first().fill('UI test yorumu: birlikte bakalım mı?');
+      await page.getByRole('button', { name: 'Gönder' }).first().click();
+      await page.locator('.comment', { hasText: 'UI test yorumu' }).waitFor({ timeout: 10_000 });
+      check('grup çağrısına yorum yazılır ve listede görünür', (await page.getByRole('button', { name: /💬 Yorumlar \(1\)/ }).count()) === 1);
+      await shot(page, `${kind}-12b-group-comments`, false);
       await page.getByRole('tab', { name: 'Üyeler' }).click();
       check('üye listesinde e-posta görünmez', (await page.locator('.followed').getByText('@').count()) === 0);
       const gid = groupUrl.split('#/grup/')[1];

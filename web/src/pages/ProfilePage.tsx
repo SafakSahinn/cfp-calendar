@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PushCard } from '../components/PushCard';
+import { PushCard, ReminderCard } from '../components/PushCard';
 import { TOPICS } from '../../../shared/topics';
 import { AccountCard, DangerZone } from '../components/AccountSettings';
 import { useApp } from '../lib/app';
@@ -86,6 +86,7 @@ export function ProfilePage() {
       </div>
 
       <PushCard />
+      <ReminderCard />
 
       <div className="card">
         <h3>{t.topicsTitle}</h3>

@@ -54,3 +54,24 @@ export function PushCard() {
     </div>
   );
 }
+
+/** Profil: son başvurudan kaç gün önce hatırlatılsın. */
+export function ReminderCard() {
+  const { t } = useI18n();
+  const { profile, updateProfile } = useApp();
+  if (!profile) return null;
+  const days = profile.reminder_days ?? [7];
+  const toggle = (d: number) => updateProfile({ reminder_days: days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort((a, b) => b - a) });
+  return (
+    <div className="card reminders">
+      <h3>⏰ {t.remindersTitle}</h3>
+      <p className="muted">{t.remindersText}</p>
+      <div className="row wrap">
+        {[14, 7, 3, 1].map((d) => (
+          <label key={d} className="check"><input type="checkbox" checked={days.includes(d)} onChange={() => toggle(d)} /> {t.reminderDay(d)}</label>
+        ))}
+      </div>
+      <p className="muted small">{t.remindersNote}</p>
+    </div>
+  );
+}

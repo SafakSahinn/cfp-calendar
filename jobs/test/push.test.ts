@@ -31,3 +31,25 @@ test('push: duyuru ve boş liste', () => {
   assert.equal(m.url, '#/mesajlar');
   assert.equal(renderPush([], 'tr'), null);
 });
+
+test('hatırlatma eşiği: kalan süreyi kapsayan en küçük gün; birikmiş eşikler toplu gelmez', async () => {
+  const { reminderThreshold } = await import('../src/reminders.ts');
+  const D = 86_400_000;
+  assert.equal(reminderThreshold(10 * D, [7]), null); // 7 güne daha var
+  assert.equal(reminderThreshold(6 * D, [7]), 7);
+  assert.equal(reminderThreshold(10 * D, [14, 7, 3]), 14);
+  assert.equal(reminderThreshold(5 * D, [14, 7, 3]), 7);
+  assert.equal(reminderThreshold(2 * D, [14, 7, 3]), 3); // geç takip: sadece 3 günlük gelir
+  assert.equal(reminderThreshold(2 * D, [14, 7]), 7);
+  assert.equal(reminderThreshold(-1, [7]), null); // geçmiş
+  assert.equal(reminderThreshold(2 * D, []), null); // hatırlatma kapalı
+});
+
+test('push: seçilen güne göre hatırlatma başlığı ve grup yorumu', () => {
+  const r = renderPush([{ type: 'deadline_reminder', event: ev('e', 'DAC', 'Design Automation'), announcement: null, payload: { days: 3 } }], 'tr')!;
+  assert.equal(r.title, '⏰ Son başvuruya 3 günden az kaldı');
+  const c = renderPush([{ type: 'group_comment', event: ev('e', 'DAC', 'x'), announcement: null, payload: { by: 'Ayşe', note: 'Ben de gönderiyorum' }, group_id: 'g1' }], 'tr')!;
+  assert.equal(c.title, '💬 Grubunuzda yeni yorum');
+  assert.equal(c.body, 'Ayşe: Ben de gönderiyorum · DAC');
+  assert.equal(c.url, '#/grup/g1');
+});

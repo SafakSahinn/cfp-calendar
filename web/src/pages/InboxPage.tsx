@@ -58,6 +58,7 @@ export function InboxPage() {
     announcement: t.nAnnouncement,
     group_recommendation: t.nGroup,
     series_new: t.nSeries,
+    group_comment: t.nGroupComment,
   };
   const icon: Record<Notification['type'], string> = {
     submission_open: '📝',
@@ -67,6 +68,7 @@ export function InboxPage() {
     announcement: '📣',
     group_recommendation: '👥',
     series_new: '🔁',
+    group_comment: '💬',
   };
 
   if (!items) return <p className="muted center">{t.loading}</p>;
@@ -84,7 +86,7 @@ export function InboxPage() {
             <article key={n.id} className={`card message ${n.read_at ? '' : 'unread'}`}>
               <div className="message-head">
                 <span className="message-icon">{icon[n.type]}</span>
-                <strong>{heading[n.type]}</strong>
+                <strong>{n.type === 'deadline_reminder' && n.payload.days ? t.nReminderDays(n.payload.days) : heading[n.type]}</strong>
                 <span className="muted small">{timeAgo(n.created_at, lang)}</span>
               </div>
               {n.type === 'announcement' && a && (
@@ -93,6 +95,13 @@ export function InboxPage() {
                   <p className="pre">{a.body}</p>
                   {a.url && <a href={a.url} target="_blank" rel="noreferrer noopener" className="small">↗ {a.url}</a>}
                 </div>
+              )}
+              {n.type === 'group_comment' && (
+                <p className="message-body small">
+                  {t.groupCommentLine(n.payload.by ?? '—', n.payload.group_name ?? '')}
+                  {n.group_id && <> · <a href={`#/grup/${n.group_id}`}>{t.openGroup}</a></>}
+                  {n.payload.note && <span className="note">💬 {n.payload.note}</span>}
+                </p>
               )}
               {n.type === 'group_recommendation' && (
                 <p className="message-body small">

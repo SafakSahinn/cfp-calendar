@@ -6,12 +6,15 @@ import { chunks, db } from './db.ts';
 import { renderPush, type Locale, type PushItem } from './pushRender.ts';
 import { runStats } from './runStats.ts';
 
-const BACKLOG_HOURS = 24; // daha eski bildirimler push'lanmaz (ilk kurulumda geçmiş yığılması olmasın)
+const BACKLOG_HOURS = 36; // daha eski bildirimler push'lanmaz (12 saatlik döngü + 8 saat bekletme payı)
+/** Bir cihaza bu süre içinde push gittiyse yenisi gönderilmez, bir sonraki özete kalır → günde en fazla ~2 bildirim */
+const MIN_GAP_HOURS = 8; // daha eski bildirimler push'lanmaz (ilk kurulumda geçmiş yığılması olmasın)
 
 interface Row {
   id: string;
   user_id: string;
   type: string;
+  group_id: string | null;
   payload: PushItem['payload'];
   events: PushItem['event'];
   announcements: PushItem['announcement'];
@@ -29,7 +32,7 @@ export async function runPush(log: (m: string) => void = console.log): Promise<v
 
   const { data, error } = await db
     .from('notifications')
-    .select('id, user_id, type, payload, events (id, acronym, title, submission_deadline), announcements (title)')
+    .select('id, user_id, type, group_id, payload, events (id, acronym, title, submission_deadline), announcements (title)')
     .is('pushed_at', null)
     .order('created_at')
     .limit(5000);
@@ -41,21 +44,26 @@ export async function runPush(log: (m: string) => void = console.log): Promise<v
   for (const r of rows) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
 
   const users = [...byUser.keys()];
-  const subs: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string }[] = [];
+  const subs: { id: string; user_id: string; endpoint: string; p256dh: string; auth: string; last_ok_at: string | null }[] = [];
   const locales = new Map<string, Locale>();
   for (const ids of chunks(users, 200)) {
     const [{ data: s }, { data: p }] = await Promise.all([
-      db.from('push_subscriptions').select('id, user_id, endpoint, p256dh, auth').in('user_id', ids),
+      db.from('push_subscriptions').select('id, user_id, endpoint, p256dh, auth, last_ok_at').in('user_id', ids),
       db.from('profiles').select('id, locale').in('id', ids),
     ]);
     subs.push(...(s ?? []));
     for (const x of p ?? []) locales.set(x.id, x.locale === 'en' ? 'en' : 'tr');
   }
 
+  // Yakın zamanda bildirim almış kullanıcıları bu çalışmada atla; bildirimleri işaretlenmez, sonraki çalışmada özetlenir
+  const gap = Date.now() - MIN_GAP_HOURS * 3600_000;
+  const waiting = new Set(subs.filter((s) => s.last_ok_at && new Date(s.last_ok_at).getTime() > gap).map((s) => s.user_id));
+
   let sent = 0, removed = 0;
   for (const sub of subs) {
+    if (waiting.has(sub.user_id)) continue;
     const msg = renderPush(
-      byUser.get(sub.user_id)!.map((r) => ({ type: r.type, event: r.events, announcement: r.announcements, payload: r.payload ?? {} })),
+      byUser.get(sub.user_id)!.map((r) => ({ type: r.type, event: r.events, announcement: r.announcements, payload: r.payload ?? {}, group_id: r.group_id })),
       locales.get(sub.user_id) ?? 'tr',
     );
     if (!msg) continue;
@@ -74,8 +82,8 @@ export async function runPush(log: (m: string) => void = console.log): Promise<v
       }
     }
   }
-  for (const ids of chunks(rows.map((r) => r.id), 300)) await db.from('notifications').update({ pushed_at: now }).in('id', ids);
-  log(`Anlık bildirim: ${byUser.size} kullanıcı, ${subs.length} cihaz, ${sent} gönderildi, ${removed} geçersiz abonelik silindi`);
+  for (const ids of chunks(rows.filter((r) => !waiting.has(r.user_id)).map((r) => r.id), 300)) await db.from('notifications').update({ pushed_at: now }).in('id', ids);
+  log(`Anlık bildirim: ${byUser.size} kullanıcı, ${subs.length} cihaz, ${sent} gönderildi, ${removed} geçersiz abonelik silindi, ${waiting.size} kullanıcı sonraki özete bırakıldı (son ${MIN_GAP_HOURS} saatte bildirim almış)`);
   runStats.push_sent = sent;
 }
 

@@ -7,6 +7,7 @@ import {
 } from '../../supabase/functions/_shared/calendar.ts';
 import { calendarEnv, db, selectAll } from './db.ts';
 import { isCaution } from './quality.ts';
+import { reminderThreshold } from './reminders.ts';
 import { runStats } from './runStats.ts';
 
 type Event = EventRow & { topics: string[]; ranks: Record<string, string>; is_ieee: boolean; flags: string[]; series_key: string | null };
@@ -16,6 +17,7 @@ interface Profile {
   locale: Locale;
   calendar_provider: Provider | null;
   topic_notifications: boolean;
+  reminder_days: number[] | null;
 }
 
 interface Notif {
@@ -48,7 +50,7 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   log(`Dağıtım: ${events.length} güncel etkinlik`);
 
   const profiles = await selectAll<Profile>((from, to) =>
-    db.from('profiles').select('id, locale, calendar_provider, topic_notifications').range(from, to),
+    db.from('profiles').select('id, locale, calendar_provider, topic_notifications, reminder_days').range(from, to),
   );
   const interests = await selectAll<{ user_id: string; event_id: string | null; topic: string | null }>((from, to) =>
     db.from('interests').select('user_id, event_id, topic').range(from, to),
@@ -148,8 +150,11 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
           });
         }
 
-        if (deadline - now < REMINDER_DAYS * DAY) {
-          notify(ev.id, 'deadline_reminder', `rem:${ev.id}:${ev.submission_deadline}`, { deadline: ev.submission_deadline });
+        // Kullanıcının seçtiği eşiklerden, kalan süreyi kapsayan EN KÜÇÜĞÜ (geç takip edilince birikmiş eşikler toplu gelmesin)
+        const days = reminderThreshold(deadline - now, profile.reminder_days ?? [REMINDER_DAYS]);
+        // Eski biçimli (eşiksiz) 7 gün hatırlatması zaten gönderildiyse tekrar gönderme
+        if (days !== null && !(days === 7 && seenKeys.has(`rem:${ev.id}:${ev.submission_deadline}`))) {
+          notify(ev.id, 'deadline_reminder', `rem:${ev.id}:${ev.submission_deadline}:${days}`, { deadline: ev.submission_deadline, days });
         }
       }
 
@@ -212,3 +217,4 @@ export async function runDispatch(log: (msg: string) => void = console.log): Pro
   log(`Dağıtım bitti: ${profiles.length} kullanıcı, ${notified} bildirim, ${synced} takvim kaydı`);
   Object.assign(runStats, { notifications: notified, calendar_entries: synced });
 }
+

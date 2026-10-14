@@ -1,7 +1,7 @@
 // Özet e-postası şablonu (saf fonksiyon; veritabanı veya SMTP gerektirmez, test edilebilir).
 
 type Locale = 'tr' | 'en';
-type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new';
+type NotifType = 'submission_open' | 'topic_match' | 'dates_changed' | 'deadline_reminder' | 'group_recommendation' | 'series_new' | 'group_comment';
 
 export interface DigestEvent {
   acronym: string | null;
@@ -15,7 +15,7 @@ export interface DigestEvent {
 
 export interface DigestItem {
   type: NotifType;
-  payload: { old_deadline?: string; group_name?: string; by?: string | null };
+  payload: { old_deadline?: string; group_name?: string; by?: string | null; days?: number; note?: string | null };
   event: DigestEvent | null;
 }
 
@@ -32,8 +32,9 @@ const T = {
       deadline_reminder: 'Son başvuruya 1 haftadan az kaldı',
       group_recommendation: 'Grubunuzdan öneri',
       series_new: 'Takip ettiğiniz serinin yeni çağrısı',
+      group_comment: 'Grubunuzda yeni yorum',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬' },
     hello: (n: string | null) => (n ? `Merhaba ${n},` : 'Merhaba,'),
     intro: (n: number) => (n === 1 ? 'Takip ettiğiniz çağrılarla ilgili yeni bir bildiriminiz var:' : `Takip ettiğiniz çağrılarla ilgili ${n} yeni bildiriminiz var:`),
     deadline: 'Son başvuru',
@@ -57,8 +58,9 @@ const T = {
       deadline_reminder: 'Less than a week to the deadline',
       group_recommendation: 'Recommended by your group',
       series_new: 'New edition of a series you follow',
+      group_comment: 'New comment in your group',
     },
-    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁' },
+    icons: { submission_open: '📝', topic_match: '✨', dates_changed: '🔄', deadline_reminder: '⏰', group_recommendation: '👥', series_new: '🔁', group_comment: '💬' },
     hello: (n: string | null) => (n ? `Hi ${n},` : 'Hi,'),
     intro: (n: number) => (n === 1 ? 'You have a new notification about calls you follow:' : `You have ${n} new notifications about calls you follow:`),
     deadline: 'Deadline',
@@ -137,14 +139,19 @@ export function renderDigest(opts: {
   unsubscribeUrl: string;
 }): { subject: string; html: string; text: string } {
   const t = T[opts.locale];
+  // Hatırlatma etiketi seçilen güne göre: 'Son başvuruya 3 gün kaldı'
+  const label = (i: DigestItem) =>
+    i.type === 'deadline_reminder' && i.payload.days
+      ? (opts.locale === 'tr' ? `Son başvuruya ${i.payload.days} günden az kaldı` : `Less than ${i.payload.days} days to the deadline`)
+      : t.labels[i.type];
   const items = opts.items.filter((i) => i.event).slice(0, MAX_ITEMS);
   const rest = opts.items.length - items.length;
   const first = items[0];
   const firstName = first.event!.acronym ?? first.event!.title;
   const subject =
     items.length === 1
-      ? `${BRAND} · ${t.labels[first.type]}: ${firstName}`
-      : `${BRAND} · ${t.subjectMany(opts.items.length)} — ${t.labels[first.type]}: ${firstName}`;
+      ? `${BRAND} · ${label(first)}: ${firstName}`
+      : `${BRAND} · ${t.subjectMany(opts.items.length)} — ${label(first)}: ${firstName}`;
   const inbox = `${opts.siteUrl}#/mesajlar`;
 
   const cards = items.map((i) => {
@@ -156,6 +163,7 @@ export function renderDigest(opts: {
         : '';
       lines.push(`${t.deadline}: <strong>${esc(fmtDeadline(e.submission_deadline, opts.locale))}</strong>${old}`);
     }
+    if (i.type === 'group_comment' && i.payload.note) lines.push(`💬 <em>${esc(i.payload.by ?? '')}</em>: ${esc(i.payload.note)}`);
     if (e.event_start) lines.push(`${t.event}: ${esc(fmtRange(e.event_start, e.event_end, opts.locale))}${e.location ? ` · ${esc(e.location)}` : ''}`);
     const name = e.acronym ? `<strong>${esc(e.acronym)}</strong> – ${esc(e.title)}` : `<strong>${esc(e.title)}</strong>`;
     const title = e.url ? `<a href="${esc(e.url)}" style="color:#111827;text-decoration:none;">${name}</a>` : name;
@@ -163,7 +171,7 @@ export function renderDigest(opts: {
       ? `<p style="margin:8px 0 0;font-size:13px;"><a href="${esc(inbox)}" style="color:${ACCENT};">${t.ask}</a></p>` : '';
     return `<tr><td style="padding:0 0 12px;">
   <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;">
-    <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:${ACCENT};text-transform:uppercase;letter-spacing:.03em;">${t.icons[i.type]} ${t.labels[i.type]}</p>
+    <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:${ACCENT};text-transform:uppercase;letter-spacing:.03em;">${t.icons[i.type]} ${label(i)}</p>
     <p style="margin:0 0 6px;font-size:15px;line-height:1.4;color:#111827;">${title}</p>
     ${lines.map((l) => `<p style="margin:0;font-size:13px;line-height:1.6;color:#4b5563;">${l}</p>`).join('\n    ')}
     ${ask}
@@ -186,7 +194,7 @@ export function renderDigest(opts: {
     ...items.flatMap((i) => {
       const e = i.event!;
       return [
-        `${t.icons[i.type]} ${t.labels[i.type]}: ${e.acronym ? `${e.acronym} – ` : ''}${e.title}`,
+        `${t.icons[i.type]} ${label(i)}: ${e.acronym ? `${e.acronym} – ` : ''}${e.title}`,
         ...(e.submission_deadline ? [`   ${t.deadline}: ${fmtDeadline(e.submission_deadline, opts.locale)}`] : []),
         ...(e.url ? [`   ${e.url}`] : []),
         '',

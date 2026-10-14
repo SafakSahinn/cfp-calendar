@@ -22,8 +22,9 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 - Bir çağrıyı **Takip et** ile işaretleyin. Başvuru açıldığında **başvuru başlangıcı**, **özet** ve **son başvuru** tarihleri takviminize eklenir.
 - Son tarih uzatılırsa takviminiz kendiliğinden güncellenir ve size mesaj gelir.
 - Takvim bağlamak için: **Profil → Google Takvim bağla**. Apple Takvim veya Outlook kullanıyorsanız profilinizdeki **Takvim aboneliği (ICS)** adresini takviminize ekleyin.
+- Son başvurudan **14 / 7 / 3 / 1 gün önce** hatırlatılmayı **Profil → Son başvuru hatırlatmaları** bölümünden seçin.
 - Tüm takip ettikleriniz **Takvimim** sayfasında bir arada.
-- 🔔 **Telefonunuza bildirim:** Profil → **Bu cihazda bildirimleri aç**. Başvuru açılınca, son tarih değişince veya yaklaşınca bildirim gelir. iPhone'da önce siteyi ana ekrana ekleyin.
+- 🔔 **Telefonunuza bildirim:** Profil → **Bu cihazda bildirimleri aç**. Başvuru açılınca, son tarih değişince veya yaklaşınca bildirim gelir; günde en fazla 2 özet bildirim. iPhone'da önce siteyi ana ekrana ekleyin.
 
 ### ✉️ İlginizi çekecek çağrılardan haberdar olun
 - **Profil → İlgi alanlarım** bölümünden konularınızı seçin. Yeni bir çağrı çıkınca **Mesajlar**'a "İlgileniyor musunuz?" gelir.
@@ -42,7 +43,7 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 
 ### 👥 Grubunuzla birlikte çalışın
 - **Gruplar** sayfasından laboratuvarınız veya ekibiniz için bir grup kurun, davet bağlantısını paylaşın.
-- Gruba çağrı önerin; grubun **ortak takvimi** olsun.
+- Gruba çağrı önerin; grubun **ortak takvimi** olsun. Önerilen çağrıların altında **yorumlaşın** (yalnızca grup üyeleri görür).
 - **Başvurularınızı takip edin:** Planlanıyor → Gönderildi → Değerlendirmede → Kabul / Ret.
 - İsterseniz başvurunuzun durumunu **danışmanınızla** (grup sahibi) paylaşın. Kişisel notlarınız hiçbir zaman paylaşılmaz.
 - **Başvurularınızı dışa aktarın:** Takvimim → Başvurularım → **Excel (CSV)** veya **Yazdır / PDF** — yıllık faaliyet raporu ve özgeçmiş için yıl seçerek.

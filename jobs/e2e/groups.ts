@@ -198,6 +198,53 @@ try {
   check('giriş yapmamış kişi göremez', !!anonPart);
 
   // -------------------------------------------------------------------------
+  section('Grup yorumları');
+  const { error: cErr1 } = await member.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: 'Ben de gönderiyorum' });
+  check('üye grup takvimindeki çağrıya yorum yazar', !cErr1, cErr1?.message);
+  await member.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: 'İkinci not' });
+  const { data: ownerCn } = await owner.client.from('notifications').select('type, payload, group_id').eq('type', 'group_comment').eq('event_id', ev1);
+  check('sahibe "grup yorumu" bildirimi: aynı gün aynı çağrı için TEK bildirim', ownerCn?.length === 1 && ownerCn[0].payload.note === 'Ben de gönderiyorum' && ownerCn[0].group_id === gid, ownerCn);
+  const { data: selfCn } = await member.client.from('notifications').select('id').eq('type', 'group_comment');
+  check('yorum yazan kendine bildirim almaz', (selfCn ?? []).length === 0);
+  const { data: cList, error: cListErr } = await owner.client.rpc('group_comment_list', { p_group: gid });
+  check('üyeler yorumları ad/unvanla görür (e-posta yok)', !cListErr && cList?.length === 2 && cList[0].display_name === 'Test uye' && !JSON.stringify(cList).includes('@'), cListErr?.message ?? cList);
+  const { data: cOut } = await outsider.client.from('group_comments').select('id');
+  check('dışarıdaki yorumları göremez', (cOut ?? []).length === 0);
+  const { error: cOutList } = await outsider.client.rpc('group_comment_list', { p_group: gid });
+  check('dışarıdaki yorum listesini açamaz', !!cOutList);
+  const { error: cOutIns } = await outsider.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: 'sızma' });
+  check('dışarıdaki yorum yazamaz', !!cOutIns);
+  const { error: cNotInGroup } = await member.client.from('group_comments').insert({ group_id: gid, event_id: ev3, body: 'takvimde olmayan çağrı' });
+  check('grup takviminde olmayan çağrıya yorum yazılamaz', !!cNotInGroup);
+  const { data: ownerC } = await owner.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: 'Sahip notu' }).select('id').single();
+  await member.client.from('group_comments').delete().eq('id', ownerC!.id);
+  const { count: ownerCLeft } = await db.from('group_comments').select('*', { count: 'exact', head: true }).eq('id', ownerC!.id);
+  check('üye başkasının yorumunu silemez', ownerCLeft === 1);
+  const memberC = (cList ?? []).find((c: { body: string }) => c.body === 'İkinci not');
+  await owner.client.from('group_comments').delete().eq('id', memberC.id);
+  const { count: memberCLeft } = await db.from('group_comments').select('*', { count: 'exact', head: true }).eq('id', memberC.id);
+  check('grup sahibi uygunsuz yorumu silebilir', memberCLeft === 0);
+  const { error: cEmpty } = await member.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: '   ' });
+  check('boş yorum reddedilir', !!cEmpty);
+  let limitErr: string | null = null;
+  for (let i = 0; i < 31 && !limitErr; i++) {
+    const { error } = await member.client.from('group_comments').insert({ group_id: gid, event_id: ev1, body: `toplu ${i}` });
+    if (error) limitErr = error.message;
+  }
+  check('günde 30 yorum sınırı', !!limitErr && /rate_limited/.test(limitErr), limitErr);
+
+  // -------------------------------------------------------------------------
+  section('Hatırlatma günleri');
+  const { data: remDefault } = await member.client.from('profiles').select('reminder_days').eq('id', member.id).single();
+  check('varsayılan hatırlatma: 7 gün', JSON.stringify(remDefault?.reminder_days) === '[7]', remDefault);
+  const { error: remOk } = await member.client.from('profiles').update({ reminder_days: [14, 3, 1] }).eq('id', member.id);
+  check('üye hatırlatma günlerini seçer (14/3/1)', !remOk, remOk?.message);
+  const { error: remBad } = await member.client.from('profiles').update({ reminder_days: [5] }).eq('id', member.id);
+  check('izin verilmeyen gün (5) reddedilir', !!remBad);
+  const { error: remNone } = await member.client.from('profiles').update({ reminder_days: [] }).eq('id', member.id);
+  check('hatırlatmalar tamamen kapatılabilir', !remNone, remNone?.message);
+
+  // -------------------------------------------------------------------------
   section('Seri takibi');
   const { error: sErr } = await member.client.from('series_follows').insert({ series_key: 'ICASSP', label: 'ICASSP' });
   check('üye seriyi takip eder', !sErr, sErr?.message);
