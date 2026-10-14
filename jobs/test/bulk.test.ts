@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { flagBulkClusters } from '../src/quality.ts';
 
 const conf = (o: Record<string, unknown> = {}) => ({
+  acronym: null as string | null,
   kind: 'conference', ranks: {} as Record<string, string>, flags: [] as string[], location: 'Virtual Conference',
   submission_deadline: '2026-10-13T11:59:59.000Z', event_start: '2026-12-29', event_end: '2026-12-30', ...o,
 });
@@ -26,4 +27,10 @@ test('toplu konferans kümesi: 3 konferans eşik altında; tekrar çalıştırma
   flagBulkClusters(four);
   flagBulkClusters(four);
   assert.deepEqual(four[0].flags, ['bulk_cluster']);
+});
+
+test('toplu konferans kümesi: meşru çatı konferans (INSTICC BIOSTEC) muaf', () => {
+  const biostec = ['BIOSIGNALS', 'BIODEVICES', 'HEALTHINF', 'BIOIMAGING', 'BIOINFORMATICS', 'MODELSWARD'].map((acronym) =>
+    conf({ acronym, location: 'Valletta, Malta', event_start: '2027-02-19', event_end: '2027-02-21' }));
+  assert.equal(flagBulkClusters(biostec), 0);
 });

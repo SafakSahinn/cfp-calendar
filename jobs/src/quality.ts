@@ -40,6 +40,22 @@ export function isCaution(flags: readonly string[]): boolean {
   return hasCautionFlag(flags);
 }
 
+/**
+ * Birden çok konferansı aynı gün/yerde birlikte düzenleyen MEŞRU organizatörler (INSTICC / SCITEPRESS).
+ * Kümenin en az yarısı bu kısaltmalardansa küme işaretlenmez. Yeni yanlış pozitif görülürse buraya eklenir.
+ */
+export const REPUTABLE_UMBRELLA = new Set([
+  // BIOSTEC
+  'BIOSTEC', 'BIODEVICES', 'BIOIMAGING', 'BIOINFORMATICS', 'BIOSIGNALS', 'HEALTHINF',
+  // VISIGRAPP
+  'VISIGRAPP', 'GRAPP', 'HUCAPP', 'IVAPP', 'VISAPP',
+  // ICETE / IC3K / diğer INSTICC
+  'ICETE', 'DCNET', 'ICE-B', 'OPTICS', 'SIGMAP', 'WINSYS', 'SECRYPT', 'IC3K', 'KDIR', 'KEOD', 'KMIS',
+  'MODELSWARD', 'ICAART', 'ICPRAM', 'ICORES', 'ICEIS', 'ENASE', 'CLOSER', 'IOTBDS', 'COMPLEXIS', 'VEHITS', 'SMARTGREENS',
+  'ICINCO', 'SIMULTECH', 'IJCCI', 'NCTA', 'ECTA', 'FCTA', 'DATA', 'ICSOFT', 'ICISSP', 'WEBIST', 'CSEDU', 'GISTAM',
+  'PECCS', 'SENSORNETS', 'PHOTOPTICS', 'ICSBT', 'ICFNDS', 'DELTA', 'NEUROTECHNIX', 'ICSPORTS', 'IN4PL', 'ROBOVIS', 'COLLA',
+]);
+
 /** Toplu konferans kümesi için en az kaç konferans aynı tarih/yer/son başvuruyu paylaşmalı */
 export const BULK_CLUSTER_MIN = 4;
 
@@ -49,7 +65,7 @@ export const BULK_CLUSTER_MIN = 4;
  * Engineering — hepsi 29–30 Aralık, "Virtual Conference", son başvuru 13 Ekim). Derecelendirilmiş konferanslar ve
  * çalıştaylar (büyük konferansların ortak çalıştayları) muaftır. Yerinde değiştirir; işaretlenen sayısını döndürür.
  */
-export function flagBulkClusters(events: { kind: string; ranks: Record<string, string>; flags: string[]; location: string | null; submission_deadline: string | null; event_start: string | null; event_end: string | null }[]): number {
+export function flagBulkClusters(events: { acronym: string | null; kind: string; ranks: Record<string, string>; flags: string[]; location: string | null; submission_deadline: string | null; event_start: string | null; event_end: string | null }[]): number {
   const groups = new Map<string, typeof events>();
   for (const e of events) {
     if (e.kind !== 'conference' || Object.keys(e.ranks).length > 0) continue;
@@ -60,6 +76,8 @@ export function flagBulkClusters(events: { kind: string; ranks: Record<string, s
   let n = 0;
   for (const g of groups.values()) {
     if (g.length < BULK_CLUSTER_MIN) continue;
+    // Meşru çatı konferanslar (ör. INSTICC BIOSTEC: BIOSIGNALS + BIODEVICES + HEALTHINF … aynı gün/yer) muaf
+    if (g.filter((e) => REPUTABLE_UMBRELLA.has((e.acronym ?? '').toUpperCase())).length * 2 >= g.length) continue;
     for (const e of g) {
       if (!e.flags.includes('bulk_cluster')) e.flags = [...e.flags, 'bulk_cluster'];
       n++;
