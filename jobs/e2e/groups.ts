@@ -308,7 +308,11 @@ try {
   check('yönetici olmayan duyuru yayımlayamaz', !!nonAdminAnn);
   const { error: directAnn } = await member.client.from('announcements').insert({ title: 'Sahte', body: 'x' });
   check('duyuru tablosuna doğrudan yazılamaz', !!directAnn);
+  const { error: nonAdminStats } = await member.client.rpc('admin_usage_stats');
+  check('yönetici olmayan kullanım istatistiklerini göremez', !!nonAdminStats);
   await db.from('admins').insert({ user_id: owner.id });
+  const { data: usage, error: usageErr } = await owner.client.rpc('admin_usage_stats');
+  check('yönetici kullanım istatistiklerini alır (12 hafta, kişisel veri yok)', !usageErr && usage?.signups_weekly?.length === 12 && usage.adoption.users >= 3 && !JSON.stringify(usage).includes('@'), usageErr?.message);
   const { error: badUrl } = await owner.client.rpc('admin_create_announcement', { p_title: 'Kötü bağlantı', p_body: 'x', p_url: 'javascript:alert(1)', p_recipients: [owner.id] });
   check('duyuruda javascript: bağlantısı reddedilir', !!badUrl);
   const { data: annSent, error: annErr } = await owner.client.rpc('admin_create_announcement', { p_title: 'E2E duyurusu', p_body: 'Merhaba\nikinci satır', p_url: 'https://example.org', p_recipients: [owner.id, member.id, outsider.id] });

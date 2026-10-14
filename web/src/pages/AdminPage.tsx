@@ -3,13 +3,14 @@
 // Yönetici paneli Türkçedir (yönetici kitlesi).
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { AdminStats, type UsageStats } from '../components/AdminStats';
 import { fieldsOf, TOPICS } from '../../../shared/topics';
 import { useApp } from '../lib/app';
 import { formatDate, formatDeadline, timeAgo } from '../lib/format';
 import { useI18n } from '../lib/i18n';
 import { supabase, type EventRow } from '../lib/supabase';
 
-type Tab = 'overview' | 'feedback' | 'users' | 'events' | 'announcements' | 'audit';
+type Tab = 'overview' | 'stats' | 'feedback' | 'users' | 'events' | 'announcements' | 'audit';
 
 interface Stats {
   users: number; users_new_7d: number; users_active_7d: number; calendar_connected: number; email_on: number;
@@ -61,6 +62,7 @@ export function AdminPage() {
 
   const tabs: [Tab, string][] = [
     ['overview', 'Özet'],
+    ['stats', 'İstatistikler'],
     ['feedback', 'Geri bildirimler'],
     ['users', 'Üyeler'],
     ['events', 'Etkinlik ekle'],
@@ -79,6 +81,7 @@ export function AdminPage() {
         ))}
       </div>
       {tab === 'overview' && <Overview />}
+      {tab === 'stats' && <StatsTab />}
       {tab === 'feedback' && <Feedback />}
       {tab === 'users' && <Users />}
       {tab === 'events' && <ManualEvents />}
@@ -89,6 +92,13 @@ export function AdminPage() {
 }
 
 interface SyncRun { started_at: string; finished_at: string | null; trigger: string | null; ok: boolean | null; stats: Record<string, unknown>; error: string | null }
+
+function StatsTab() {
+  const { data, error } = useRpc<UsageStats>('admin_usage_stats');
+  if (error) return <div className="notice">{error}</div>;
+  if (!data) return <p className="muted">Yükleniyor…</p>;
+  return <AdminStats data={data} />;
+}
 
 function Overview() {
   const { data, error } = useRpc<Stats>('admin_stats');

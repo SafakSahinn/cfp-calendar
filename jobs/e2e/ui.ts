@@ -445,6 +445,12 @@ try {
       await page.locator('.stat-grid').waitFor({ timeout: 15_000 });
       check('yönetici: özet kutuları', (await page.locator('.stat').count()) >= 6);
       await shot(page, `${kind}-08-admin-overview`, false);
+      await page.getByRole('tab', { name: 'İstatistikler' }).click();
+      await page.locator('.chart svg .bar').first().waitFor({ timeout: 15_000 });
+      check('yönetici: istatistikler (haftalık üye grafiği + özellik kullanımı + sıralı listeler)', (await page.locator('.chart').count()) === 3 && (await page.locator('.stat').count()) >= 7);
+      await page.locator('.chart svg .bar').last().hover();
+      check('yönetici: grafik üzerine gelince değer gösterilir', await page.locator('.chart-tip').isVisible());
+      await shot(page, `${kind}-08b-admin-stats`, true);
 
       await page.getByRole('tab', { name: 'Üyeler' }).click();
       await page.locator('table.table tbody tr').first().waitFor({ timeout: 10_000 });
