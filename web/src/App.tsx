@@ -1,20 +1,24 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useApp } from './lib/app';
 import { useI18n } from './lib/i18n';
 import { NewPasswordForm } from './components/EmailAuth';
 import { Logo } from './components/Logo';
 import { REPO_URL, SITE_NAME } from './lib/site';
-import { LegalPage } from './pages/LegalPage';
-import { AdminPage } from './pages/AdminPage';
-import { EventDetailPage } from './pages/EventDetailPage';
-import { GroupPage, GroupsPage, JoinGroupPage } from './pages/GroupsPage';
-import { MyCalendarPage } from './pages/MyCalendarPage';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
-import { InboxPage } from './pages/InboxPage';
 import { LandingPage } from './pages/LandingPage';
 import { ThemeButton } from './components/ThemeButton';
-import { ProfilePage } from './pages/ProfilePage';
+
+// Sık kullanılmayan sayfalar ayrı parçalar hâlinde, ihtiyaç olunca yüklenir (ilk açılış hızlansın)
+const LegalPage = lazy(() => import('./pages/LegalPage').then((m) => ({ default: m.LegalPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage').then((m) => ({ default: m.EventDetailPage })));
+const MyCalendarPage = lazy(() => import('./pages/MyCalendarPage').then((m) => ({ default: m.MyCalendarPage })));
+const InboxPage = lazy(() => import('./pages/InboxPage').then((m) => ({ default: m.InboxPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const GroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.GroupPage })));
+const GroupsPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.GroupsPage })));
+const JoinGroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.JoinGroupPage })));
 
 type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join';
 
@@ -96,6 +100,7 @@ export function App() {
       </header>
 
       <main className="main">
+        <Suspense fallback={<p className="muted center">{t.loading}</p>}>
         {!configured ? (
           <div className="notice">{t.notConfigured}</div>
         ) : route === 'privacy' || route === 'terms' ? (
@@ -125,6 +130,7 @@ export function App() {
         ) : (
           <EventsPage />
         )}
+        </Suspense>
       </main>
 
       <footer className="footer muted">
