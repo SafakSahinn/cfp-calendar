@@ -11,6 +11,9 @@ test('konu sınıflandırması: yeni alanlar (kuantum, blokzincir, biyoinformati
   assert.ok(classify('Intelligent Systems for Molecular Biology (ISMB): genomic data').includes('bioinformatics'));
   assert.ok(classify('ACM Technical Symposium on Computer Science Education (SIGCSE)').includes('education'));
   assert.ok(!classify('International Conference on Machine Learning').includes('education'));
+  assert.ok(!classify('ICMLT: International Conference on Machine Learning Technologies').includes('education')); // gerçek veride yakalanan yanlış eşleşme
+  assert.ok(!classify('SIGMETRICS: Measurement and Modeling of Computer Systems').includes('sensors')); // gerçek veride yakalanan yanlış eşleşme
+  assert.ok(classify('IEEE International Instrumentation and Measurement Technology Conference').includes('sensors'));
   assert.ok(classify('IEEE Antennas and Propagation Symposium, millimeter-wave arrays').includes('rf'));
   assert.ok(classify('IEEE Sensors Conference').includes('sensors'));
   assert.ok(classify('IEEE Transportation Electrification Conference: electric vehicle charging').includes('ev'));

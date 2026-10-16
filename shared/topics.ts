@@ -45,7 +45,7 @@ export const TOPICS: Topic[] = [
   { id: 'bioinformatics', field: 'cs', tr: 'Biyoinformatik / Hesaplamalı Biyoloji', en: 'Bioinformatics & Computational Biology',
     keywords: /\b(bioinformatic|computational biology|genomic|proteomic|systems biology|ISMB\b|RECOMB\b)/i },
   { id: 'education', field: 'cs', tr: 'Bilgisayar / Mühendislik Eğitimi', en: 'Computing & Engineering Education',
-    keywords: /\b(engineering education|computing education|computer science education|educational technolog|learning technolog|e-learning|MOOC|SIGCSE|ITiCSE)/i },
+    keywords: /\b(engineering education|computing education|computer science education|educational technolog|technology[- ]enhanced learning|e-learning|MOOC|SIGCSE|ITiCSE)/i },
 
   // Elektrik-elektronik mühendisliği
   { id: 'power', field: 'ee', tr: 'Güç Sistemleri / Enerji', en: 'Power Systems & Energy',
@@ -71,7 +71,7 @@ export const TOPICS: Topic[] = [
   { id: 'rf', field: 'ee', tr: 'RF / Mikrodalga / Antenler', en: 'RF, Microwave & Antennas',
     keywords: /\b(antenna|microwave|millimeter[- ]wave|mmWave|terahertz|THz\b|radio frequency|RF\b|electromagnetic|EMC\b|wave propagation)/i },
   { id: 'sensors', field: 'ee', tr: 'Sensörler / Ölçme', en: 'Sensors & Instrumentation',
-    keywords: /\b(sensor|instrumentation|measurement|metrology|MEMS\b)/i },
+    keywords: /\b(sensor|instrumentation|metrology|MEMS\b)/i },
   { id: 'ev', field: 'ee', tr: 'Elektrikli Araçlar / Ulaşım', en: 'Electric Vehicles & Transportation',
     keywords: /\b(electric vehicle|EV charging|vehicular|transportation electrification|battery management|intelligent transportation|automotive|railway)/i },
   { id: 'semiconductor', field: 'ee', tr: 'Yarıiletken / Nanoteknoloji', en: 'Semiconductors & Nanotechnology',
