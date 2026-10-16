@@ -121,6 +121,22 @@ try {
     await page.locator('article.event').first().waitFor({ timeout: 20_000 });
     const count = await page.locator('article.event').count();
     check('çağrı listesi yüklendi', count > 0, count);
+    if (kind === 'desktop') {
+      // Hız: liste tarayıcıda saklanır; yeniden açılışta sunucuyu beklemeden görünür, çıkışta silinir
+      const stored = () => page.evaluate(async () => {
+        const res = await (await caches.open('cfp-data')).match(new URL('__open-events-v1', document.baseURI).href);
+        return res ? ((await res.json()) as { rows: unknown[] }).rows.length : 0;
+      });
+      await page.waitForFunction(async () => !!(await (await caches.open('cfp-data')).match(new URL('__open-events-v1', document.baseURI).href)), null, { timeout: 15_000 }).catch(() => {});
+      const storedRows = await stored();
+      check('hız: çağrı listesi tarayıcıda saklanır', storedRows > 100, storedRows);
+      await page.route('**/rest/v1/events?*', async (route) => { await new Promise((r) => setTimeout(r, 4000)); await route.continue(); });
+      await page.reload();
+      const fast = await page.locator('article.event').first().waitFor({ timeout: 3_000 }).then(() => true).catch(() => false);
+      check('hız: yeniden açılışta liste sunucuyu beklemeden görünür', fast);
+      await page.unroute('**/rest/v1/events?*');
+      await page.locator('article.event').first().waitFor();
+    }
     if (kind === 'mobile') {
       check('telefonda filtreler varsayılan katlı', !(await page.getByLabel('Her zaman').isVisible()));
       await page.getByRole('button', { name: /Filtreler/ }).click();
@@ -611,6 +627,13 @@ try {
       const { data: gone } = await db.auth.admin.getUserById(userId);
       check('kullanıcı veritabanından silindi', !gone?.user);
       if (!gone?.user) userId = '';
+    }
+    if (kind === 'desktop') {
+      await page.goto(`${SITE}#/`);
+      await page.getByRole('button', { name: 'Çıkış' }).click();
+      await page.getByRole('heading', { name: 'Son başvuru tarihlerini kaçırmayın' }).waitFor({ timeout: 15_000 });
+      const left = await page.evaluate(async () => !!(await (await caches.open('cfp-data')).match(new URL('__open-events-v1', document.baseURI).href)));
+      check('çıkışta tarayıcıda saklanan çağrı listesi silinir', !left);
     }
     await page.context().close();
   }

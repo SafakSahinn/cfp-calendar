@@ -169,7 +169,7 @@ sequenceDiagram
 
 | Klasör | İçerik |
 |---|---|
-| `web/` | React 19 + Vite + TypeScript arayüzü (GitHub Pages, PWA; ikincil sayfalar ve harita ihtiyaç anında yüklenir) |
+| `web/` | React 19 + Vite + TypeScript arayüzü (GitHub Pages, PWA; ikincil sayfalar ve harita ihtiyaç anında yüklenir; açık çağrı listesi tarayıcıda saklanıp açılışta anında gösterilir, arka planda yenilenir) |
 | `web/public/sw.js` | Service worker: kabuk önbelleği, push bildirimi gösterme ve tıklama |
 | `jobs/src/` | 12 saatlik iş: `fetch`, `merge`, `quality`, `core`, `sjr`, `geocode`, `dispatch`, `reminders`, `savedSearches`, `push`, `email`, `maintenance`, `adminReport` |
 | `jobs/src/sources/` | Kaynak ayrıştırıcıları: `ccf`, `wikicfp`, `comsoc`, `ieeejournals`, `turkiye` |

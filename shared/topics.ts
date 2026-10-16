@@ -38,6 +38,14 @@ export const TOPICS: Topic[] = [
     keywords: /\b(theory of computing|algorithm|complexity|logic in computer|automata|combinatori)/i },
   { id: 'robotics', field: 'cs', tr: 'Robotik', en: 'Robotics',
     keywords: /\b(robot|robotics|autonomous systems|mechatronic|unmanned)/i },
+  { id: 'quantum', field: 'cs', tr: 'Kuantum Hesaplama', en: 'Quantum Computing',
+    keywords: /\b(quantum (comput|information|algorithm|machine learning|software|network|communication|internet|cryptograph|key distribution|error correction|technolog|engineering|simulation|circuit|programming)|qubit|QKD\b|post-quantum)/i },
+  { id: 'blockchain', field: 'cs', tr: 'Blokzincir / Dağıtık Defter', en: 'Blockchain & Distributed Ledgers',
+    keywords: /\b(blockchain|distributed ledger|smart contract|cryptocurrenc|bitcoin|ethereum|web3|decentralized finance|DeFi\b)/i },
+  { id: 'bioinformatics', field: 'cs', tr: 'Biyoinformatik / Hesaplamalı Biyoloji', en: 'Bioinformatics & Computational Biology',
+    keywords: /\b(bioinformatic|computational biology|genomic|proteomic|systems biology|ISMB\b|RECOMB\b)/i },
+  { id: 'education', field: 'cs', tr: 'Bilgisayar / Mühendislik Eğitimi', en: 'Computing & Engineering Education',
+    keywords: /\b(engineering education|computing education|computer science education|educational technolog|learning technolog|e-learning|MOOC|SIGCSE|ITiCSE)/i },
 
   // Elektrik-elektronik mühendisliği
   { id: 'power', field: 'ee', tr: 'Güç Sistemleri / Enerji', en: 'Power Systems & Energy',
@@ -60,6 +68,14 @@ export const TOPICS: Topic[] = [
     keywords: /\b(photonic|optic|laser|optoelectronic)/i },
   { id: 'biomedical', field: 'ee', tr: 'Biyomedikal Mühendisliği', en: 'Biomedical Engineering',
     keywords: /\b(biomedical|medical imaging|bioinformatic|health informatics|EMBC)/i },
+  { id: 'rf', field: 'ee', tr: 'RF / Mikrodalga / Antenler', en: 'RF, Microwave & Antennas',
+    keywords: /\b(antenna|microwave|millimeter[- ]wave|mmWave|terahertz|THz\b|radio frequency|RF\b|electromagnetic|EMC\b|wave propagation)/i },
+  { id: 'sensors', field: 'ee', tr: 'Sensörler / Ölçme', en: 'Sensors & Instrumentation',
+    keywords: /\b(sensor|instrumentation|measurement|metrology|MEMS\b)/i },
+  { id: 'ev', field: 'ee', tr: 'Elektrikli Araçlar / Ulaşım', en: 'Electric Vehicles & Transportation',
+    keywords: /\b(electric vehicle|EV charging|vehicular|transportation electrification|battery management|intelligent transportation|automotive|railway)/i },
+  { id: 'semiconductor', field: 'ee', tr: 'Yarıiletken / Nanoteknoloji', en: 'Semiconductors & Nanotechnology',
+    keywords: /\b(semiconductor device|nanotechnolog|nanoelectronic|nanoscale|nanomaterial|thin film|2D material|transistor|device physics)/i },
 ];
 
 export const TOPIC_BY_ID = new Map(TOPICS.map((t) => [t.id, t]));

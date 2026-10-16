@@ -4,6 +4,7 @@ import { requestGoogleCalendarCode } from './googleCalendar';
 import { useI18n } from './i18n';
 import { authProvider, configured, siteRoot, supabase, type Profile, type Provider } from './supabase';
 import { disablePush } from './push';
+import { invalidateEvents } from './events';
 
 const PENDING_KEY = 'cfp.pendingCalendar';
 
@@ -222,6 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     // Paylaşılan bilgisayarda bir sonraki kişiye bildirim gitmesin: bu cihazın aboneliğini kaldır
     await disablePush().catch(() => {});
+    invalidateEvents(); // tarayıcıda saklanan çağrı listesini de temizle
     await supabase.auth.signOut();
   };
 
