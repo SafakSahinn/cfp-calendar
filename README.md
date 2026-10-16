@@ -2,6 +2,8 @@
 
 # CFP Calendar
 
+**Türkçe** · [English](README.en.md)
+
 Bilgisayar mühendisliği ve elektrik-elektronik mühendisliği alanındaki **konferans, çalıştay ve dergi özel sayısı çağrılarını** tek yerde toplayan, takip ettiklerinizi **takviminize otomatik ekleyen** ve araştırma gruplarının başvurularını birlikte izlemesini sağlayan site.
 
 ### 👉 https://safaksahinn.github.io/cfp-calendar/
@@ -15,6 +17,7 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 ### 🔎 Çağrıları bulun
 - Çağrılar her 12 saatte bir IEEE, WikiCFP, ccf-deadlines gibi kaynaklardan güncellenir.
 - **Liste**, **aylık takvim** veya **🗺️ harita** görünümünde inceleyin.
+- Bilgisayar ve elektrik-elektronik alanında 31 konu: yapay zekâ, kuantum hesaplama, siber güvenlik, sinyal işleme, RF/antenler, güç sistemleri, yarıiletkenler ve daha fazlası.
 - Alan, konu, tarih, yüz yüze / çevrim içi, **Türkiye'de**, **sadece IEEE**, **dereceli konferanslar** (CORE, CCF) veya **Q1–Q2 dergiler** gibi filtreleri kullanın.
 - **✨ Senin için:** ilgi alanlarına, takip ettiğin çağrı ve serilere, başvuru geçmişine göre kişisel öneriler — her önerinin nedeniyle birlikte.
 - **💾 Aramayı kaydet:** sık kullandığın filtreyi (ör. "Q1 sinyal işleme dergileri") kaydet, tek tıkla geri uygula; istersen uyan yeni çağrı çıkınca haber verilir.
@@ -23,7 +26,8 @@ Site üyelere açıktır. Google hesabınızla veya e-posta adresinizle ücretsi
 ### ⭐ Takip edin, takviminize eklensin
 - Bir çağrıyı **Takip et** ile işaretleyin. Başvuru açıldığında **başvuru başlangıcı**, **özet** ve **son başvuru** tarihleri takviminize eklenir.
 - Son tarih uzatılırsa takviminiz kendiliğinden güncellenir ve size mesaj gelir.
-- Takvim bağlamak için: **Profil → Google Takvim bağla**. Apple Takvim veya Outlook kullanıyorsanız profilinizdeki **Takvim aboneliği (ICS)** adresini takviminize ekleyin.
+- Takvim bağlamak için: **Profil → Google Takvim bağla**.
+- **Outlook (okul / iş hesabı dahil) veya Apple Takvim:** Profil → **Takvim aboneliği (ICS)** bölümündeki tek tıkla ekleme düğmelerini ya da adım adım rehberi kullanın. Adres size özeldir; yanlışlıkla paylaşırsanız **Adresi yenile** ile eskisini geçersiz kılın.
 - Son başvurudan **14 / 7 / 3 / 1 gün önce** hatırlatılmayı **Profil → Son başvuru hatırlatmaları** bölümünden seçin.
 - Tüm takip ettikleriniz **Takvimim** sayfasında bir arada.
 - 🔔 **Telefonunuza bildirim:** Profil → **Bu cihazda bildirimleri aç**. Başvuru açılınca, son tarih değişince veya yaklaşınca bildirim gelir; günde en fazla 2 özet bildirim. iPhone'da önce siteyi ana ekrana ekleyin.
