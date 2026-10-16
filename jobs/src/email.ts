@@ -2,12 +2,13 @@
 //  * Anında (email_frequency='instant'): yeni site içi mesajların özeti, 12 saatte en fazla bir.
 //  * Haftalık (varsayılan): pazartesi (Türkiye saati) ilk çalışmada — bu hafta kapanan takip edilenler,
 //    ilgi alanında yaklaşanlar, gruplardan öneriler. 'instant' kullanıcılar da haftalık özeti alır.
-//  * Yeni geri bildirimler yöneticiye (ADMIN_EMAIL) iletilir.
+//  * Yeni geri bildirimler yöneticilere (yönetici rolündeki herkes; yoksa ADMIN_EMAIL) iletilir.
 // Güvenli deneme: EMAIL_ONLY_TO="a@x.com,b@y.com" verilirse yalnızca bu adreslere gönderilir (diğerleri hiç işaretlenmez);
 // FORCE_WEEKLY=1 haftalık özeti günü beklemeden gönderir.
 
 import nodemailer, { type Transporter } from 'nodemailer';
 import { db } from './db.ts';
+import { adminRecipients } from './admins.ts';
 import { runStats } from './runStats.ts';
 import { buildWeekly, EV_COLS, type Ev } from './weekly.ts';
 import { BRAND, renderDigest, renderWeekly, type DigestEvent, type DigestItem } from './emailRender.ts';
@@ -221,8 +222,8 @@ async function sendWeekly(ctx: Ctx) {
 // Geri bildirimleri yöneticiye ilet
 // ---------------------------------------------------------------------------
 async function forwardFeedback(transport: Transporter, from: string, log: (msg: string) => void) {
-  const admin = process.env.ADMIN_EMAIL;
-  if (!admin) return;
+  const recipients = await adminRecipients();
+  if (recipients.length === 0) return;
   const { data } = await db
     .from('feedback')
     .select('id, kind, url, message, created_at, user_id, events (acronym, title, url)')
@@ -246,12 +247,14 @@ async function forwardFeedback(transport: Transporter, from: string, log: (msg: 
     `Mesaj: ${r.message}`,
   ].join('\n')).join('\n\n----\n\n');
 
-  await transport.sendMail({
-    from: { name: BRAND, address: from },
-    to: admin,
-    subject: `${BRAND} · ${rows.length} yeni geri bildirim`,
-    text: `${text}\n\nYönetim paneli → Geri bildirimler sekmesinden yanıtlayabilirsiniz.`,
-  });
+  for (const to of recipients) {
+    await transport.sendMail({
+      from: { name: BRAND, address: from },
+      to,
+      subject: `${BRAND} · ${rows.length} yeni geri bildirim`,
+      text: `${text}\n\nYönetim paneli → Geri bildirimler sekmesinden yanıtlayabilirsiniz.`,
+    });
+  }
   await db.from('feedback').update({ notified_at: new Date().toISOString() }).in('id', rows.map((r) => r.id));
   log(`Geri bildirim: ${rows.length} kayıt yöneticiye iletildi`);
 }

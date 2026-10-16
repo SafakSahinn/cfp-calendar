@@ -1,7 +1,8 @@
-// Yöneticiye sistem raporu (ADMIN_EMAIL): günde bir kez (Türkiye saatine göre o günün ilk çalışmasında) özet,
+// Yöneticilere sistem raporu (yönetici rolündeki herkes; yoksa ADMIN_EMAIL): günde bir kez (Türkiye saatine göre o günün ilk çalışmasında) özet,
 // veri güncellemesi başarısız olursa hemen uyarı. SMTP_USER/SMTP_PASS yoksa sessizce atlanır (panel yine gösterir).
 
 import nodemailer from 'nodemailer';
+import { adminRecipients } from './admins.ts';
 import { db } from './db.ts';
 import { renderAdminReport, type ReportRun } from './adminReportRender.ts';
 import type { MaintenanceItem } from './maintenance.ts';
@@ -35,10 +36,11 @@ async function authUserStats(): Promise<{ total: number; new24h: number; active7
 }
 
 export async function adminReport(opts: { ok: boolean; error?: string; log: (m: string) => void; maintenance: MaintenanceItem[] }) {
-  const admin = process.env.ADMIN_EMAIL;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  if (!admin || !user || !pass) return;
+  if (!user || !pass) return;
+  const recipients = await adminRecipients();
+  if (recipients.length === 0) return;
 
   const today = trDate();
   const { data: state } = await db.from('app_state').select('value').eq('key', 'admin_report').maybeSingle();
@@ -65,7 +67,7 @@ export async function adminReport(opts: { ok: boolean; error?: string; log: (m: 
   });
 
   const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user, pass } });
-  await transport.sendMail({ from: { name: BRAND, address: user }, to: admin, subject, html });
+  for (const to of recipients) await transport.sendMail({ from: { name: BRAND, address: user }, to, subject, html });
   if (opts.ok) await db.from('app_state').upsert({ key: 'admin_report', value: { date: today }, updated_at: new Date().toISOString() });
-  opts.log(`Yönetici raporu gönderildi (${opts.ok ? 'günlük' : 'hata uyarısı'})`);
+  opts.log(`Yönetici raporu gönderildi (${opts.ok ? 'günlük' : 'hata uyarısı'}, ${recipients.length} yönetici)`);
 }
