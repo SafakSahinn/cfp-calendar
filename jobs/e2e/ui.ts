@@ -412,6 +412,9 @@ try {
       : perm === 'unsupported' ? await pushCard.getByText(/ana ekrana ekleyin|desteklemiyor/).isVisible()
       : await pushCard.getByRole('button', { name: /Bu cihazda bildirimleri aç/ }).isVisible();
     check('profil: bildirim kartı tarayıcı iznine göre doğru durumu gösterir', shown, perm);
+    const outlookHref = await page.getByRole('link', { name: /Outlook.com.a ekle/ }).getAttribute('href');
+    check('profil: takvim aboneliği rehberi (Outlook / Google / Apple tek tıkla ekleme)', /outlook\.live\.com\/calendar\/0\/addfromweb\?url=https%3A%2F%2F.+ics%3Ftoken%3D/.test(outlookHref ?? '') && (await page.getByRole('link', { name: /Google Takvim.e ekle/ }).count()) === 1 && (await page.getByRole('link', { name: /Apple Takvim.e ekle/ }).getAttribute('href'))?.startsWith('webcal://'), outlookHref);
+    check('profil: Microsoft girişi yokken Outlook kullanıcılarına yönlendirme', await page.getByText(/Outlook veya okul \/ iş hesabı mı kullanıyorsunuz/).isVisible());
 
     if (kind === 'desktop') {
       await page.getByLabel('Ad Soyad').fill('Deneme Kullanıcısı 2');

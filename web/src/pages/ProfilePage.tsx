@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IcsGuide } from '../components/IcsGuide';
 import { AvatarEditor } from '../components/Avatar';
 import { PushCard, ReminderCard } from '../components/PushCard';
 import { TOPICS } from '../../../shared/topics';
@@ -44,6 +45,13 @@ export function ProfilePage() {
   const copy = async () => {
     await navigator.clipboard.writeText(icsUrl);
     showToast(t.copied);
+  };
+  const renewIcs = async () => {
+    if (!window.confirm(t.icsRenewConfirm)) return;
+    const { error } = await supabase.rpc('regenerate_ics_token');
+    if (error) return showToast(error.message);
+    await reloadProfile();
+    showToast(t.icsRenewed);
   };
 
   const user = session!.user;
@@ -92,6 +100,7 @@ export function ProfilePage() {
             </button>
           )}
         </div>
+        {!providers.microsoft && <p className="muted small">📎 {t.outlookHint} <a href="#ics">{t.icsTitle} ↓</a></p>}
       </div>
 
       <PushCard />
@@ -165,13 +174,15 @@ export function ProfilePage() {
         )}
       </div>
 
-      <div className="card">
+      <div className="card" id="ics">
         <h3>{t.icsTitle}</h3>
         <p className="muted">{t.icsText}</p>
         <div className="row">
-          <input readOnly value={icsUrl} className="grow mono" onFocus={(e) => e.target.select()} />
+          <input readOnly value={icsUrl} className="grow mono" onFocus={(e) => e.target.select()} aria-label={t.icsTitle} />
           <button className="small" onClick={copy}>{t.copy}</button>
+          <button className="small ghost" onClick={renewIcs}>{t.icsRenew}</button>
         </div>
+        <IcsGuide url={icsUrl} />
       </div>
 
       <DangerZone />

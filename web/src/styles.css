@@ -585,3 +585,8 @@ ul.plain li { line-height: 1.4; }
 .avatar-review { display: grid; gap: 0.3rem; justify-items: center; text-align: center; }
 .avatar-review img, .avatar-review-missing { width: 128px; height: 128px; border-radius: 50%; object-fit: cover; background: var(--surface-2); display: grid; place-items: center; }
 button.danger { color: var(--danger); }
+
+/* Takvim aboneliği rehberi */
+.ics-guide { display: grid; gap: 0.6rem; margin-top: 0.75rem; }
+.ics-steps { display: grid; gap: 0.6rem; margin-top: 0.5rem; }
+.ics-steps ol { margin: 0.2rem 0 0; padding-left: 1.2rem; }

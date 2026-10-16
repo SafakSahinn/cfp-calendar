@@ -181,6 +181,13 @@ try {
   check('satırlar katlanmış (RFC 5545)', longLines.length === 0, longLines.length);
   const badToken = await fetch(`${URL}/functions/v1/ics?token=${crypto.randomUUID()}`);
   check('geçersiz ICS token → 404', badToken.status === 404, badToken.status);
+  const { data: newIcs, error: renewErr } = await user.rpc('regenerate_ics_token');
+  const oldIcs = await fetch(`${URL}/functions/v1/ics?token=${profile.ics_token}`);
+  const renewedIcs = await fetch(`${URL}/functions/v1/ics?token=${newIcs}`);
+  check('ICS adresi yenilenince eski adres 404, yeni adres 200', !renewErr && oldIcs.status === 404 && renewedIcs.status === 200, { renewErr: renewErr?.message, old: oldIcs.status, renewed: renewedIcs.status });
+  const { error: anonRenew } = await createClient(URL, ANON, { auth: { persistSession: false } }).rpc('regenerate_ics_token');
+  check('giriş yapmamış kişi ICS adresi yenileyemez', !!anonRenew);
+  profile.ics_token = newIcs as string;
 
   // -------------------------------------------------------------------------
   section('Google takvim bağlama (popup kod akışı)');
