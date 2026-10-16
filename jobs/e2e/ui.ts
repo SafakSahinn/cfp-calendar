@@ -130,11 +130,15 @@ try {
       await page.waitForFunction(async () => !!(await (await caches.open('cfp-data')).match(new URL('__open-events-v1', document.baseURI).href)), null, { timeout: 15_000 }).catch(() => {});
       const storedRows = await stored();
       check('hız: çağrı listesi tarayıcıda saklanır', storedRows > 100, storedRows);
-      await page.route('**/rest/v1/events?*', async (route) => { await new Promise((r) => setTimeout(r, 4000)); await route.continue(); });
+      // Sunucuyu yavaşlat (4 sn): liste yine de hemen görünmeli. Sayfa değişirse bekleyen istek bırakılırken hata yok sayılır.
+      await page.route('**/rest/v1/events?*', async (route) => {
+        await new Promise((r) => setTimeout(r, 4000));
+        await route.continue().catch(() => {});
+      });
       await page.reload();
       const fast = await page.locator('article.event').first().waitFor({ timeout: 3_000 }).then(() => true).catch(() => false);
       check('hız: yeniden açılışta liste sunucuyu beklemeden görünür', fast);
-      await page.unroute('**/rest/v1/events?*');
+      await page.unroute('**/rest/v1/events?*').catch(() => {});
       await page.locator('article.event').first().waitFor();
     }
     if (kind === 'mobile') {
