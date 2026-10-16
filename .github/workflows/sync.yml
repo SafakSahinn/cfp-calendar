@@ -18,6 +18,10 @@ on:
         description: 'Haftalık özeti pazartesiyi beklemeden gönder'
         type: boolean
         default: false
+      force_report:
+        description: 'Yönetici raporunu bugün gönderilmiş olsa da yeniden gönder (deneme)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -61,5 +65,6 @@ jobs:
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
           EMAIL_ONLY_TO: ${{ inputs.test_to_admin && vars.ADMIN_EMAIL || '' }}
           FORCE_WEEKLY: ${{ inputs.force_weekly && '1' || '' }}
+          FORCE_ADMIN_REPORT: ${{ inputs.force_report && '1' || '' }}
       - uses: liskin/gh-workflow-keepalive@v1
         if: always() # veri adımı hata verse de zamanlanmış iş kapanmasın

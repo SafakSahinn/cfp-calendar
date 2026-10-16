@@ -43,7 +43,8 @@ export async function adminReport(opts: { ok: boolean; error?: string; log: (m: 
   const today = trDate();
   const { data: state } = await db.from('app_state').select('value').eq('key', 'admin_report').maybeSingle();
   const sentToday = (state?.value as { date?: string } | undefined)?.date === today;
-  if (opts.ok && sentToday) return; // başarılı çalışmada günde tek rapor
+  // başarılı çalışmada günde tek rapor (FORCE_ADMIN_REPORT=1: deneme için yine de gönder)
+  if (opts.ok && sentToday && process.env.FORCE_ADMIN_REPORT !== '1') return;
 
   const since = new Date(Date.now() - DAY).toISOString();
   const [{ data: runs }, users, groups, members, submissions, feedbackNew, calendar, openEvents, avatarsPending] = await Promise.all([
