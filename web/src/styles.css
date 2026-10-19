@@ -142,6 +142,39 @@ input[type='search'], input:not([type]), select {
   padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text); font: inherit;
 }
+/* Açılır listeler: kendi ok simgesi + yumuşak köşeler; destekleyen tarayıcıda açılan liste de özelleştirilir */
+select {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  border-radius: 10px; padding-right: 2.1rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a90a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.75rem center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+select:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+@supports (appearance: base-select) {
+  select, ::picker(select) { appearance: base-select; }
+  select { background-image: none; padding-right: 0.7rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+  select::picker-icon {
+    content: ''; width: 12px; height: 12px; margin-left: auto; background: var(--muted);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+    transition: rotate 0.2s;
+  }
+  select:open::picker-icon { rotate: 180deg; }
+  ::picker(select) {
+    margin-top: 6px; padding: 0.3rem; max-height: min(60vh, 22rem);
+    border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text);
+    box-shadow: 0 10px 30px rgba(20, 24, 40, 0.16), 0 2px 6px rgba(20, 24, 40, 0.08);
+    opacity: 0; translate: 0 -4px;
+    transition: opacity 0.15s, translate 0.15s, overlay 0.15s allow-discrete, display 0.15s allow-discrete;
+  }
+  select:open::picker(select) { opacity: 1; translate: 0 0; }
+  @starting-style { select:open::picker(select) { opacity: 0; translate: 0 -4px; } }
+  select option { padding: 0.45rem 0.6rem; border-radius: 8px; gap: 0.5rem; font-size: 0.92rem; }
+  select option:hover, select option:focus-visible { background: var(--surface-2); outline: none; }
+  select option:checked { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  select option::checkmark { content: '✓'; order: 1; margin-left: auto; }
+}
 input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .check { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.9rem; white-space: nowrap; cursor: pointer; }
 
@@ -322,6 +355,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 /* --- görünüm geçişi, sıralama --- */
 .list-head .row { gap: 0.4rem; flex-wrap: nowrap; }
 .small-select { padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+select.small-select { padding-right: 1.9rem; background-position: right 0.6rem center; }
+@supports (appearance: base-select) { select.small-select { padding-right: 0.5rem; } }
 .seg { display: inline-flex; padding: 3px; gap: 3px; border-radius: 9px; background: var(--surface-2); }
 .seg button { border: 0; background: transparent; padding: 0.25rem 0.6rem; font-size: 0.85rem; color: var(--muted); }
 .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
