@@ -7,6 +7,7 @@ import { REPO_URL, SITE_NAME } from './lib/site';
 import { configured } from './lib/supabase';
 import { EventsPage } from './pages/EventsPage';
 import { LandingPage } from './pages/LandingPage';
+import { Landing, goSignIn } from './pages/Landing';
 import { ThemeButton } from './components/ThemeButton';
 import { Avatar } from './components/Avatar';
 
@@ -22,9 +23,10 @@ const GroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default
 const GroupsPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.GroupsPage })));
 const JoinGroupPage = lazy(() => import('./pages/GroupsPage').then((m) => ({ default: m.JoinGroupPage })));
 
-type Route = 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join' | 'coauthor';
+type Route = 'login' | 'events' | 'inbox' | 'profile' | 'privacy' | 'terms' | 'admin' | 'detail' | 'mycal' | 'groups' | 'group' | 'join' | 'coauthor';
 
 function routeFromHash(h: string): Route {
+  if (h.startsWith('#/giris')) return 'login';
   if (h.startsWith('#/mesajlar')) return 'inbox';
   if (h.startsWith('#/profil')) return 'profile';
   if (h.startsWith('#/gizlilik')) return 'privacy';
@@ -54,6 +56,14 @@ export function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Giriş yapıldıktan sonra #/giris adreste kalmasın
+  useEffect(() => {
+    if (session && route === 'login') {
+      history.replaceState(null, '', '#/');
+      setHash('#/');
+    }
+  }, [session, route]);
 
   const switchLang = () => {
     const next = lang === 'tr' ? 'en' : 'tr';
@@ -94,9 +104,13 @@ export function App() {
             {lang === 'tr' ? 'EN' : 'TR'}
           </button>
           <ThemeButton />
-          {session && (
+          {session ? (
             <button className="ghost small" onClick={signOut}>
               {t.signOut}
+            </button>
+          ) : ready && route !== 'login' && (
+            <button className="primary small" onClick={goSignIn}>
+              {t.signInBtn}
             </button>
           )}
         </div>
@@ -113,7 +127,8 @@ export function App() {
         ) : recovery && session ? (
           <NewPasswordForm />
         ) : !session ? (
-          <LandingPage />
+          // Kök adres tanıtım sayfasını, paylaşılan bağlantılar doğrudan girişi açar
+          route === 'events' && (hash === '' || hash === '#' || hash === '#/') ? <Landing /> : <LandingPage />
         ) : route === 'inbox' ? (
           <InboxPage />
         ) : route === 'profile' ? (

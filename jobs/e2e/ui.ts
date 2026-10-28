@@ -55,7 +55,7 @@ async function openFilters(page: Page) {
 }
 
 async function signIn(page: Page) {
-  await page.goto(SITE);
+  await page.goto(`${SITE}#/giris`);
   await page.locator('form.email-auth input[type=email]').fill(email);
   await page.locator('form.email-auth input[autocomplete=current-password]').fill(password);
   await page.locator('form.email-auth button[type=submit]').click();
@@ -93,6 +93,9 @@ try {
     check('logo görünüyor', await page.locator('.brand svg').isVisible());
     check('Microsoft butonu (kapalı sağlayıcı) gizli', (await page.getByText('Microsoft ile devam et').count()) === 0);
     await shot(page, `${kind}-01-landing`);
+    await page.locator('.topbar button.primary').click();
+    await page.getByRole('heading', { name: 'Giriş yap veya üye ol' }).waitFor();
+    check('tanıtım → giriş sayfası', page.url().endsWith('#/giris'));
 
     // Üye ol: şifre tekrarı + göster butonu
     await page.getByRole('tab', { name: 'Üye ol' }).click();
@@ -606,7 +609,7 @@ try {
       const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'tr-TR' });
       const p2 = await ctx2.newPage();
       await p2.goto(`${shared}#/etkinlik/${anyEvent!.id}`);
-      await p2.getByRole('heading', { name: 'Son başvuru tarihlerini kaçırmayın' }).waitFor();
+      await p2.getByRole('heading', { name: 'Giriş yap veya üye ol' }).waitFor();
       check('paylaşılan bağlantı: oturumsuz → giriş sayfası', true);
       await p2.locator('form.email-auth input[type=email]').fill(email);
       await p2.locator('form.email-auth input[autocomplete=current-password]').fill(password);

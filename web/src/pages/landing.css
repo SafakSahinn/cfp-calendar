@@ -1,0 +1,88 @@
+/* --- tanıtım sayfası (oturum kapalıyken kök adres) --- */
+.landing-page h1, .landing-page h2, .landing-page h3 { letter-spacing: -0.01em; }
+
+.landing-hero {
+  display: grid; grid-template-columns: 1.15fr 1fr; gap: 40px; align-items: center; padding: 48px 0 40px;
+}
+.landing-eyebrow { color: var(--accent); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 12px; }
+.landing-hero h1 { font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.12; margin: 0 0 18px; }
+.landing-lead { font-size: 1.1rem; color: var(--muted); margin: 0 0 26px; max-width: 34em; }
+.landing-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.landing-page button.big { font-size: 1rem; padding: 0.7rem 1.4rem; border-radius: 10px; }
+
+.landing-art { width: 100%; max-width: 400px; justify-self: center; overflow: visible; }
+.landing-art text { text-anchor: middle; dominant-baseline: central; font: inherit; }
+.landing-art .card { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+.landing-art .card-head { fill: var(--accent); }
+.landing-art .month { fill: var(--accent-text); font-weight: 600; font-size: 15px; }
+.landing-art .day text { fill: var(--muted); font-size: 12px; }
+.landing-art .day.open rect { fill: color-mix(in srgb, var(--ok) 18%, transparent); }
+.landing-art .day.open text { fill: var(--ok); font-weight: 700; }
+.landing-art .day.deadline rect { fill: #ff8a3d; }
+.landing-art .day.deadline text { fill: #fff; font-weight: 700; }
+.landing-art .day.conf rect { fill: var(--accent-soft); }
+.landing-art .day.conf text { fill: var(--accent); font-weight: 700; }
+.landing-art .tag { animation: landing-float 4s ease-in-out infinite; }
+.landing-art .tag rect { fill: var(--surface); stroke-width: 1.5; filter: drop-shadow(0 2px 6px rgba(20, 24, 40, 0.12)); }
+.landing-art .tag text { font-size: 12px; font-weight: 600; }
+.landing-art .tag.open rect { stroke: var(--ok); }
+.landing-art .tag.open text { fill: var(--ok); }
+.landing-art .tag.deadline rect { stroke: #ff8a3d; }
+.landing-art .tag.deadline text { fill: #e2691f; }
+.landing-art .tag.conf rect { stroke: var(--accent); }
+.landing-art .tag.conf text { fill: var(--accent); }
+@keyframes landing-float { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .landing-art .tag { animation: none; } }
+
+.landing-stats {
+  list-style: none; margin: 0; padding: 18px 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--surface); text-align: center;
+}
+.landing-stats li { display: flex; flex-direction: column; gap: 2px; padding: 0 6px; }
+.landing-stats li + li { border-left: 1px solid var(--border); }
+.landing-stats b { font-size: 1.35rem; color: var(--accent); }
+.landing-stats span { font-size: 0.85rem; color: var(--muted); }
+
+.landing-section { padding: 56px 0 8px; }
+.landing-section h2, .landing-cta h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 24px; text-align: center; }
+
+.landing-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.landing-features article { border: 1px solid var(--border); border-radius: 14px; padding: 20px; background: var(--surface); }
+.landing-features h3 { margin: 10px 0 6px; font-size: 1.05rem; }
+.landing-features p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.landing-icon {
+  display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 10px; font-size: 22px; background: var(--accent-soft);
+}
+
+.landing-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; counter-reset: none; }
+.landing-steps li { position: relative; text-align: center; padding: 8px 12px; }
+.landing-steps h3 { margin: 12px 0 6px; font-size: 1.05rem; }
+.landing-steps p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.landing-step-no {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text); font-weight: 700; font-size: 1.1rem;
+}
+
+.landing-privacy ul {
+  list-style: none; margin: 0 auto; padding: 24px 28px; max-width: 680px; border-radius: 14px;
+  background: var(--accent-soft); display: flex; flex-direction: column; gap: 10px;
+}
+.landing-privacy li { position: relative; padding-left: 28px; }
+.landing-privacy li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+.landing-cta { text-align: center; padding: 64px 0 24px; }
+
+/* giriş sayfasındaki "← Tanıtım sayfası" bağlantısı */
+.login-back { display: inline-block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+
+@media (max-width: 820px) {
+  .landing-hero { grid-template-columns: 1fr; padding-top: 24px; gap: 24px; }
+  .landing-art { max-width: 300px; order: -1; }
+  .landing-features { grid-template-columns: 1fr 1fr; }
+  .landing-stats { grid-template-columns: 1fr 1fr; row-gap: 16px; }
+  .landing-stats li:nth-child(3) { border-left: 0; }
+}
+@media (max-width: 560px) {
+  .landing-features, .landing-steps { grid-template-columns: 1fr; }
+  .landing-section { padding-top: 40px; }
+}

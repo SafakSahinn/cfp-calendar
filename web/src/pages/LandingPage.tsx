@@ -31,8 +31,9 @@ export function LandingPage() {
   return (
     <section className="landing">
       <div className="hero">
-        <h1>{t.heroTitle}</h1>
-        <p className="lead">{t.heroText}</p>
+        <a className="login-back" href="#/">{t.loginBack}</a>
+        <h1>{t.loginTitle}</h1>
+        <p className="lead">{t.tagline}</p>
         <div className="signin">
           <button className="provider" onClick={() => signIn('google')}>
             <GoogleIcon /> {t.signInGoogle}
@@ -47,11 +48,6 @@ export function LandingPage() {
           <EmailAuth />
         </div>
       </div>
-      <ul className="features">
-        <li><span>🎯</span>{t.feature1}</li>
-        <li><span>⏰</span>{t.feature2}</li>
-        <li><span>🎤</span>{t.feature3}</li>
-      </ul>
     </section>
   );
 }
