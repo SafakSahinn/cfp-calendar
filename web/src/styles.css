@@ -97,7 +97,8 @@ h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; colo
 .topbar {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; gap: 1rem;
-  padding: 0.6rem 16px;
+  /* Logo ve sağdaki düğmeler sayfa içeriğinin (.main, 1040px) kenarlarıyla hizalı */
+  padding: 0.6rem max(16px, calc((100% - 1040px) / 2 + 16px));
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
